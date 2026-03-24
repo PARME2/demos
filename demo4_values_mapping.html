@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>価値観マッピング</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  background: #fff;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  padding: 20px 20px 16px;
+  text-align: center;
+}
+.header h1 { font-size: 18px; font-weight: 700; }
+.header p { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+
+/* Screens */
+.screen {
+  display: none;
+  padding: 24px 20px;
+  animation: fadeSlideIn 0.4s ease;
+}
+.screen.active { display: block; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Progress bar */
+.progress-wrap {
+  margin-bottom: 24px;
+}
+.progress-label {
+  font-size: 13px;
+  color: #6366f1;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.progress-bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #a78bfa);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Question */
+.question-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e1b4b;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.option-card {
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 22px 18px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.option-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.option-card:active { transform: scale(0.97); }
+.option-card:hover {
+  border-color: #a78bfa;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+}
+.option-card.selected {
+  border-color: #6366f1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  transform: scale(1.02);
+}
+.option-card .emoji { font-size: 32px; margin-bottom: 8px; display: block; position: relative; z-index: 1; }
+.option-card .label { font-size: 15px; font-weight: 600; line-height: 1.5; position: relative; z-index: 1; }
+.option-card .sub { font-size: 12px; color: #9ca3af; margin-top: 6px; position: relative; z-index: 1; }
+.option-card.selected .sub { color: rgba(255,255,255,0.8); }
+
+/* Divider */
+.vs-badge {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #d946ef;
+  padding: 4px 0;
+  letter-spacing: 2px;
+}
+
+/* Result screen */
+.type-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #6366f1, #d946ef);
+  color: #fff;
+  padding: 8px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.type-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1e1b4b;
+  margin: 12px 0 8px;
+}
+.type-desc {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.chart-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.ai-box {
+  background: linear-gradient(135deg, #f0f0ff, #fdf2f8);
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 20px;
+}
+.ai-box .ai-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6366f1;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-box .ai-label::before { content: '🤖'; }
+.ai-box p {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.8;
+}
+
+/* Company cards */
+.company-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.company-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+}
+.company-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.company-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e1b4b;
+}
+.match-pct {
+  font-size: 22px;
+  font-weight: 800;
+}
+.match-bar {
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.match-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+.company-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0;
+}
+.company-tags span {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #f0f0ff;
+  color: #6366f1;
+  font-weight: 500;
+}
+.company-reason {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.7;
+}
+.company-reason.open { display: block; animation: fadeSlideIn 0.3s ease; }
+
+/* Compare screen */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 16px 0 8px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.compare-insights {
+  background: #f9fafb;
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 20px;
+}
+.compare-insights h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e1b4b;
+  margin-bottom: 10px;
+}
+.insight-item {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.7;
+  padding: 6px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.insight-item:last-child { border-bottom: none; }
+
+/* Navigation tabs */
+.nav-tabs {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  border-bottom: 1px solid #e5e7eb;
+}
+.nav-tab {
+  flex: 1;
+  padding: 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.nav-tab.active {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+}
+.nav-tab.disabled {
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* Section title */
+.section-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e1b4b;
+  margin-bottom: 6px;
+}
+.section-sub {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 20px;
+}
+
+/* Btn */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:hover { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3); }
+
+.text-center { text-align: center; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>価値観マッピング</h1>
+    <p>あなたの価値観を可視化して、企業とマッチング</p>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="questions">質問</div>
+    <div class="nav-tab disabled" data-tab="result">結果</div>
+    <div class="nav-tab disabled" data-tab="matching">企業</div>
+    <div class="nav-tab disabled" data-tab="compare">比較</div>
+  </div>
+
+  <!-- Screen 1: Questions -->
+  <div class="screen active" id="screen-questions">
+    <div class="progress-wrap">
+      <div class="progress-label" id="progress-text">質問 1 / 3</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:33.3%"></div></div>
+    </div>
+    <div id="question-area"></div>
+  </div>
+
+  <!-- Screen 2: Result -->
+  <div class="screen" id="screen-result">
+    <div class="text-center">
+      <div class="type-badge">あなたのタイプ</div>
+      <div class="type-name" id="type-name">安定バランス型</div>
+      <div class="type-desc" id="type-desc">安定した環境でコツコツ力を発揮しながら、ワークライフバランスも大切にするタイプ。堅実な判断力が強みです。</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="radarChart" width="340" height="340"></canvas>
+    </div>
+    <div class="ai-box">
+      <div class="ai-label">AI分析コメント</div>
+      <p id="ai-comment">あなたは「安定性」と「WLバランス」を特に重視しています。仕事に対して堅実な姿勢を持ちつつ、プライベートの充実も大切にするバランス感覚の持ち主です。チームワークよりも自分のペースで進めることを好む傾向があり、集中力を活かせる環境で大きな成果を出せるでしょう。</p>
+    </div>
+    <button class="btn-primary" onclick="showScreen('matching')">企業マッチングを見る →</button>
+  </div>
+
+  <!-- Screen 3: Matching -->
+  <div class="screen" id="screen-matching">
+    <div class="section-title">企業マッチング</div>
+    <div class="section-sub">あなたの価値観に合う企業を提案します</div>
+    <div id="company-list"></div>
+    <button class="btn-primary" onclick="showScreen('compare')">友達と比較する →</button>
+  </div>
+
+  <!-- Screen 4: Compare -->
+  <div class="screen" id="screen-compare">
+    <div class="section-title">友達比較</div>
+    <div class="section-sub">価値観の違いを見てみよう</div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>自分</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>友達</div>
+    </div>
+    <div class="chart-container">
+      <canvas id="compareChart" width="340" height="340"></canvas>
+    </div>
+    <div class="compare-insights" id="compare-insights"></div>
+  </div>
+</div>
+
+<script>
+// ----- Data -----
+const questions = [
+  {
+    text: 'もし2つの仕事から選ぶなら？',
+    options: [
+      { emoji: '💰', label: '給料が高いけど残業多い仕事', sub: '年収600万〜・月残業40h' },
+      { emoji: '🕐', label: '給料は普通だけど定時で帰れる仕事', sub: '年収400万〜・残業ほぼなし' }
+    ],
+    axes: [
+      { a: [6, 4, 5, 4, 5, 7, 9, 5, 5, 3], b: [6, 7, 6, 6, 5, 5, 5, 5, 5, 9] }
+    ]
+  },
+  {
+    text: 'どちらの働き方が理想？',
+    options: [
+      { emoji: '🎧', label: '一人で黙々と作業', sub: '集中できる・自分のペースで' },
+      { emoji: '🎉', label: 'チームでワイワイやる仕事', sub: '刺激がある・助け合える' }
+    ],
+    axes: [
+      { a: [6, 6, 4, 9, 5, 6, 6, 7, 3, 7], b: [7, 5, 9, 4, 6, 7, 5, 5, 9, 5] }
+    ]
+  },
+  {
+    text: 'どちらの環境で働きたい？',
+    options: [
+      { emoji: '🏛️', label: '安定した大企業', sub: '福利厚生充実・ネームバリュー' },
+      { emoji: '🚀', label: '成長できるベンチャー', sub: '裁量大きい・スピード感' }
+    ],
+    axes: [
+      { a: [5, 9, 6, 4, 5, 5, 7, 4, 6, 7], b: [8, 3, 5, 8, 6, 9, 5, 8, 6, 4] }
+    ]
+  }
+];
+
+const axisLabels = ['やりがい','安定性','人間関係','自律性','社会貢献','成長機会','給与・待遇','創造性','チームワーク','WLバランス'];
+
+const companies = [
+  {
+    name: '🏢 A社（地元製造業）',
+    pct: 92,
+    color: '#6366f1',
+    tags: ['安定性◎', '福利厚生充実', 'WLバランス◎'],
+    reason: 'あなたが重視する「安定性」「WLバランス」が、A社の企業文化と非常に高い一致を示しています。地元密着型で転勤も少なく、長く安心して働ける環境です。残業も月平均15時間以下で、あなたの理想に近い働き方が実現できます。'
+  },
+  {
+    name: '🏢 B社（IT企業）',
+    pct: 78,
+    color: '#8b5cf6',
+    tags: ['成長機会◎', '自律性◎', 'リモート可'],
+    reason: 'あなたの「自律性」を重視する傾向がB社のフレックス・リモート文化と合致。成長機会も豊富ですが、プロジェクトによって繁忙期があるため、WLバランスの面でやや差があります。'
+  },
+  {
+    name: '🏢 C社（飲食チェーン）',
+    pct: 65,
+    color: '#d946ef',
+    tags: ['チームワーク◎', '人間関係◎', '社会貢献'],
+    reason: 'チームワークと人間関係の面で親和性がありますが、あなたが重視する「自律性」「WLバランス」との差が見られます。ただし、店長候補として裁量を持てるキャリアパスもあります。'
+  }
+];
+
+const friendData = [7, 4, 8, 5, 7, 8, 5, 7, 8, 5];
+
+// ----- State -----
+let currentQ = 0;
+let answers = [];
+let myData = [6, 6, 6, 6, 6, 6, 6, 6, 6, 6];
+
+// ----- Navigation -----
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.remove('active');
+    if (t.dataset.tab === name) t.classList.add('active');
+  });
+  if (name === 'result') drawRadar('radarChart', [myData], ['#6366f1'], false);
+  if (name === 'matching') renderCompanies();
+  if (name === 'compare') {
+    drawRadar('compareChart', [myData, friendData], ['#6366f1', '#f59e0b'], true);
+    renderInsights();
+  }
+}
+
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (!tab.classList.contains('disabled')) showScreen(tab.dataset.tab);
+  });
+});
+
+// ----- Questions -----
+function renderQuestion() {
+  const q = questions[currentQ];
+  const area = document.getElementById('question-area');
+  document.getElementById('progress-text').textContent = `質問 ${currentQ + 1} / ${questions.length}`;
+  document.getElementById('progress-fill').style.width = ((currentQ + 1) / questions.length * 100) + '%';
+
+  area.innerHTML = `
+    <div class="question-text">${q.text}</div>
+    <div class="options">
+      <div class="option-card" data-choice="0">
+        <span class="emoji">${q.options[0].emoji}</span>
+        <div class="label">${q.options[0].label}</div>
+        <div class="sub">${q.options[0].sub}</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="option-card" data-choice="1">
+        <span class="emoji">${q.options[1].emoji}</span>
+        <div class="label">${q.options[1].label}</div>
+        <div class="sub">${q.options[1].sub}</div>
+      </div>
+    </div>
+  `;
+
+  area.querySelectorAll('.option-card').forEach(card => {
+    card.addEventListener('click', () => selectOption(parseInt(card.dataset.choice)));
+  });
+}
+
+function selectOption(choice) {
+  const cards = document.querySelectorAll('.option-card');
+  cards[choice].classList.add('selected');
+  answers.push(choice);
+
+  const q = questions[currentQ];
+  const axisMap = choice === 0 ? q.axes[0].a : q.axes[0].b;
+  for (let i = 0; i < 10; i++) {
+    myData[i] = Math.round((myData[i] + axisMap[i]) / 2 * 10) / 10;
+  }
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ < questions.length) {
+      renderQuestion();
+    } else {
+      // Enable all tabs
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('disabled'));
+      determineType();
+      showScreen('result');
+    }
+  }, 400);
+}
+
+function determineType() {
+  const stability = myData[1];
+  const growth = myData[5];
+  const wlb = myData[9];
+  const autonomy = myData[3];
+
+  let name, desc;
+  if (stability >= 7 && wlb >= 7) {
+    name = '安定バランス型';
+    desc = '安定した環境でコツコツ力を発揮しながら、ワークライフバランスも大切にするタイプ。堅実な判断力が強みです。';
+  } else if (growth >= 7 && autonomy >= 7) {
+    name = '自律成長型';
+    desc = '自分の裁量で仕事を進め、常に成長を求めるタイプ。ベンチャーやフリーランス向きの冒険者です。';
+  } else if (myData[2] >= 7 && myData[8] >= 7) {
+    name = 'チーム重視型';
+    desc = '人間関係とチームワークを大切にするタイプ。周囲と協力して大きな成果を出す力があります。';
+  } else {
+    name = 'バランス探求型';
+    desc = '特定の軸に偏らず、総合的にバランスの取れた環境を求めるタイプ。柔軟性が最大の強みです。';
+  }
+  document.getElementById('type-name').textContent = name;
+  document.getElementById('type-desc').textContent = desc;
+
+  // AI comment
+  const top2 = axisLabels
+    .map((l, i) => ({ l, v: myData[i] }))
+    .sort((a, b) => b.v - a.v)
+    .slice(0, 2);
+  document.getElementById('ai-comment').textContent =
+    `あなたは「${top2[0].l}」と「${top2[1].l}」を特に重視しています。` +
+    `この2つの価値観が高い人は、自分の信念を持ちながらも環境に適応できる柔軟さがあります。` +
+    `就職活動では、これらの価値観を満たせる企業文化かどうかを面接で確認することをおすすめします。` +
+    `あなたの強みを活かせる環境で、きっと大きな成果を出せるでしょう。`;
+}
+
+// ----- Radar Chart -----
+function drawRadar(canvasId, datasets, colors, filled) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 340 * dpr;
+  canvas.height = 340 * dpr;
+  canvas.style.width = '340px';
+  canvas.style.height = '340px';
+  ctx.scale(dpr, dpr);
+
+  const cx = 170, cy = 170, maxR = 120;
+  const n = 10;
+  const angleStep = (Math.PI * 2) / n;
+  const startAngle = -Math.PI / 2;
+
+  ctx.clearRect(0, 0, 340, 340);
+
+  // Grid
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = (ring / 5) * maxR;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = startAngle + i * angleStep;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = ring === 5 ? '#d1d5db' : '#e5e7eb';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axis lines + labels
+  for (let i = 0; i < n; i++) {
+    const a = startAngle + i * angleStep;
+    const x2 = cx + Math.cos(a) * maxR;
+    const y2 = cy + Math.sin(a) * maxR;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const lx = cx + Math.cos(a) * (maxR + 22);
+    const ly = cy + Math.sin(a) * (maxR + 22);
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(axisLabels[i], lx, ly);
+  }
+
+  // Data polygons
+  datasets.forEach((data, di) => {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const idx = i % n;
+      const a = startAngle + idx * angleStep;
+      const r = (data[idx] / 10) * maxR;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+
+    const c = colors[di];
+    ctx.fillStyle = c + '25';
+    ctx.fill();
+    ctx.strokeStyle = c;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Dots
+    for (let i = 0; i < n; i++) {
+      const a = startAngle + i * angleStep;
+      const r = (data[i] / 10) * maxR;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = c;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+    }
+  });
+}
+
+// ----- Companies -----
+function renderCompanies() {
+  const list = document.getElementById('company-list');
+  if (list.children.length > 0) return;
+
+  companies.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'company-card';
+    div.innerHTML = `
+      <div class="company-top">
+        <div class="company-name">${c.name}</div>
+        <div class="match-pct" style="color:${c.color}">${c.pct}%</div>
+      </div>
+      <div class="match-bar">
+        <div class="match-bar-fill" style="width:0%;background:${c.color}" data-target="${c.pct}"></div>
+      </div>
+      <div class="company-tags">${c.tags.map(t => '<span>' + t + '</span>').join('')}</div>
+      <div class="company-reason" id="reason-${i}">
+        <strong>マッチ理由：</strong>${c.reason}
+      </div>
+    `;
+    div.addEventListener('click', () => {
+      const reason = document.getElementById('reason-' + i);
+      reason.classList.toggle('open');
+    });
+    list.appendChild(div);
+
+    // Animate bar
+    setTimeout(() => {
+      div.querySelector('.match-bar-fill').style.width = c.pct + '%';
+    }, 100 + i * 150);
+  });
+}
+
+// ----- Compare Insights -----
+function renderInsights() {
+  const container = document.getElementById('compare-insights');
+  if (container.innerHTML) return;
+
+  const diffs = axisLabels.map((l, i) => ({ label: l, mine: myData[i], friend: friendData[i], diff: myData[i] - friendData[i] }));
+  diffs.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+
+  let html = '<h4>主な違い</h4>';
+  diffs.slice(0, 3).forEach(d => {
+    const who = d.diff > 0 ? 'あなた' : '友達';
+    html += `<div class="insight-item">
+      <strong>${d.label}</strong>：${who}の方が ${Math.abs(d.diff).toFixed(1)} ポイント高い
+    </div>`;
+  });
+
+  const similar = diffs.filter(d => Math.abs(d.diff) < 1);
+  if (similar.length > 0) {
+    html += `<div class="insight-item" style="color:#6366f1;font-weight:600;">
+      共通点：${similar.map(s => s.label).join('、')} は似た価値観です
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ----- Init -----
+renderQuestion();
+</script>
+</body>
+</html>

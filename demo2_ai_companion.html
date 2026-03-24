@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>進化する相棒AI</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px 0;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  background: #fff;
+  border-radius: 32px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.screen { display: none; height: 100%; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ===== Bottom Nav ===== */
+.bottom-nav {
+  display: flex;
+  background: #fff;
+  border-top: 1px solid #f0e6ef;
+  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+.bottom-nav button {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px 4px;
+  font-size: 11px;
+  color: #999;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: color 0.2s;
+}
+.bottom-nav button .nav-icon { font-size: 22px; }
+.bottom-nav button.active { color: #e57399; }
+
+/* ===== Screen 1: 相棒選択 ===== */
+#screen-select { background: linear-gradient(180deg, #fff5f7 0%, #fff 40%); }
+
+.select-header {
+  text-align: center;
+  padding: 40px 24px 16px;
+}
+.select-header h1 {
+  font-size: 22px;
+  background: linear-gradient(135deg, #e57399, #a76bdb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 6px;
+}
+.select-header p { font-size: 13px; color: #999; }
+
+.companions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.companion-card {
+  background: #fff;
+  border: 2px solid #f0e6ef;
+  border-radius: 20px;
+  padding: 20px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.companion-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(229,115,153,0.15); }
+.companion-card.selected {
+  border-color: #e57399;
+  background: linear-gradient(135deg, #fff5f7, #fef0ff);
+  box-shadow: 0 4px 16px rgba(229,115,153,0.2);
+}
+.companion-card .emoji { font-size: 44px; display: block; margin-bottom: 10px; }
+.companion-card .type-name { font-size: 13px; font-weight: 700; color: #444; margin-bottom: 4px; }
+.companion-card .type-desc { font-size: 11px; color: #999; line-height: 1.5; }
+
+.name-section {
+  padding: 20px 24px;
+  display: none;
+}
+.name-section.visible { display: block; }
+.name-section label { font-size: 13px; font-weight: 600; color: #666; display: block; margin-bottom: 8px; }
+.name-input-wrap {
+  display: flex;
+  gap: 10px;
+}
+.name-input-wrap input {
+  flex: 1;
+  padding: 14px 16px;
+  border: 2px solid #f0e6ef;
+  border-radius: 16px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.name-input-wrap input:focus { border-color: #e57399; }
+.name-input-wrap button {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #e57399, #c47ad7);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.name-input-wrap button:hover { opacity: 0.9; }
+
+/* ===== Screen 2: チャット ===== */
+#screen-chat { background: #faf8fc; }
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #f0e6ef;
+}
+.chat-avatar {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, #ffe0ec, #e8d5f5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.chat-header-info h2 { font-size: 15px; color: #333; }
+.chat-header-info span { font-size: 11px; color: #aaa; }
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg {
+  max-width: 78%;
+  padding: 12px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  animation: msgIn 0.3s ease;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.msg.ai {
+  align-self: flex-start;
+  background: #fff;
+  color: #444;
+  border-bottom-left-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #e57399, #c47ad7);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+
+.chat-input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #f0e6ef;
+}
+.chat-input-bar input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #f0e6ef;
+  border-radius: 24px;
+  font-size: 14px;
+  outline: none;
+}
+.chat-input-bar input:focus { border-color: #e0a0c0; }
+.chat-input-bar button {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, #e57399, #c47ad7);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Screen 3: 気づきレポート ===== */
+#screen-report { background: linear-gradient(180deg, #fff5f7 0%, #faf8fc 100%); }
+
+.report-header {
+  text-align: center;
+  padding: 32px 24px 16px;
+}
+.report-header h2 { font-size: 20px; color: #555; margin-bottom: 4px; }
+.report-header p { font-size: 12px; color: #aaa; }
+
+.insight-card {
+  margin: 12px 20px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.insight-card .label {
+  font-size: 11px;
+  color: #c47ad7;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.insight-card .insight-text {
+  font-size: 16px;
+  color: #444;
+  line-height: 1.7;
+  font-weight: 600;
+}
+.insight-card .insight-text em {
+  font-style: normal;
+  background: linear-gradient(transparent 60%, #ffe0ec 60%);
+}
+
+.personality-card {
+  margin: 12px 20px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.personality-card h3 { font-size: 14px; color: #666; margin-bottom: 16px; }
+
+.trait-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.trait-row .trait-label {
+  width: 80px;
+  font-size: 12px;
+  color: #888;
+  text-align: right;
+  flex-shrink: 0;
+}
+.trait-bar-bg {
+  flex: 1;
+  height: 10px;
+  background: #f5f0f7;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.trait-bar {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 1s ease;
+}
+.trait-bar.pink { background: linear-gradient(90deg, #f8a4c0, #e57399); }
+.trait-bar.purple { background: linear-gradient(90deg, #d4a5e8, #a76bdb); }
+.trait-bar.peach { background: linear-gradient(90deg, #f8c9a0, #f0956c); }
+.trait-bar.blue { background: linear-gradient(90deg, #a8d0f0, #6ba4db); }
+.trait-bar.green { background: linear-gradient(90deg, #a8e8c0, #5cbd7a); }
+
+.trait-row .trait-value { font-size: 12px; color: #bbb; width: 32px; }
+
+.keyword-section {
+  margin: 12px 20px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.keyword-section h3 { font-size: 14px; color: #666; margin-bottom: 12px; }
+.keyword-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.keyword-tag {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.keyword-tag.t1 { background: #ffe0ec; color: #d45a7f; }
+.keyword-tag.t2 { background: #e8d5f5; color: #9060c0; }
+.keyword-tag.t3 { background: #fff3e0; color: #d48a30; }
+.keyword-tag.t4 { background: #e0f2f1; color: #4a9a8f; }
+
+/* ===== Screen 4: 成長ダイアリー ===== */
+#screen-diary { background: #faf8fc; }
+
+.diary-header {
+  text-align: center;
+  padding: 32px 24px 16px;
+}
+.diary-header h2 { font-size: 20px; color: #555; margin-bottom: 4px; }
+.diary-header p { font-size: 12px; color: #aaa; }
+
+.diary-timeline {
+  padding: 0 20px 20px;
+}
+
+.diary-entry {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 20px;
+}
+.diary-entry::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 24px;
+  bottom: -20px;
+  width: 2px;
+  background: linear-gradient(180deg, #e8d5f5, #f0e6ef);
+}
+.diary-entry:last-child::before { display: none; }
+.diary-dot {
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e57399, #c47ad7);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px #e8d5f5;
+}
+
+.diary-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.diary-date {
+  font-size: 11px;
+  color: #c47ad7;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.diary-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #444;
+  margin-bottom: 6px;
+}
+.diary-body {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.6;
+}
+.diary-mood {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: #fff5f7;
+  color: #e57399;
+}
+
+.spacer { height: 16px; }
+
+/* Scroll area for screens with nav */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Screen 1: 相棒選択 -->
+  <div id="screen-select" class="screen active">
+    <div class="scroll-area">
+      <div class="select-header">
+        <h1>相棒AIを選ぼう</h1>
+        <p>毎日一緒に成長してくれるパートナーを選んでね</p>
+      </div>
+      <div class="companions-grid">
+        <div class="companion-card" data-type="genki" data-emoji="🐕">
+          <span class="emoji">🐕</span>
+          <div class="type-name">元気な友達タイプ</div>
+          <div class="type-desc">ノリが良くて前向き！<br>テンション上げてくれる</div>
+        </div>
+        <div class="companion-card" data-type="cool" data-emoji="🐈">
+          <span class="emoji">🐈</span>
+          <div class="type-name">クール先輩タイプ</div>
+          <div class="type-desc">的確なアドバイスと<br>さりげない優しさ</div>
+        </div>
+        <div class="companion-card" data-type="healing" data-emoji="🐰">
+          <span class="emoji">🐰</span>
+          <div class="type-name">おっとり癒し系タイプ</div>
+          <div class="type-desc">ふんわり寄り添って<br>心をほぐしてくれる</div>
+        </div>
+        <div class="companion-card" data-type="mystery" data-emoji="🦉">
+          <span class="emoji">🦉</span>
+          <div class="type-name">ミステリアス知的タイプ</div>
+          <div class="type-desc">深い洞察で新しい<br>視点をくれる</div>
+        </div>
+      </div>
+      <div class="name-section" id="nameSection">
+        <label>相棒の名前をつけてあげよう</label>
+        <div class="name-input-wrap">
+          <input type="text" id="nameInput" placeholder="例: ポチ、ミケ、うさぎ先生...">
+          <button onclick="startChat()">決定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: チャット -->
+  <div id="screen-chat" class="screen">
+    <div class="chat-header">
+      <div class="chat-avatar" id="chatAvatar">🐕</div>
+      <div class="chat-header-info">
+        <h2 id="chatName">ポチ</h2>
+        <span>オンライン</span>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="chatInput" placeholder="メッセージを入力...">
+      <button onclick="sendMessage()">▶</button>
+    </div>
+    <div class="bottom-nav">
+      <button onclick="showScreen('screen-chat')" class="active" data-nav="screen-chat">
+        <span class="nav-icon">💬</span>トーク
+      </button>
+      <button onclick="showScreen('screen-report')" data-nav="screen-report">
+        <span class="nav-icon">✨</span>気づき
+      </button>
+      <button onclick="showScreen('screen-diary')" data-nav="screen-diary">
+        <span class="nav-icon">📖</span>ダイアリー
+      </button>
+    </div>
+  </div>
+
+  <!-- Screen 3: 気づきレポート -->
+  <div id="screen-report" class="screen">
+    <div class="scroll-area">
+      <div class="report-header">
+        <h2>✨ 気づきレポート</h2>
+        <p>会話から見えてきた あなたらしさ</p>
+      </div>
+      <div class="insight-card">
+        <div class="label">AI からの気づき</div>
+        <div class="insight-text">
+          あなたは<em>"チームで何かを達成すること"</em>にやりがいを感じるタイプかも。体育祭の話をするとき、すごく楽しそうだったよ！
+        </div>
+      </div>
+      <div class="personality-card">
+        <h3>パーソナリティ傾向</h3>
+        <div class="trait-row">
+          <span class="trait-label">協調性</span>
+          <div class="trait-bar-bg"><div class="trait-bar pink" style="width:88%"></div></div>
+          <span class="trait-value">88</span>
+        </div>
+        <div class="trait-row">
+          <span class="trait-label">行動力</span>
+          <div class="trait-bar-bg"><div class="trait-bar purple" style="width:75%"></div></div>
+          <span class="trait-value">75</span>
+        </div>
+        <div class="trait-row">
+          <span class="trait-label">好奇心</span>
+          <div class="trait-bar-bg"><div class="trait-bar peach" style="width:82%"></div></div>
+          <span class="trait-value">82</span>
+        </div>
+        <div class="trait-row">
+          <span class="trait-label">思考力</span>
+          <div class="trait-bar-bg"><div class="trait-bar blue" style="width:68%"></div></div>
+          <span class="trait-value">68</span>
+        </div>
+        <div class="trait-row">
+          <span class="trait-label">共感力</span>
+          <div class="trait-bar-bg"><div class="trait-bar green" style="width:91%"></div></div>
+          <span class="trait-value">91</span>
+        </div>
+      </div>
+      <div class="keyword-section">
+        <h3>よく出てくるキーワード</h3>
+        <div class="keyword-tags">
+          <span class="keyword-tag t1">チームワーク</span>
+          <span class="keyword-tag t2">体育祭</span>
+          <span class="keyword-tag t3">友達</span>
+          <span class="keyword-tag t4">頑張る</span>
+          <span class="keyword-tag t2">応援</span>
+          <span class="keyword-tag t1">練習</span>
+        </div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+    <div class="bottom-nav">
+      <button onclick="showScreen('screen-chat')" data-nav="screen-chat">
+        <span class="nav-icon">💬</span>トーク
+      </button>
+      <button onclick="showScreen('screen-report')" class="active" data-nav="screen-report">
+        <span class="nav-icon">✨</span>気づき
+      </button>
+      <button onclick="showScreen('screen-diary')" data-nav="screen-diary">
+        <span class="nav-icon">📖</span>ダイアリー
+      </button>
+    </div>
+  </div>
+
+  <!-- Screen 4: 成長ダイアリー -->
+  <div id="screen-diary" class="screen">
+    <div class="scroll-area">
+      <div class="diary-header">
+        <h2>📖 成長ダイアリー</h2>
+        <p>会話から自動で生まれた あなたの記録</p>
+      </div>
+      <div class="diary-timeline">
+        <div class="diary-entry">
+          <div class="diary-dot"></div>
+          <div class="diary-card">
+            <div class="diary-date">2026年3月24日（火）</div>
+            <div class="diary-title">体育祭の練習、全力で頑張った日</div>
+            <div class="diary-body">リレーの練習でバトンパスを何度も繰り返した。クラスのみんなと息が合ってきた感じがして嬉しかった。</div>
+            <span class="diary-mood">😊 充実感</span>
+          </div>
+        </div>
+        <div class="diary-entry">
+          <div class="diary-dot"></div>
+          <div class="diary-card">
+            <div class="diary-date">2026年3月23日（月）</div>
+            <div class="diary-title">応援団の振り付けを考えた</div>
+            <div class="diary-body">放課後に友達と応援の振り付けを考えた。みんなでアイデアを出し合うのが楽しくて、時間を忘れた。</div>
+            <span class="diary-mood">🎉 ワクワク</span>
+          </div>
+        </div>
+        <div class="diary-entry">
+          <div class="diary-dot"></div>
+          <div class="diary-card">
+            <div class="diary-date">2026年3月21日（土）</div>
+            <div class="diary-title">テスト勉強と息抜き</div>
+            <div class="diary-body">午前中は数学の問題集を進めた。午後は気分転換に散歩して、カフェで友達とおしゃべり。メリハリ大事。</div>
+            <span class="diary-mood">☕ リラックス</span>
+          </div>
+        </div>
+        <div class="diary-entry">
+          <div class="diary-dot"></div>
+          <div class="diary-card">
+            <div class="diary-date">2026年3月19日（木）</div>
+            <div class="diary-title">ちょっと落ち込んだけど復活</div>
+            <div class="diary-body">小テストの結果がイマイチで凹んだ。でも友達に「次があるよ」って言われて前向きになれた。</div>
+            <span class="diary-mood">💪 回復</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button onclick="showScreen('screen-chat')" data-nav="screen-chat">
+        <span class="nav-icon">💬</span>トーク
+      </button>
+      <button onclick="showScreen('screen-report')" data-nav="screen-report">
+        <span class="nav-icon">✨</span>気づき
+      </button>
+      <button onclick="showScreen('screen-diary')" class="active" data-nav="screen-diary">
+        <span class="nav-icon">📖</span>ダイアリー
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// State
+let selectedType = null;
+let selectedEmoji = '';
+let companionName = '';
+
+// AI response templates per type
+const aiResponses = {
+  genki: [
+    'おおー！いいね！めっちゃ応援してる！💪🔥',
+    'わかるわかる〜！一緒に頑張ろ！✨',
+    'すごいじゃん！その調子だよ〜！🎉',
+    'うんうん、話してくれてありがと！元気出た？😆',
+    'そっか〜！でも大丈夫、なんとかなるって！💪',
+  ],
+  cool: [
+    'なるほどね。それ、結構大事なことだと思うよ。',
+    'ふーん、面白いじゃん。もっと聞かせて。',
+    'まぁ、焦らなくていいよ。ゆっくりやろう。',
+    'それ、自分で気づけてるだけすごいと思うけど。',
+    '悪くないんじゃない。自分のペースで行きなよ。',
+  ],
+  healing: [
+    'うんうん、頑張ったんだね〜。えらいよ〜🌸',
+    'そうなんだ〜。ゆっくりでいいからね〜☁️',
+    'わぁ、すてきだね〜。ほっこりしちゃった🐰',
+    '大丈夫だよ〜。そばにいるからね〜🌷',
+    'いっぱい話してくれてうれしいな〜🍀',
+  ],
+  mystery: [
+    'ふむ...その出来事の裏に何があると思う？🦉',
+    '興味深いね。それは君の本質に関わる話かもしれない。',
+    'なるほど。点と点が繋がりつつあるね...✨',
+    'その感情、大切にした方がいい。理由はいずれ分かるよ。',
+    '面白い視点だね。もう少し深く潜ってみようか。',
+  ],
+};
+
+// Companion card selection
+document.querySelectorAll('.companion-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.companion-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedType = card.dataset.type;
+    selectedEmoji = card.dataset.emoji;
+    document.getElementById('nameSection').classList.add('visible');
+    document.getElementById('nameInput').focus();
+  });
+});
+
+// Start chat
+function startChat() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { document.getElementById('nameInput').focus(); return; }
+  companionName = name;
+
+  document.getElementById('chatAvatar').textContent = selectedEmoji;
+  document.getElementById('chatName').textContent = companionName;
+
+  // Pre-populate conversation
+  const msgs = document.getElementById('chatMessages');
+  msgs.innerHTML = '';
+  addMessage('ai', '今日はどうだった？🐾');
+  setTimeout(() => addMessage('user', '体育祭の練習つかれた〜'), 100);
+  setTimeout(() => addMessage('ai', 'おつかれ！体育祭何の種目？応援してるよ💪'), 200);
+
+  showScreen('screen-chat');
+}
+
+// Add message to chat
+function addMessage(type, text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Send message
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addMessage('user', text);
+  input.value = '';
+
+  // Simulated AI response
+  const type = selectedType || 'genki';
+  const pool = aiResponses[type];
+  const response = pool[Math.floor(Math.random() * pool.length)];
+
+  setTimeout(() => {
+    addMessage('ai', response);
+  }, 600 + Math.random() * 800);
+}
+
+// Enter key to send
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+// Enter key on name input
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startChat();
+});
+
+// Screen navigation
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  // Update nav buttons
+  document.querySelectorAll('.bottom-nav button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.nav === id);
+  });
+}
+</script>
+</body>
+</html>

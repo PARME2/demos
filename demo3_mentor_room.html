@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>オンラインメンター相談室</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #2A7B9B;
+  --primary-light: #3A9BBB;
+  --primary-dark: #1A5B7B;
+  --teal: #4ECDC4;
+  --teal-light: #A8E6CF;
+  --bg: #F0F7FA;
+  --card: #FFFFFF;
+  --text: #2C3E50;
+  --text-light: #6B8299;
+  --border: #E0EDF3;
+  --shadow: 0 2px 16px rgba(42,123,155,0.10);
+  --shadow-lg: 0 8px 32px rgba(42,123,155,0.15);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  background: linear-gradient(160deg, #E8F4F8 0%, #F0F7FA 40%, #FFF 100%);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: white;
+  padding: 20px 20px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.header .back-btn {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.header .back-btn:hover { background: rgba(255,255,255,0.3); }
+.header .back-btn.visible { display: flex; }
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.header-sub {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-left: 46px;
+}
+
+/* Screen management */
+.screen {
+  display: none;
+  animation: fadeIn 0.35s ease;
+}
+
+.screen.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Screen 1: Mentor Selection */
+.screen-inner {
+  padding: 24px 20px 32px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.section-desc {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.mentor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.mentor-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 16px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mentor-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--teal), var(--primary-light));
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.mentor-card:hover, .mentor-card:active {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.mentor-card:hover::before, .mentor-card:active::before { opacity: 1; }
+
+.mentor-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.mentor-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.mentor-desc {
+  font-size: 11px;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+/* Screen 2: Category Selection */
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.category-card:hover, .category-card:active {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow);
+  transform: translateX(4px);
+}
+
+.cat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.cat-icon.c1 { background: linear-gradient(135deg, #E8F5FD, #D0ECFB); }
+.cat-icon.c2 { background: linear-gradient(135deg, #E8FDF5, #CCFBE4); }
+.cat-icon.c3 { background: linear-gradient(135deg, #FDF5E8, #FBE8CC); }
+.cat-icon.c4 { background: linear-gradient(135deg, #F5E8FD, #E8CCFB); }
+.cat-icon.c5 { background: linear-gradient(135deg, #FDE8EF, #FBCCD8); }
+
+.cat-text h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.cat-text p {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.category-card .arrow {
+  margin-left: auto;
+  color: var(--text-light);
+  font-size: 16px;
+}
+
+.selected-mentor-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+/* Screen 3: Chat */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 72px);
+}
+
+.phase-bar {
+  background: var(--card);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.phase-step {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  color: var(--text-light);
+  background: var(--bg);
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.phase-step.active {
+  background: linear-gradient(135deg, var(--primary), var(--teal));
+  color: white;
+}
+
+.phase-step.done {
+  background: var(--teal-light);
+  color: var(--primary-dark);
+}
+
+.phase-arrow {
+  color: #CBD5E0;
+  font-size: 11px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.msg {
+  max-width: 82%;
+  animation: slideUp 0.3s ease;
+}
+
+.msg.mentor {
+  align-self: flex-start;
+}
+
+.msg.user {
+  align-self: flex-end;
+}
+
+.msg-bubble {
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.7;
+  position: relative;
+}
+
+.msg.mentor .msg-bubble {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 6px;
+  color: var(--text);
+}
+
+.msg.user .msg-bubble {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  border-bottom-right-radius: 6px;
+}
+
+.msg-label {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.msg.user .msg-label {
+  text-align: right;
+}
+
+.phase-label {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.phase-label.empathy {
+  background: #E8F5FD;
+  color: #2A7B9B;
+}
+
+.phase-label.organize {
+  background: #FDF5E8;
+  color: #B8860B;
+}
+
+.phase-label.action {
+  background: #E8FDF5;
+  color: #2D8B6F;
+}
+
+.chat-bottom {
+  padding: 12px 16px 20px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.chat-input {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  padding: 12px 18px;
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+.chat-input:focus { border-color: var(--primary-light); }
+.chat-input::placeholder { color: #A0B4C0; }
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--primary), var(--teal));
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.send-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(78,205,196,0.4);
+}
+
+.end-chat-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1.5px solid var(--primary);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.end-chat-btn:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* Screen 4: Summary */
+.summary-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+.summary-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-card h3 .icon {
+  font-size: 20px;
+}
+
+.insight-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insight-list li {
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.6;
+  border-left: 3px solid var(--teal);
+}
+
+.checklist {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.checklist input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--teal);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.checklist label {
+  cursor: pointer;
+}
+
+.checklist label.checked {
+  text-decoration: line-through;
+  color: var(--text-light);
+}
+
+.reserve-btn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary), var(--teal));
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.reserve-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary-light);
+  color: var(--primary);
+}
+
+/* Mentor info bar */
+.mentor-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255,255,255,0.15);
+  margin: 8px -20px -16px;
+  border-radius: 0 0 0 0;
+}
+
+.mentor-info-bar .avatar {
+  font-size: 28px;
+}
+
+.mentor-info-bar .info {
+  font-size: 13px;
+}
+
+.mentor-info-bar .info .name {
+  font-weight: 700;
+}
+
+.mentor-info-bar .info .status {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.online-dot {
+  width: 8px;
+  height: 8px;
+  background: #68D391;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Typing indicator */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 14px 18px;
+  align-items: center;
+}
+
+.typing-indicator span {
+  width: 7px;
+  height: 7px;
+  background: #A0B4C0;
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--text);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 999;
+  opacity: 0;
+  transition: all 0.4s ease;
+  white-space: nowrap;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* Scrollbar */
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #CBD5E0;
+  border-radius: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <button class="back-btn" id="backBtn" onclick="goBack()">&#8249;</button>
+      <h1>オンラインメンター相談室</h1>
+    </div>
+    <div class="header-sub" id="headerSub">24時間いつでも、あなたの味方です</div>
+    <div class="mentor-info-bar" id="mentorInfoBar" style="display:none;">
+      <div class="avatar" id="chatMentorIcon"></div>
+      <div class="info">
+        <div class="name" id="chatMentorName"></div>
+        <div class="status"><span class="online-dot"></span>オンライン</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 1: Mentor Selection -->
+  <div class="screen active" id="screen1">
+    <div class="screen-inner">
+      <div class="section-title">メンターを選ぼう</div>
+      <div class="section-desc">あなたの話しやすいタイプのメンターを選んでください。<br>いつでも変更できます。</div>
+      <div class="mentor-grid">
+        <div class="mentor-card" onclick="selectMentor(0)">
+          <span class="mentor-icon">👩</span>
+          <div class="mentor-name">優しいお姉さん</div>
+          <div class="mentor-desc">あたたかく寄り添い、<br>じっくり話を聞きます</div>
+        </div>
+        <div class="mentor-card" onclick="selectMentor(1)">
+          <span class="mentor-icon">👨‍💼</span>
+          <div class="mentor-name">頼れる先輩</div>
+          <div class="mentor-desc">経験をもとに、<br>的確なアドバイスを</div>
+        </div>
+        <div class="mentor-card" onclick="selectMentor(2)">
+          <span class="mentor-icon">🧑‍🏫</span>
+          <div class="mentor-name">落ち着いた大人</div>
+          <div class="mentor-desc">冷静に状況を分析し、<br>一緒に考えます</div>
+        </div>
+        <div class="mentor-card" onclick="selectMentor(3)">
+          <span class="mentor-icon">😊</span>
+          <div class="mentor-name">フレンドリーな友達</div>
+          <div class="mentor-desc">気軽に何でも<br>話せる相手です</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Category Selection -->
+  <div class="screen" id="screen2">
+    <div class="screen-inner">
+      <div class="selected-mentor-badge" id="mentorBadge"></div>
+      <div class="section-title">何について相談する？</div>
+      <div class="section-desc">一番近いものを選んでください。相談中に話題が変わっても大丈夫です。</div>
+      <div class="category-list">
+        <div class="category-card" onclick="selectCategory(0)">
+          <div class="cat-icon c1">🎯</div>
+          <div class="cat-text">
+            <h3>進路・就職の悩み</h3>
+            <p>やりたいことが見つからない、進路選択…</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="category-card" onclick="selectCategory(1)">
+          <div class="cat-icon c2">🏫</div>
+          <div class="cat-text">
+            <h3>学校生活</h3>
+            <p>友人関係、勉強、部活のこと…</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="category-card" onclick="selectCategory(2)">
+          <div class="cat-icon c3">🌅</div>
+          <div class="cat-text">
+            <h3>将来への不安</h3>
+            <p>漠然とした不安、自信がない…</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="category-card" onclick="selectCategory(3)">
+          <div class="cat-icon c4">💎</div>
+          <div class="cat-text">
+            <h3>自分の強みがわからない</h3>
+            <p>自己分析、自分らしさの発見…</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="category-card" onclick="selectCategory(4)">
+          <div class="cat-icon c5">💬</div>
+          <div class="cat-text">
+            <h3>ただ聞いてほしい</h3>
+            <p>モヤモヤを言葉にしたい…</p>
+          </div>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 3: Chat -->
+  <div class="screen" id="screen3">
+    <div class="chat-container">
+      <div class="phase-bar">
+        <span class="phase-step active" id="phase1">共感</span>
+        <span class="phase-arrow">▸</span>
+        <span class="phase-step" id="phase2">整理</span>
+        <span class="phase-arrow">▸</span>
+        <span class="phase-step" id="phase3">アクション</span>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-bottom">
+        <div class="chat-input-row">
+          <input class="chat-input" type="text" placeholder="メッセージを入力…" id="chatInput" readonly>
+          <button class="send-btn" id="sendBtn">&#9654;</button>
+        </div>
+        <button class="end-chat-btn" id="endChatBtn" style="display:none;" onclick="showScreen('screen4')">相談をまとめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 4: Summary -->
+  <div class="screen" id="screen4">
+    <div class="screen-inner">
+      <div class="summary-card">
+        <h3><span class="icon">📝</span>今日の相談まとめ</h3>
+        <p style="font-size:13px; color:var(--text-light); margin-bottom:10px;">2026年3月24日 ・ 進路・就職の悩み</p>
+        <ul class="insight-list" id="insightList">
+          <li>「やりたいこと」が明確でなくても焦る必要はない。多くの社会人も働きながら見つけている。</li>
+          <li>今の不安の根っこには「周りと比較してしまう」気持ちがある。自分のペースで進んで良い。</li>
+          <li>「人と話すのが好き」「チームで何かを作るのが楽しい」という強みの種がすでにある。</li>
+        </ul>
+      </div>
+
+      <div class="summary-card">
+        <h3><span class="icon">✅</span>次にやること</h3>
+        <ul class="checklist" id="checklist">
+          <li>
+            <input type="checkbox" id="todo1" onchange="toggleCheck(this)">
+            <label for="todo1">興味のある業界を3つ書き出してみる</label>
+          </li>
+          <li>
+            <input type="checkbox" id="todo2" onchange="toggleCheck(this)">
+            <label for="todo2">大学のキャリアセンターの予約を取る</label>
+          </li>
+          <li>
+            <input type="checkbox" id="todo3" onchange="toggleCheck(this)">
+            <label for="todo3">「好きだったこと」を10個リストアップする</label>
+          </li>
+          <li>
+            <input type="checkbox" id="todo4" onchange="toggleCheck(this)">
+            <label for="todo4">来週もう一度メンターに話してみる</label>
+          </li>
+        </ul>
+      </div>
+
+      <button class="reserve-btn" onclick="showToast('予約画面に移動します（デモ）')">
+        🗓 人間メンターに相談予約
+      </button>
+      <button class="btn-secondary" onclick="resetDemo()">
+        最初からやり直す
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const mentors = [
+  { icon: '👩', name: '優しいお姉さん', style: 'kind' },
+  { icon: '👨‍💼', name: '頼れる先輩', style: 'reliable' },
+  { icon: '🧑‍🏫', name: '落ち着いた大人', style: 'calm' },
+  { icon: '😊', name: 'フレンドリーな友達', style: 'friendly' }
+];
+
+let selectedMentor = null;
+let currentScreen = 'screen1';
+let screenHistory = [];
+
+// Conversation script per mentor style for "進路・就職の悩み"
+function getConversation(style) {
+  const m = mentors[selectedMentor];
+  const conversations = {
+    kind: [
+      { role: 'mentor', phase: 'empathy', text: `こんにちは！今日は来てくれてありがとう😊\n進路のことで悩んでいるんだね。よかったら、今どんな気持ちか教えてくれる？` },
+      { role: 'user', text: '就活が始まるのに、自分が何をやりたいのか全然わからなくて…。周りはもうインターン行ってるのに、焦ってばかりです。' },
+      { role: 'mentor', phase: 'empathy', text: 'そうだったんだね…。周りが進んでいるように見えると、余計に焦っちゃうよね。その気持ち、すごくよくわかるよ。\n\n焦ってる自分のこと、ダメだなって思ったりしてない？' },
+      { role: 'user', text: 'はい…正直、自分だけ取り残されてる感じがして、ちょっと辛いです。' },
+      { role: 'mentor', phase: 'empathy', text: '話してくれてありがとう。辛いって感じてること、ちゃんと認めてあげてほしいな。\n\nでもね、「やりたいことがわからない」っていうのは全然おかしいことじゃないんだよ。社会人になってから見つける人もたくさんいるの。' },
+      { role: 'mentor', phase: 'organize', text: '少し整理してみようか。\n\n今の不安は大きく分けると、こんな感じかな？\n\n① やりたいことが見つからない不安\n② 周りと比べてしまう焦り\n③ このまま何も決められないかもという恐れ\n\nどれが一番大きい？' },
+      { role: 'user', text: '②が一番大きいかもしれません。SNSとか見ちゃうと余計に…。あと、①もあります。' },
+      { role: 'mentor', phase: 'organize', text: 'なるほどね。比較しちゃう気持ち、SNS時代だと特にしんどいよね。\n\nじゃあ逆に聞いてみるね。最近「楽しいな」「これ好きだな」って思った瞬間って何かあった？勉強じゃなくてもいいよ。' },
+      { role: 'user', text: 'うーん…ゼミのグループワークで、みんなの意見をまとめて発表した時は楽しかったです。あと、文化祭の実行委員も楽しかった。' },
+      { role: 'mentor', phase: 'organize', text: 'すごくいいね！それって「人と協力して何かを作り上げる」ことが好きってことだよね。\n\nそれ、立派な「強みの種」だと思うな。やりたいことって、こういう小さな「好き」の積み重ねから見えてくるものだよ。' },
+      { role: 'mentor', phase: 'action', text: 'じゃあ、具体的に動けることを一緒に考えてみようか。\n\n無理のない範囲で、こんなことからはじめてみない？\n\n✅ 興味のある業界を3つだけ書き出してみる\n✅ 大学のキャリアセンターに一回行ってみる\n✅ 「楽しかったこと」を10個リストアップしてみる\n\n全部やらなくていいよ。1つでもOK！' },
+      { role: 'user', text: 'それなら、できそうな気がします…！ちょっとやってみます。' },
+      { role: 'mentor', phase: 'action', text: 'うん！その「やってみよう」って気持ちが何より大事だよ😊\n\nまた不安になったら、いつでもここに来てね。一人で抱えなくていいからね。\n\n来週また話そうか？' }
+    ],
+    reliable: [
+      { role: 'mentor', phase: 'empathy', text: 'よく来たね。進路の悩みか。\n就活って先が見えなくて不安だよな。まず、今の状況を聞かせてくれないか？' },
+      { role: 'user', text: '就活が始まるのに、自分が何をやりたいのか全然わからなくて…。周りはもうインターン行ってるのに、焦ってばかりです。' },
+      { role: 'mentor', phase: 'empathy', text: 'なるほど。周りが動いてるのを見ると焦るよな、その気持ちはよくわかる。\n\n俺も学生の頃、同じだったよ。周りが内定もらい始めた時は正直キツかった。だから気持ちはすごくわかる。' },
+      { role: 'user', text: 'そうなんですか？先輩みたいな人でも悩んだことあるんですね…。' },
+      { role: 'mentor', phase: 'empathy', text: 'もちろん。最初から「これだ！」って決まってる人のほうが少ないんだ。\n\nでも一つ言えるのは、焦りは判断力を鈍らせる。だから一旦、冷静に状況を整理しよう。' },
+      { role: 'mentor', phase: 'organize', text: 'ちょっと整理させてくれ。\n\n今の悩みって要するに：\n① 何がやりたいかわからない\n② 周りとの差が気になる\n③ 行動できてない自分への焦り\n\nこの3つだよな？一番しんどいのはどれだ？' },
+      { role: 'user', text: '②と③ですかね…。何もできてない自分がダメに思えて。' },
+      { role: 'mentor', phase: 'organize', text: '「何もできてない」って本当にそうか？\n\n今こうやって相談しに来てること自体が行動だろ。それに、ゼミとか部活とか、今まで取り組んできたこともあるはずだ。\n\n何か「やってて楽しかった」ことはないか？' },
+      { role: 'user', text: 'ゼミのグループワークでみんなの意見をまとめるのは好きでした。文化祭の実行委員も楽しかったです。' },
+      { role: 'mentor', phase: 'organize', text: 'いいじゃないか。「チームをまとめる」「企画を形にする」のが得意ってことだ。\n\nそういう経験こそが、就活で語れる「自分の強み」になる。やりたいことは、行動しながら見つけるもんだ。' },
+      { role: 'mentor', phase: 'action', text: 'よし、じゃあ具体的に動こう。\n\nまずこの3つだ：\n✅ 興味ある業界を3つ書き出す（直感でいい）\n✅ キャリアセンターを予約する\n✅ 好きだったことを10個書き出す\n\n期限は1週間。できるか？' },
+      { role: 'user', text: 'はい、やってみます！' },
+      { role: 'mentor', phase: 'action', text: 'いい返事だ。行動した分だけ不安は小さくなる。\n\n来週の結果、聞かせてくれよ。うまくいかなくても全然OK、その時はまた一緒に考えよう。\n\n応援してるぞ。' }
+    ],
+    calm: [
+      { role: 'mentor', phase: 'empathy', text: 'こんにちは。今日は進路のことで相談したいとのことですね。\nまず、あなたの今の気持ちを教えていただけますか？' },
+      { role: 'user', text: '就活が始まるのに、自分が何をやりたいのか全然わからなくて…。周りはもうインターン行ってるのに、焦ってばかりです。' },
+      { role: 'mentor', phase: 'empathy', text: 'なるほど。焦りを感じているのですね。\n\nまず一つ、お伝えしておきたいことがあります。「やりたいことがわからない」という状態は、決して異常なことではありません。\n\nむしろ、それだけ真剣に考えている証拠です。' },
+      { role: 'user', text: 'でも、周りはどんどん進んでいて…自分だけ止まってる気がします。' },
+      { role: 'mentor', phase: 'empathy', text: 'そう感じるのは自然なことです。ただ、一つ問いかけてみたいのですが。\n\n「進んでいる」とは何を基準にそう判断していますか？インターンに参加していること＝正しい道とは限りません。' },
+      { role: 'mentor', phase: 'organize', text: '少し構造的に整理してみましょう。\n\n今の悩みを分解すると：\n① 自己理解の不足（何がやりたいかわからない）\n② 社会的比較による焦り\n③ 行動できていないことへの自己否定\n\nこの3つは実は別々の問題です。一つずつ見ていきましょう。' },
+      { role: 'user', text: '確かに…ごちゃ混ぜになっていたかもしれません。' },
+      { role: 'mentor', phase: 'organize', text: 'そうですね。特に②の比較は、本来①の解決には関係がない要素です。\n\nでは①について。これまでの経験で「時間を忘れて没頭した」「自然と体が動いた」ということはありますか？' },
+      { role: 'user', text: 'ゼミでグループワークの意見をまとめた時とか、文化祭の実行委員は没頭していました。' },
+      { role: 'mentor', phase: 'organize', text: '興味深いですね。どちらも「複数の人の考えを統合し、一つの成果物にする」という共通パターンがあります。\n\nこれはファシリテーション能力やプロジェクトマネジメントの素養です。非常に市場価値の高いスキルですよ。' },
+      { role: 'mentor', phase: 'action', text: 'では、次のステップを提案します。\n\n✅ 興味のある業界を3つ仮説として挙げる\n✅ キャリアセンターで客観的なフィードバックを得る\n✅ 過去の「好き」を10個書き出し、共通項を分析する\n\n重要なのは、正解を探すのではなく「仮説を立てて検証する」という姿勢です。' },
+      { role: 'user', text: '仮説でいいんですね…それなら気が楽です。やってみます。' },
+      { role: 'mentor', phase: 'action', text: 'はい。完璧な答えは行動の中からしか見つかりません。\n\n「わからない」ことを恐れず、小さな実験を重ねていきましょう。また来週、その結果をもとに次を考えましょう。\n\nいつでも相談に来てください。' }
+    ],
+    friendly: [
+      { role: 'mentor', phase: 'empathy', text: 'やっほー！来てくれてありがとう！\n進路のこと？オッケー、なんでも話してー！' },
+      { role: 'user', text: '就活が始まるのに、自分が何をやりたいのか全然わからなくて…。周りはもうインターン行ってるのに、焦ってばかりです。' },
+      { role: 'mentor', phase: 'empathy', text: 'あー、わかるわかる！！めっちゃわかる！\nSNSとかで「インターン決まった！」とか見ると焦るよね〜😭\n\nでもさ、ぶっちゃけ「やりたいこと決まってます！」って人、実は少数派だよ？' },
+      { role: 'user', text: 'えっそうなの？みんなちゃんと決まってるように見えるけど…' },
+      { role: 'mentor', phase: 'empathy', text: 'いやいや、SNSのキラキラ投稿にだまされちゃダメだって！\n裏ではみんな「マジわかんね〜」って言ってるから笑\n\nそれよりさ、焦ってるってことは真剣に考えてるってことじゃん。それ自体すごいよ！' },
+      { role: 'mentor', phase: 'organize', text: 'ちょっと整理しない？\n\n今のモヤモヤって多分これじゃない？\n① やりたいことわかんない問題\n② みんなと比べちゃう問題\n③ 何していいかわかんない問題\n\nどれが一番しんどい？' },
+      { role: 'user', text: '②かな…あと③も。何から手をつけていいかわからない。' },
+      { role: 'mentor', phase: 'organize', text: 'オッケオッケ！\nじゃあさ、比較はいったん置いといて。\n\n最近「楽しかった〜！」ってなったこと何かある？バイトでも趣味でも何でもいいよ！' },
+      { role: 'user', text: 'ゼミのグループワークで意見まとめるのは楽しかった！文化祭の実行委員も！' },
+      { role: 'mentor', phase: 'organize', text: 'え、それめっちゃいいじゃん！！\n\n「みんなの力を引き出してまとめる」のが好きってことでしょ？それ企業がめちゃくちゃ欲しがるスキルだよ！\n\nやりたいことの「種」、もう持ってるじゃん！' },
+      { role: 'mentor', phase: 'action', text: 'よし！じゃあ軽〜くでいいから、こんなのやってみない？\n\n✅ 「なんか面白そう」な業界を3つメモる\n✅ キャリアセンターに行ってみる（意外と楽しいよ）\n✅ 好きだったこと10個書き出してみる\n\n完璧じゃなくてOK！とりあえずやってみよ！' },
+      { role: 'user', text: 'なんかできそうな気がしてきた！やってみるね！' },
+      { role: 'mentor', phase: 'action', text: 'いいね！！その前向きな気持ちが一番大事！\n\nまたいつでも来てよ〜。愚痴でもOKだからさ！\n来週また話そ！待ってるね！' }
+    ]
+  };
+  return conversations[style] || conversations.kind;
+}
+
+function selectMentor(index) {
+  selectedMentor = index;
+  const m = mentors[index];
+  document.getElementById('mentorBadge').innerHTML = `${m.icon} ${m.name}`;
+  showScreen('screen2');
+}
+
+function selectCategory(index) {
+  showScreen('screen3');
+  startChat();
+}
+
+function showScreen(id) {
+  screenHistory.push(currentScreen);
+  document.getElementById(currentScreen).classList.remove('active');
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+
+  const backBtn = document.getElementById('backBtn');
+  const mentorBar = document.getElementById('mentorInfoBar');
+  const headerSub = document.getElementById('headerSub');
+
+  if (id === 'screen1') {
+    backBtn.classList.remove('visible');
+    mentorBar.style.display = 'none';
+    headerSub.style.display = '';
+  } else if (id === 'screen3') {
+    backBtn.classList.add('visible');
+    const m = mentors[selectedMentor];
+    document.getElementById('chatMentorIcon').textContent = m.icon;
+    document.getElementById('chatMentorName').textContent = m.name;
+    mentorBar.style.display = 'flex';
+    headerSub.style.display = 'none';
+  } else if (id === 'screen4') {
+    backBtn.classList.remove('visible');
+    mentorBar.style.display = 'none';
+    headerSub.style.display = 'none';
+  } else {
+    backBtn.classList.add('visible');
+    mentorBar.style.display = 'none';
+    headerSub.style.display = '';
+  }
+}
+
+function goBack() {
+  if (screenHistory.length === 0) return;
+  const prev = screenHistory.pop();
+  document.getElementById(currentScreen).classList.remove('active');
+  document.getElementById(prev).classList.add('active');
+  currentScreen = prev;
+
+  const backBtn = document.getElementById('backBtn');
+  const mentorBar = document.getElementById('mentorInfoBar');
+  const headerSub = document.getElementById('headerSub');
+
+  if (prev === 'screen1') {
+    backBtn.classList.remove('visible');
+    mentorBar.style.display = 'none';
+    headerSub.style.display = '';
+  } else {
+    backBtn.classList.add('visible');
+    mentorBar.style.display = 'none';
+    headerSub.style.display = '';
+  }
+}
+
+function startChat() {
+  const container = document.getElementById('chatMessages');
+  container.innerHTML = '';
+
+  const m = mentors[selectedMentor];
+  const convo = getConversation(m.style);
+
+  // Reset phases
+  document.getElementById('phase1').className = 'phase-step active';
+  document.getElementById('phase2').className = 'phase-step';
+  document.getElementById('phase3').className = 'phase-step';
+  document.getElementById('endChatBtn').style.display = 'none';
+
+  let currentPhase = 'empathy';
+  let delay = 600;
+
+  convo.forEach((msg, i) => {
+    delay += msg.role === 'mentor' ? 1200 : 800;
+
+    setTimeout(() => {
+      // Update phase indicator
+      if (msg.phase && msg.phase !== currentPhase) {
+        currentPhase = msg.phase;
+        updatePhaseBar(currentPhase);
+      }
+
+      addMessage(msg, container);
+      container.scrollTop = container.scrollHeight;
+
+      // Show end button after last message
+      if (i === convo.length - 1) {
+        setTimeout(() => {
+          document.getElementById('endChatBtn').style.display = 'block';
+        }, 600);
+      }
+    }, delay);
+  });
+}
+
+function updatePhaseBar(phase) {
+  const p1 = document.getElementById('phase1');
+  const p2 = document.getElementById('phase2');
+  const p3 = document.getElementById('phase3');
+
+  if (phase === 'empathy') {
+    p1.className = 'phase-step active';
+    p2.className = 'phase-step';
+    p3.className = 'phase-step';
+  } else if (phase === 'organize') {
+    p1.className = 'phase-step done';
+    p2.className = 'phase-step active';
+    p3.className = 'phase-step';
+  } else if (phase === 'action') {
+    p1.className = 'phase-step done';
+    p2.className = 'phase-step done';
+    p3.className = 'phase-step active';
+  }
+}
+
+function addMessage(msg, container) {
+  const div = document.createElement('div');
+  div.className = `msg ${msg.role === 'mentor' ? 'mentor' : 'user'}`;
+
+  const m = mentors[selectedMentor];
+  let labelText = msg.role === 'mentor' ? m.name : 'あなた';
+
+  let phaseHTML = '';
+  if (msg.phase) {
+    const phaseNames = { empathy: '共感', organize: '整理', action: 'アクション' };
+    phaseHTML = `<div class="phase-label ${msg.phase}">${phaseNames[msg.phase]}</div>`;
+  }
+
+  const textFormatted = msg.text.replace(/\n/g, '<br>');
+
+  div.innerHTML = `
+    <div class="msg-label">${labelText}</div>
+    <div class="msg-bubble">
+      ${msg.role === 'mentor' ? phaseHTML : ''}
+      ${textFormatted}
+    </div>
+  `;
+
+  container.appendChild(div);
+}
+
+function toggleCheck(checkbox) {
+  const label = checkbox.nextElementSibling;
+  if (checkbox.checked) {
+    label.classList.add('checked');
+  } else {
+    label.classList.remove('checked');
+  }
+}
+
+function showToast(text) {
+  const toast = document.getElementById('toast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function resetDemo() {
+  screenHistory = [];
+  selectedMentor = null;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen1').classList.add('active');
+  currentScreen = 'screen1';
+  document.getElementById('backBtn').classList.remove('visible');
+  document.getElementById('mentorInfoBar').style.display = 'none';
+  document.getElementById('headerSub').style.display = '';
+  document.querySelectorAll('.checklist input').forEach(cb => {
+    cb.checked = false;
+    cb.nextElementSibling.classList.remove('checked');
+  });
+}
+</script>
+</body>
+</html>

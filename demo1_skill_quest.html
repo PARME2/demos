@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>スキルクエスト - RPG型スキル発見アプリ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #0a0a1a;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow-x: hidden;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #0d0b2e 0%, #1a1145 40%, #0d0b2e 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .app::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 20%, rgba(120, 60, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(0, 200, 255, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    animation: bgPulse 8s ease-in-out infinite;
+  }
+
+  @keyframes bgPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .screen {
+    display: none;
+    padding: 24px 20px;
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+  }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ===== Header ===== */
+  .header {
+    text-align: center;
+    padding: 32px 0 16px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+  .header .subtitle {
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== Screen 1: Character Select ===== */
+  .char-title {
+    color: #e0d4ff;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    margin: 24px 0 8px;
+  }
+  .char-desc {
+    color: rgba(255,255,255,0.45);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .char-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 0 8px;
+  }
+
+  .char-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 28px 16px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .char-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .char-card:nth-child(1)::before { background: radial-gradient(circle at 50% 30%, rgba(255,180,100,0.15), transparent 70%); }
+  .char-card:nth-child(2)::before { background: radial-gradient(circle at 50% 30%, rgba(255,80,80,0.15), transparent 70%); }
+  .char-card:nth-child(3)::before { background: radial-gradient(circle at 50% 30%, rgba(255,160,50,0.15), transparent 70%); }
+  .char-card:nth-child(4)::before { background: radial-gradient(circle at 50% 30%, rgba(100,150,255,0.15), transparent 70%); }
+
+  .char-card:hover::before, .char-card:active::before { opacity: 1; }
+  .char-card:hover, .char-card:active {
+    transform: translateY(-4px) scale(1.03);
+    border-color: rgba(167, 139, 250, 0.4);
+    box-shadow: 0 8px 32px rgba(120, 60, 255, 0.2);
+  }
+
+  .char-emoji {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+    animation: float 3s ease-in-out infinite;
+  }
+  .char-card:nth-child(2) .char-emoji { animation-delay: -0.75s; }
+  .char-card:nth-child(3) .char-emoji { animation-delay: -1.5s; }
+  .char-card:nth-child(4) .char-emoji { animation-delay: -2.25s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .char-name {
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .char-type {
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+  }
+
+  /* ===== Screen 2: Quest Input ===== */
+  .quest-avatar {
+    text-align: center;
+    margin: 16px 0;
+  }
+  .quest-avatar .avatar-display {
+    font-size: 72px;
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 8px 24px rgba(120, 60, 255, 0.3));
+  }
+  .quest-avatar .avatar-name {
+    display: block;
+    color: #a78bfa;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .quest-label {
+    color: #e0d4ff;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 24px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .quest-label::before {
+    content: '⚔️';
+    font-size: 18px;
+  }
+
+  .quest-hint {
+    color: rgba(255,255,255,0.35);
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .input-wrap {
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .input-wrap textarea {
+    width: 100%;
+    min-height: 120px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(167, 139, 250, 0.2);
+    border-radius: 16px;
+    padding: 16px;
+    color: #fff;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .input-wrap textarea::placeholder { color: rgba(255,255,255,0.25); }
+  .input-wrap textarea:focus {
+    border-color: rgba(167, 139, 250, 0.5);
+    box-shadow: 0 0 24px rgba(120, 60, 255, 0.15);
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: linear-gradient(135deg, #7c3aed, #6366f1, #3b82f6);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(120, 60, 255, 0.35);
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+  .btn-primary:hover::after { transform: translateX(100%); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(120, 60, 255, 0.5); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 14px;
+    border: 1.5px solid rgba(167, 139, 250, 0.3);
+    border-radius: 14px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #a78bfa;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 12px;
+  }
+  .btn-secondary:hover {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: rgba(167, 139, 250, 0.5);
+  }
+
+  /* ===== Screen 3: Skill Result ===== */
+  .result-header {
+    text-align: center;
+    margin: 16px 0 8px;
+  }
+  .result-avatar {
+    font-size: 64px;
+    display: inline-block;
+    animation: celebrate 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes celebrate {
+    0% { transform: rotate(-5deg) scale(1); }
+    100% { transform: rotate(5deg) scale(1.08); }
+  }
+
+  .result-title {
+    color: #fbbf24;
+    font-size: 22px;
+    font-weight: 900;
+    text-align: center;
+    margin: 12px 0 4px;
+    text-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+  }
+  .result-sub {
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .skill-cards { display: flex; flex-direction: column; gap: 14px; }
+
+  .skill-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+    animation: skillAppear 0.6s forwards;
+    position: relative;
+    overflow: hidden;
+  }
+  .skill-card:nth-child(1) { animation-delay: 0.3s; }
+  .skill-card:nth-child(2) { animation-delay: 0.7s; }
+  .skill-card:nth-child(3) { animation-delay: 1.1s; }
+
+  .skill-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(167,139,250,0.1), transparent, rgba(96,165,250,0.1), transparent);
+    animation: cardGlow 4s linear infinite;
+  }
+  @keyframes cardGlow { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  .skill-card > * { position: relative; z-index: 1; }
+
+  @keyframes skillAppear {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .skill-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .skill-card:nth-child(1) .skill-icon { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .skill-card:nth-child(2) .skill-icon { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+  .skill-card:nth-child(3) .skill-icon { background: linear-gradient(135deg, #10b981, #06b6d4); }
+
+  .skill-info { flex: 1; }
+  .skill-name {
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .skill-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .skill-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    width: 0;
+    animation: barFill 1s forwards;
+  }
+  .skill-card:nth-child(1) .skill-bar-fill { background: linear-gradient(90deg, #f59e0b, #ef4444); animation-delay: 0.8s; --fill: 75%; }
+  .skill-card:nth-child(2) .skill-bar-fill { background: linear-gradient(90deg, #3b82f6, #8b5cf6); animation-delay: 1.2s; --fill: 50%; }
+  .skill-card:nth-child(3) .skill-bar-fill { background: linear-gradient(90deg, #10b981, #06b6d4); animation-delay: 1.6s; --fill: 60%; }
+
+  @keyframes barFill { to { width: var(--fill); } }
+
+  .skill-xp {
+    color: #fbbf24;
+    font-weight: 900;
+    font-size: 15px;
+    white-space: nowrap;
+    text-shadow: 0 0 12px rgba(251,191,36,0.5);
+    animation: xpPulse 1s ease-in-out infinite;
+  }
+  @keyframes xpPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .levelup-banner {
+    text-align: center;
+    margin: 28px 0 20px;
+    opacity: 0;
+    animation: bannerAppear 0.8s 1.8s forwards;
+  }
+  @keyframes bannerAppear {
+    0% { opacity: 0; transform: scale(0.5); }
+    50% { transform: scale(1.15); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .levelup-text {
+    display: inline-block;
+    padding: 10px 32px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border-radius: 30px;
+    color: #1a1145;
+    font-weight: 900;
+    font-size: 18px;
+    box-shadow: 0 0 40px rgba(251,191,36,0.4);
+    letter-spacing: 2px;
+  }
+
+  /* Particles */
+  .particles {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: particleFloat 2s forwards;
+    opacity: 0;
+  }
+  @keyframes particleFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-120px) scale(0); }
+  }
+
+  /* ===== Screen 4: Radar Chart ===== */
+  .radar-title {
+    color: #e0d4ff;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    margin: 16px 0 4px;
+  }
+  .radar-sub {
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .radar-container {
+    display: flex;
+    justify-content: center;
+    margin: 0 -20px;
+  }
+
+  .total-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 24px 0;
+  }
+  .stat-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 14px 8px;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-label {
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  /* Loading overlay */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 11, 46, 0.9);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .loading-overlay.active { display: flex; }
+
+  .loading-spinner {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid rgba(167, 139, 250, 0.2);
+    border-top-color: #a78bfa;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    color: #a78bfa;
+    font-size: 14px;
+    font-weight: 700;
+    animation: loadDots 1.5s infinite;
+  }
+  @keyframes loadDots {
+    0% { content: ''; }
+    33% { opacity: 0.6; }
+    66% { opacity: 1; }
+  }
+
+  /* Stars background */
+  .stars {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.8; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="stars" id="stars"></div>
+
+  <!-- Screen 1: Character Select -->
+  <div class="screen active" id="screen1">
+    <div class="header">
+      <h1>SKILL QUEST</h1>
+      <div class="subtitle">スキルクエスト ─ 冒険の始まり</div>
+    </div>
+    <div class="char-title">仲間を選ぼう</div>
+    <div class="char-desc">一緒に冒険するパートナーを選択してください</div>
+    <div class="char-grid">
+      <div class="char-card" onclick="selectChar(0)">
+        <span class="char-emoji">🐱</span>
+        <div class="char-name">ミケ</div>
+        <div class="char-type">知恵のネコ</div>
+      </div>
+      <div class="char-card" onclick="selectChar(1)">
+        <span class="char-emoji">🐉</span>
+        <div class="char-name">リュウ</div>
+        <div class="char-type">勇気のドラゴン</div>
+      </div>
+      <div class="char-card" onclick="selectChar(2)">
+        <span class="char-emoji">🦊</span>
+        <div class="char-name">コン</div>
+        <div class="char-type">閃きのキツネ</div>
+      </div>
+      <div class="char-card" onclick="selectChar(3)">
+        <span class="char-emoji">🐺</span>
+        <div class="char-name">ガル</div>
+        <div class="char-type">絆のオオカミ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Quest Input -->
+  <div class="screen" id="screen2">
+    <div class="header">
+      <h1>SKILL QUEST</h1>
+      <div class="subtitle">クエスト報告</div>
+    </div>
+    <div class="quest-avatar">
+      <span class="avatar-display" id="selectedAvatar">🐱</span>
+      <span class="avatar-name" id="selectedName">ミケ と冒険中</span>
+    </div>
+    <div class="quest-label">今日のクエスト</div>
+    <div class="quest-hint">活動内容を入力すると、AIがスキルを自動で発見します</div>
+    <div class="input-wrap">
+      <textarea id="questInput" placeholder="今日やったことを入力...&#10;&#10;例: 文化祭の実行委員長として、チームメンバー10人をまとめて準備を進めた。意見が対立した時に間に入って解決策を提案した。"></textarea>
+    </div>
+    <button class="btn-primary" onclick="submitQuest()">🔮 スキルを発見する</button>
+    <button class="btn-secondary" onclick="goToScreen(1)">← キャラ選択に戻る</button>
+  </div>
+
+  <!-- Screen 3: Skill Result -->
+  <div class="screen" id="screen3">
+    <div class="particles" id="particles"></div>
+    <div class="header">
+      <h1>SKILL QUEST</h1>
+      <div class="subtitle">スキル発見！</div>
+    </div>
+    <div class="result-header">
+      <span class="result-avatar" id="resultAvatar">🐱</span>
+    </div>
+    <div class="result-title">✨ スキル抽出完了！</div>
+    <div class="result-sub">AIが活動からスキルを発見しました</div>
+    <div class="skill-cards" id="skillCards"></div>
+    <div class="levelup-banner">
+      <span class="levelup-text">🎊 LEVEL UP！Lv.4 → Lv.5</span>
+    </div>
+    <button class="btn-primary" onclick="goToScreen(4)" style="margin-top: 16px;">📊 スキルレーダーを見る</button>
+    <button class="btn-secondary" onclick="goToScreen(2)">🔁 もう一回報告する</button>
+  </div>
+
+  <!-- Screen 4: Radar Chart -->
+  <div class="screen" id="screen4">
+    <div class="header">
+      <h1>SKILL QUEST</h1>
+      <div class="subtitle">スキルマップ</div>
+    </div>
+    <div class="radar-title">📊 あなたのスキルレーダー</div>
+    <div class="radar-sub">全スキルの成長を可視化</div>
+    <div class="radar-container">
+      <canvas id="radarCanvas" width="380" height="380"></canvas>
+    </div>
+    <div class="total-stats">
+      <div class="stat-box">
+        <div class="stat-value">Lv.5</div>
+        <div class="stat-label">現在レベル</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">285</div>
+        <div class="stat-label">合計XP</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">12</div>
+        <div class="stat-label">クエスト数</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="goToScreen(2)">⚔️ 新しいクエストへ</button>
+    <button class="btn-secondary" onclick="goToScreen(1)">🏠 ホームに戻る</button>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">AIがスキルを解析中...</div>
+  </div>
+</div>
+
+<script>
+const characters = [
+  { emoji: '🐱', name: 'ミケ' },
+  { emoji: '🐉', name: 'リュウ' },
+  { emoji: '🦊', name: 'コン' },
+  { emoji: '🐺', name: 'ガル' },
+];
+
+let selectedCharIndex = 0;
+
+// Generate star background
+(function initStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 50; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 3 + 's';
+    star.style.animationDuration = (2 + Math.random() * 3) + 's';
+    const size = 1 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    container.appendChild(star);
+  }
+})();
+
+function selectChar(index) {
+  selectedCharIndex = index;
+  const c = characters[index];
+  document.getElementById('selectedAvatar').textContent = c.emoji;
+  document.getElementById('selectedName').textContent = c.name + ' と冒険中';
+  document.getElementById('resultAvatar').textContent = c.emoji;
+  goToScreen(2);
+}
+
+function goToScreen(num) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen' + num).classList.add('active');
+  window.scrollTo(0, 0);
+
+  if (num === 4) {
+    setTimeout(drawRadar, 100);
+  }
+  if (num === 3) {
+    spawnParticles();
+  }
+}
+
+function submitQuest() {
+  const input = document.getElementById('questInput').value.trim();
+  if (!input) {
+    document.getElementById('questInput').focus();
+    document.getElementById('questInput').style.borderColor = 'rgba(239,68,68,0.6)';
+    setTimeout(() => {
+      document.getElementById('questInput').style.borderColor = '';
+    }, 1500);
+    return;
+  }
+
+  const loading = document.getElementById('loading');
+  loading.classList.add('active');
+
+  setTimeout(() => {
+    loading.classList.remove('active');
+    renderSkillCards();
+    goToScreen(3);
+  }, 2000);
+}
+
+function renderSkillCards() {
+  const skills = [
+    { icon: '👑', name: 'リーダーシップ', xp: 15, fill: '75%' },
+    { icon: '🤝', name: '問題解決力', xp: 12, fill: '60%' },
+    { icon: '💬', name: 'コミュニケーション', xp: 10, fill: '50%' },
+  ];
+
+  const container = document.getElementById('skillCards');
+  container.innerHTML = skills.map((s, i) => `
+    <div class="skill-card" style="animation-delay: ${0.3 + i * 0.4}s">
+      <div class="skill-icon">${s.icon}</div>
+      <div class="skill-info">
+        <div class="skill-name">${s.name}</div>
+        <div class="skill-bar-bg">
+          <div class="skill-bar-fill" style="--fill: ${s.fill}; animation-delay: ${0.8 + i * 0.4}s"></div>
+        </div>
+      </div>
+      <div class="skill-xp">+${s.xp}XP!</div>
+    </div>
+  `).join('');
+}
+
+function spawnParticles() {
+  const container = document.getElementById('particles');
+  container.innerHTML = '';
+  const colors = ['#fbbf24', '#a78bfa', '#60a5fa', '#34d399', '#f472b6', '#fb923c'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = (10 + Math.random() * 80) + '%';
+    p.style.top = (30 + Math.random() * 50) + '%';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDelay = (Math.random() * 2) + 's';
+    p.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    const size = 3 + Math.random() * 5;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    container.appendChild(p);
+  }
+}
+
+// Radar Chart
+function drawRadar() {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 380 * dpr;
+  canvas.height = 380 * dpr;
+  canvas.style.width = '380px';
+  canvas.style.height = '380px';
+  ctx.scale(dpr, dpr);
+
+  const cx = 190, cy = 195, maxR = 130;
+  const labels = ['リーダーシップ', '創造性', '協調性', '問題解決力', 'コミュニケーション', '学習意欲'];
+  const values = [0.78, 0.55, 0.85, 0.65, 0.72, 0.60];
+  const n = labels.length;
+
+  ctx.clearRect(0, 0, 380, 380);
+
+  // Grid rings
+  for (let ring = 1; ring <= 5; ring++) {
+    const r = maxR * ring / 5;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(167, 139, 250, ' + (0.08 + ring * 0.03) + ')';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + maxR * Math.cos(angle), cy + maxR * Math.sin(angle));
+    ctx.strokeStyle = 'rgba(167, 139, 250, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Animated data fill
+  let progress = 0;
+  function animate() {
+    progress = Math.min(progress + 0.025, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    // Clear only the data area (redraw grid would be expensive, so just draw over)
+    ctx.clearRect(0, 0, 380, 380);
+
+    // Redraw grid
+    for (let ring = 1; ring <= 5; ring++) {
+      const r = maxR * ring / 5;
+      ctx.beginPath();
+      for (let i = 0; i <= n; i++) {
+        const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(167, 139, 250, ' + (0.08 + ring * 0.03) + ')';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + maxR * Math.cos(angle), cy + maxR * Math.sin(angle));
+      ctx.strokeStyle = 'rgba(167, 139, 250, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Data polygon
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const idx = i % n;
+      const angle = (Math.PI * 2 * idx / n) - Math.PI / 2;
+      const r = maxR * values[idx] * ease;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+    grad.addColorStop(0, 'rgba(167, 139, 250, 0.35)');
+    grad.addColorStop(1, 'rgba(96, 165, 250, 0.15)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(167, 139, 250, 0.8)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Data points
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const r = maxR * values[i] * ease;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#a78bfa';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(167, 139, 250, 0.2)';
+      ctx.fill();
+    }
+
+    // Labels
+    ctx.font = '700 12px "Noto Sans JP", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const lr = maxR + 28;
+      let x = cx + lr * Math.cos(angle);
+      let y = cy + lr * Math.sin(angle);
+
+      ctx.fillStyle = 'rgba(224, 212, 255, 0.85)';
+      ctx.fillText(labels[i], x, y);
+
+      // Value percentage
+      ctx.font = '900 11px "Noto Sans JP", sans-serif';
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText(Math.round(values[i] * 100 * ease), x, y + 16);
+      ctx.font = '700 12px "Noto Sans JP", sans-serif';
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    }
+  }
+  animate();
+}
+</script>
+
+</body>
+</html>

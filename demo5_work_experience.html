@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企業1日疑似体験</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --navy: #1a2744;
+  --navy-light: #2a3f6a;
+  --navy-dark: #0f1a2e;
+  --orange: #e8843c;
+  --orange-light: #f4a261;
+  --orange-glow: rgba(232, 132, 60, 0.15);
+  --white: #ffffff;
+  --gray-50: #f8f9fb;
+  --gray-100: #eef1f5;
+  --gray-200: #d8dde6;
+  --gray-400: #94a3b8;
+  --gray-600: #64748b;
+  --text: #1e293b;
+  --text-light: #475569;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --shadow: 0 4px 20px rgba(26, 39, 68, 0.08);
+  --shadow-lg: 0 8px 32px rgba(26, 39, 68, 0.12);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+  background: linear-gradient(135deg, #f0f2f8 0%, #e8ecf4 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  background: var(--white);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(26, 39, 68, 0.1);
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.screen.active {
+  display: flex;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  padding: 52px 24px 24px;
+  color: var(--white);
+  position: relative;
+  overflow: hidden;
+}
+.header::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+}
+.header-back {
+  background: none; border: none; color: rgba(255,255,255,0.7);
+  font-size: 14px; cursor: pointer; padding: 4px 0; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 4px;
+  transition: color var(--transition);
+}
+.header-back:hover { color: var(--white); }
+.header-back svg { width: 16px; height: 16px; }
+.header h1 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.02em;
+}
+.header p {
+  font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 6px; line-height: 1.5;
+}
+.header-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(232, 132, 60, 0.2); color: var(--orange-light);
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  margin-top: 12px;
+}
+
+/* Job Selection */
+.job-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 24px;
+  flex: 1;
+}
+.job-card {
+  background: var(--white);
+  border: 2px solid var(--gray-100);
+  border-radius: var(--radius);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.job-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--orange);
+  transform: scaleX(0);
+  transition: transform var(--transition);
+}
+.job-card:hover, .job-card:active {
+  border-color: var(--orange);
+  box-shadow: var(--shadow-lg), 0 0 0 4px var(--orange-glow);
+  transform: translateY(-2px);
+}
+.job-card:hover::before, .job-card:active::before {
+  transform: scaleX(1);
+}
+.job-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+  display: block;
+}
+.job-title {
+  font-size: 15px; font-weight: 700; color: var(--navy);
+}
+.job-desc {
+  font-size: 11px; color: var(--gray-600); margin-top: 4px;
+}
+
+/* Timeline */
+.timeline-wrap {
+  padding: 24px;
+  flex: 1;
+}
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition);
+}
+.timeline-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 19px; top: 52px; bottom: -4px;
+  width: 2px;
+  background: var(--gray-200);
+}
+.timeline-dot {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all var(--transition);
+  position: relative;
+  z-index: 1;
+}
+.timeline-item.current .timeline-dot {
+  background: var(--orange);
+  color: var(--white);
+  box-shadow: 0 4px 16px rgba(232, 132, 60, 0.35);
+}
+.timeline-item.completed .timeline-dot {
+  background: var(--navy);
+  color: var(--white);
+}
+.timeline-item.completed::after {
+  background: var(--navy);
+}
+.timeline-content h3 {
+  font-size: 15px; font-weight: 700; color: var(--navy);
+  margin-bottom: 3px;
+}
+.timeline-content p {
+  font-size: 12px; color: var(--gray-600); line-height: 1.5;
+}
+.timeline-item.current .timeline-content h3 {
+  color: var(--orange);
+}
+.timeline-time {
+  font-size: 12px; font-weight: 600; color: var(--gray-400);
+  margin-bottom: 2px;
+}
+.timeline-item:hover .timeline-dot {
+  transform: scale(1.08);
+}
+.timeline-item.locked {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Roleplay */
+.roleplay-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.scene-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px 24px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-100);
+}
+.avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.avatar-boss { background: linear-gradient(135deg, var(--navy), var(--navy-light)); }
+.avatar-customer { background: linear-gradient(135deg, #2d6a4f, #40916c); }
+.scene-header-info h3 {
+  font-size: 15px; font-weight: 700; color: var(--navy);
+}
+.scene-header-info p {
+  font-size: 12px; color: var(--gray-600);
+}
+
+.chat-area {
+  flex: 1;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.chat-bubble {
+  max-width: 85%;
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.65;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: bubbleIn 0.4s ease forwards;
+}
+@keyframes bubbleIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+.bubble-npc {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+  border-bottom-left-radius: 4px;
+  align-self: flex-start;
+  color: var(--text);
+}
+.bubble-user {
+  background: linear-gradient(135deg, var(--orange), var(--orange-light));
+  color: var(--white);
+  border-bottom-right-radius: 4px;
+  align-self: flex-end;
+}
+.bubble-feedback {
+  background: var(--orange-glow);
+  border: 1px solid rgba(232, 132, 60, 0.2);
+  border-radius: var(--radius-sm);
+  align-self: flex-start;
+  color: var(--text);
+  font-size: 13px;
+}
+.bubble-feedback strong {
+  color: var(--orange);
+}
+
+.choices {
+  padding: 16px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--gray-100);
+  background: var(--white);
+}
+.choice-btn {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.5;
+  transition: all var(--transition);
+  font-family: inherit;
+}
+.choice-btn:hover, .choice-btn:active {
+  border-color: var(--orange);
+  background: var(--orange-glow);
+  transform: translateX(4px);
+}
+.choice-btn.selected {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: var(--white);
+}
+
+.next-scene-btn {
+  margin: 16px 24px 28px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+.next-scene-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Score */
+.score-wrap {
+  padding: 24px;
+  flex: 1;
+}
+.score-overall {
+  text-align: center;
+  padding: 28px 20px;
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  border-radius: var(--radius);
+  color: var(--white);
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
+}
+.score-overall::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 100px; height: 100px;
+  background: rgba(232, 132, 60, 0.15);
+  border-radius: 50%;
+}
+.score-percent {
+  font-size: 56px; font-weight: 800; letter-spacing: -0.03em;
+  color: var(--orange-light);
+  line-height: 1;
+}
+.score-label {
+  font-size: 18px; font-weight: 700; margin-top: 8px;
+}
+.score-comment {
+  font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 8px; line-height: 1.6;
+}
+
+.score-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.score-bar-item label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.score-bar-item label span {
+  color: var(--orange);
+  font-weight: 700;
+}
+.score-bar-track {
+  height: 10px;
+  background: var(--gray-100);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.bar-high { background: linear-gradient(90deg, var(--orange), var(--orange-light)); }
+.bar-mid { background: linear-gradient(90deg, var(--navy), var(--navy-light)); }
+.bar-low { background: linear-gradient(90deg, #94a3b8, #b0bec5); }
+
+.restart-btn {
+  width: 100%;
+  margin-top: 32px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--orange), var(--orange-light));
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+.restart-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(232, 132, 60, 0.35);
+}
+
+/* Utility */
+.fade-enter {
+  animation: fadeUp 0.45s ease forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+@media (max-width: 430px) {
+  .app { max-width: 100%; }
+  .header { padding-top: 48px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Screen 1: Job Selection -->
+  <div class="screen active" id="screen-jobs">
+    <div class="header">
+      <h1>企業1日疑似体験</h1>
+      <p>AIロールプレイで、リアルな仕事を体験しよう</p>
+      <div class="header-badge">🎯 職種を選んでスタート</div>
+    </div>
+    <div class="job-grid">
+      <div class="job-card fade-enter stagger-1" onclick="selectJob('sales')">
+        <span class="job-icon">💼</span>
+        <div class="job-title">営業</div>
+        <div class="job-desc">法人営業の1日</div>
+      </div>
+      <div class="job-card fade-enter stagger-2" onclick="selectJob('manufacturing')">
+        <span class="job-icon">🏭</span>
+        <div class="job-title">製造</div>
+        <div class="job-desc">品質管理の1日</div>
+      </div>
+      <div class="job-card fade-enter stagger-3" onclick="selectJob('it')">
+        <span class="job-icon">💻</span>
+        <div class="job-title">IT・エンジニア</div>
+        <div class="job-desc">開発チームの1日</div>
+      </div>
+      <div class="job-card fade-enter stagger-4" onclick="selectJob('food')">
+        <span class="job-icon">🍳</span>
+        <div class="job-title">飲食</div>
+        <div class="job-desc">店舗運営の1日</div>
+      </div>
+      <div class="job-card fade-enter stagger-5" onclick="selectJob('construction')">
+        <span class="job-icon">🏗️</span>
+        <div class="job-title">建設</div>
+        <div class="job-desc">現場管理の1日</div>
+      </div>
+      <div class="job-card fade-enter stagger-6" onclick="selectJob('care')">
+        <span class="job-icon">🏥</span>
+        <div class="job-title">介護</div>
+        <div class="job-desc">施設介護の1日</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen 2: Timeline -->
+  <div class="screen" id="screen-timeline">
+    <div class="header">
+      <button class="header-back" onclick="goTo('screen-jobs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        職種選択に戻る
+      </button>
+      <h1>💼 営業職の1日</h1>
+      <p>タイムラインをタップして体験を始めよう</p>
+    </div>
+    <div class="timeline-wrap" id="timeline-list"></div>
+  </div>
+
+  <!-- Screen 3: Roleplay -->
+  <div class="screen" id="screen-roleplay">
+    <div class="header" style="padding-bottom:16px;">
+      <button class="header-back" onclick="goTo('screen-timeline')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        タイムラインに戻る
+      </button>
+      <h1 id="rp-scene-title"></h1>
+    </div>
+    <div class="scene-header" id="rp-npc-header"></div>
+    <div class="chat-area" id="rp-chat"></div>
+    <div class="choices" id="rp-choices"></div>
+    <button class="next-scene-btn" id="rp-next" style="display:none;" onclick="advanceScene()">次のシーンへ →</button>
+  </div>
+
+  <!-- Screen 4: Score -->
+  <div class="screen" id="screen-score">
+    <div class="header">
+      <h1>📊 適性スコア</h1>
+      <p>今日の体験から分析した、あなたの適性結果</p>
+    </div>
+    <div class="score-wrap">
+      <div class="score-overall">
+        <div class="score-percent" id="score-total">0%</div>
+        <div class="score-label">営業職との相性</div>
+        <div class="score-comment">特に"創造性"が光ってた！<br>柔軟な発想で顧客を惹きつける力があるよ</div>
+      </div>
+      <div class="score-bars" id="score-bars"></div>
+      <button class="restart-btn" onclick="restart()">🔄 別の職種も体験する</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TIMELINE = [
+  { time: '9:00', icon: '🕘', title: '朝礼', desc: '部署の朝会でその日の目標を共有' },
+  { time: '10:00', icon: '🕙', title: '顧客訪問', desc: '新規クライアントへの初回訪問' },
+  { time: '12:00', icon: '🕛', title: '昼休み', desc: '同僚とランチ＆情報交換' },
+  { time: '14:00', icon: '🕑', title: '提案書作成', desc: '午前の訪問を踏まえた提案資料づくり' },
+  { time: '16:00', icon: '🕓', title: '上司報告', desc: '進捗報告と翌日の計画策定' },
+  { time: '17:00', icon: '🕔', title: '振り返り', desc: '1日の成果と学びを整理' },
+];
+
+const SCENES = [
+  {
+    timelineIdx: 0,
+    npc: { name: '田中部長', role: '営業部 部長', avatar: '👔', type: 'boss' },
+    messages: [
+      { from: 'npc', text: 'おはよう！今日は新規顧客への訪問がある。準備はできてる？' },
+    ],
+    choices: [
+      { text: 'はい！昨日のうちに資料を準備しました', quality: 'high' },
+      { text: 'すみません、もう少し時間をください…', quality: 'low' },
+      { text: '概要は把握していますが、詳細を確認させてください', quality: 'mid' },
+    ],
+    feedback: {
+      high: '素晴らしい！事前準備は営業の基本だ。その姿勢、好感が持てるよ。',
+      mid: 'いいね、確認する姿勢は大事だ。分からないことは聞く方がいい。',
+      low: '準備不足はまずいな…。次からは前日に済ませておこう。',
+    },
+  },
+  {
+    timelineIdx: 1,
+    npc: { name: '鈴木様', role: '株式会社ABC 取締役', avatar: '🤵', type: 'customer' },
+    messages: [
+      { from: 'npc', text: '初めまして。御社のサービス、興味はあるんですが、正直なところ競合他社との違いがよく分からなくて…' },
+    ],
+    choices: [
+      { text: '他社との最大の違いは、導入後のサポート体制です。具体的にご説明します', quality: 'high' },
+      { text: 'うちが一番です！絶対に後悔させません！', quality: 'low' },
+      { text: '良いご質問ですね。まず御社の課題を詳しくお聞きしてもよろしいですか？', quality: 'mid' },
+    ],
+    feedback: {
+      high: '具体的な差別化ポイントを示せたね。顧客は"根拠"を求めている。',
+      mid: '課題ヒアリングから入る姿勢は信頼構築に効果的だ。',
+      low: '熱意は伝わるが、根拠なく断言するのは逆効果になりやすいぞ。',
+    },
+  },
+  {
+    timelineIdx: 3,
+    npc: { name: '田中部長', role: '営業部 部長', avatar: '👔', type: 'boss' },
+    messages: [
+      { from: 'npc', text: '提案書のドラフトを見せてくれ。鈴木様のニーズに合った内容になってるかな？' },
+    ],
+    choices: [
+      { text: '先方の課題を3点に整理し、それぞれの解決策を記載しました', quality: 'high' },
+      { text: 'まだ作成中です。もう少しお待ちください', quality: 'low' },
+      { text: '大枠はできましたが、価格面のご意見をいただきたいです', quality: 'mid' },
+    ],
+    feedback: {
+      high: '課題ベースの提案、完璧だ。これなら先方にも刺さるはず。',
+      mid: '上司に相談できる判断力は評価できる。一人で抱え込まないのは大事だ。',
+      low: '時間管理を意識しよう。期限内に仕上げる力も営業の実力だ。',
+    },
+  },
+  {
+    timelineIdx: 4,
+    npc: { name: '田中部長', role: '営業部 部長', avatar: '👔', type: 'boss' },
+    messages: [
+      { from: 'npc', text: '今日1日お疲れさま。初めての営業、どうだった？率直な感想を聞かせてくれ。' },
+    ],
+    choices: [
+      { text: '顧客の課題を深掘りする面白さを感じました。もっと学びたいです', quality: 'high' },
+      { text: '正直、緊張して大変でした…', quality: 'low' },
+      { text: '準備の大切さと、臨機応変に対応する力の両方が必要だと感じました', quality: 'mid' },
+    ],
+    feedback: {
+      high: 'その知的好奇心は営業に向いてるぞ。これからが楽しみだ！',
+      mid: '的確な振り返りだ。その分析力は必ず武器になる。',
+      low: '緊張するのは当然だ。大事なのはそこから何を学んだかだよ。',
+    },
+  },
+];
+
+const SCORES = [
+  { label: 'タスク遂行力', value: 80 },
+  { label: '対人コミュニケーション', value: 60 },
+  { label: 'ストレス耐性', value: 75 },
+  { label: '正確性', value: 45 },
+  { label: '創造性', value: 95 },
+];
+
+let currentSceneIdx = 0;
+let completedTimeline = new Set();
+
+function goTo(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(screenId);
+  target.classList.add('active');
+  if (screenId === 'screen-timeline') renderTimeline();
+  if (screenId === 'screen-score') renderScores();
+}
+
+function selectJob(job) {
+  if (job !== 'sales') {
+    alert('このデモでは「営業」のみ体験できます');
+    return;
+  }
+  currentSceneIdx = 0;
+  completedTimeline.clear();
+  goTo('screen-timeline');
+}
+
+function renderTimeline() {
+  const list = document.getElementById('timeline-list');
+  const currentTlIdx = currentSceneIdx < SCENES.length ? SCENES[currentSceneIdx].timelineIdx : 999;
+  list.innerHTML = TIMELINE.map((item, i) => {
+    const isCompleted = completedTimeline.has(i);
+    const isCurrent = i === currentTlIdx;
+    const isPlayable = SCENES.some((s, si) => s.timelineIdx === i && si === currentSceneIdx);
+    const isLocked = !isCompleted && !isCurrent && !isPlayable;
+    const cls = isCompleted ? 'completed' : isCurrent ? 'current' : isLocked ? 'locked' : '';
+    return `
+      <div class="timeline-item ${cls} fade-enter stagger-${i+1}" onclick="${isPlayable ? 'startScene('+currentSceneIdx+')' : isCompleted ? '' : ''}">
+        <div class="timeline-dot">${isCompleted ? '✓' : item.icon}</div>
+        <div class="timeline-content">
+          <div class="timeline-time">${item.time}</div>
+          <h3>${item.title}</h3>
+          <p>${item.desc}</p>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function startScene(idx) {
+  currentSceneIdx = idx;
+  const scene = SCENES[idx];
+  if (!scene) return;
+
+  document.getElementById('rp-scene-title').textContent =
+    TIMELINE[scene.timelineIdx].icon + ' ' + TIMELINE[scene.timelineIdx].time + ' ' + TIMELINE[scene.timelineIdx].title;
+
+  const avatarType = scene.npc.type === 'boss' ? 'avatar-boss' : 'avatar-customer';
+  document.getElementById('rp-npc-header').innerHTML = `
+    <div class="avatar ${avatarType}">${scene.npc.avatar}</div>
+    <div class="scene-header-info">
+      <h3>${scene.npc.name}</h3>
+      <p>${scene.npc.role}</p>
+    </div>`;
+
+  const chat = document.getElementById('rp-chat');
+  chat.innerHTML = '';
+  scene.messages.forEach((m, i) => {
+    setTimeout(() => {
+      chat.innerHTML += `<div class="chat-bubble bubble-npc" style="animation-delay:${i*0.2}s">${m.text}</div>`;
+    }, i * 300);
+  });
+
+  const choicesEl = document.getElementById('rp-choices');
+  choicesEl.innerHTML = scene.choices.map((c, i) =>
+    `<button class="choice-btn" onclick="pickChoice(${idx}, ${i})">${c.text}</button>`
+  ).join('');
+  choicesEl.style.display = 'flex';
+
+  document.getElementById('rp-next').style.display = 'none';
+  goTo('screen-roleplay');
+}
+
+function pickChoice(sceneIdx, choiceIdx) {
+  const scene = SCENES[sceneIdx];
+  const choice = scene.choices[choiceIdx];
+  const chat = document.getElementById('rp-chat');
+  const choicesEl = document.getElementById('rp-choices');
+
+  // Mark selected
+  choicesEl.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === choiceIdx) btn.classList.add('selected');
+    else btn.style.opacity = '0.4';
+  });
+
+  // User bubble
+  setTimeout(() => {
+    chat.innerHTML += `<div class="chat-bubble bubble-user">${choice.text}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+  }, 200);
+
+  // Feedback
+  setTimeout(() => {
+    const fb = scene.feedback[choice.quality];
+    chat.innerHTML += `<div class="chat-bubble bubble-feedback"><strong>💬 ${scene.npc.name}：</strong><br>${fb}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+    choicesEl.style.display = 'none';
+
+    completedTimeline.add(scene.timelineIdx);
+
+    const nextBtn = document.getElementById('rp-next');
+    nextBtn.style.display = 'block';
+    if (currentSceneIdx >= SCENES.length - 1) {
+      nextBtn.textContent = '📊 適性スコアを見る';
+    } else {
+      nextBtn.textContent = '次のシーンへ →';
+    }
+  }, 800);
+}
+
+function advanceScene() {
+  currentSceneIdx++;
+  if (currentSceneIdx >= SCENES.length) {
+    goTo('screen-score');
+  } else {
+    startScene(currentSceneIdx);
+  }
+}
+
+function renderScores() {
+  const barsEl = document.getElementById('score-bars');
+  barsEl.innerHTML = SCORES.map(s => {
+    const barClass = s.value >= 75 ? 'bar-high' : s.value >= 50 ? 'bar-mid' : 'bar-low';
+    return `
+      <div class="score-bar-item">
+        <label>${s.label}<span>${s.value}%</span></label>
+        <div class="score-bar-track">
+          <div class="score-bar-fill ${barClass}" data-width="${s.value}"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Animate
+  const totalEl = document.getElementById('score-total');
+  setTimeout(() => {
+    document.querySelectorAll('.score-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.width + '%';
+    });
+    animateCounter(totalEl, 0, 72, 1200);
+  }, 300);
+}
+
+function animateCounter(el, from, to, duration) {
+  const start = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(from + (to - from) * eased) + '%';
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function restart() {
+  currentSceneIdx = 0;
+  completedTimeline.clear();
+  goTo('screen-jobs');
+}
+</script>
+</body>
+</html>
