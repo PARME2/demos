@@ -541,7 +541,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <title>Agent Meeting + Live Build</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0F0F1A;color:#E2E8F0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0F0F1A;color:#E2E8F0;display:flex;flex-direction:column}
 
 .header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:14px 20px;border-bottom:1px solid #2D3748;display:flex;align-items:center;gap:14px;flex-shrink:0}
 .header h1{font-size:17px;font-weight:700;background:linear-gradient(135deg,#4ECDC4,#A78BFA);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -556,10 +557,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* Main layout: timeline left, preview right */
-.main{display:flex;flex:1;overflow:hidden}
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
 
-.timeline-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid #2D3748;min-width:0}
-.timeline-container{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth}
+.timeline-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid #2D3748;min-width:0;min-height:0;overflow:hidden}
+.timeline-container{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth;min-height:0}
 .timeline{max-width:700px;display:flex;flex-direction:column;gap:16px;padding-bottom:80px}
 
 .preview-panel{width:480px;display:flex;flex-direction:column;flex-shrink:0;background:#1A1A2E}
@@ -656,7 +657,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 </div>
 
 <!-- Meeting Screen (hidden initially) -->
-<div id="meetingScreen" style="display:none;height:100vh;flex-direction:column">
+<div id="meetingScreen" style="display:none;height:100vh;flex-direction:column;overflow:hidden">
   <div class="header">
     <h1>Agent Meeting + Live Build</h1>
     <span class="ver-badge" id="verBadge">v0</span>
@@ -717,9 +718,10 @@ async function loadSessions(){
   const resp=await fetch('/api/sessions');
   const sessions=await resp.json();
   const area=document.getElementById('sessionsArea');
-  if(!sessions.length){area.innerHTML='';return;}
+  const valid=sessions.filter(s=>s.messages>0);
+  if(!valid.length){area.innerHTML='';return;}
   let h='<div class="sessions-title">過去のセッション</div>';
-  sessions.forEach(s=>{
+  valid.forEach(s=>{
     const phaseText=s.phase==='done'?'完了':s.phase||'不明';
     h+=`<div class="session-item" onclick="resumeSession('${s.id}')">
       <div class="session-meta">
