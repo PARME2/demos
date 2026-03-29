@@ -137,7 +137,7 @@ def call_agent_streaming(agent_id, prompt):
     log(f"  → {AGENTS[agent_id]['label']} 呼び出し開始")
     try:
         proc = subprocess.Popen(
-            ["claude", "-p", "--allowedTools", "WebFetch,WebSearch"],
+            ["claude", "-p", "--dangerously-skip-permissions"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -250,10 +250,24 @@ def run_meeting(topic):
         log(f"エラーで会議終了。ログ保存済み: {SESSION_DIR}")
 
 
+_log_file = None
+_log_lines = []
+
 def log(msg):
-    """タイムスタンプ付きでコンソールにログ出力"""
+    """タイムスタンプ付きでコンソール＋ファイル＋メモリにログ出力"""
+    global _log_file
     ts = time.strftime("%H:%M:%S")
-    print(f"  [{ts}] {msg}", flush=True)
+    line = f"[{ts}] {msg}"
+    print(f"  {line}", flush=True)
+    _log_lines.append(line)
+    if len(_log_lines) > 500:
+        _log_lines.pop(0)
+    if _log_file:
+        try:
+            _log_file.write(line + "\n")
+            _log_file.flush()
+        except:
+            pass
 
 
 def _run_meeting_inner(topic):
@@ -571,6 +585,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .preview-frame{width:430px;height:100%;border:none;border-radius:12px;background:#fff}
 .preview-empty{color:#64748B;font-size:13px;text-align:center}
 
+/* Console */
+.console-toggle{padding:8px 16px;border-top:1px solid #2D3748;font-size:11px;color:#64748B;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:6px;user-select:none}
+.console-toggle:hover{color:#94A3B8}
+.console-panel{height:180px;overflow-y:auto;background:#0a0a12;padding:8px 12px;font-family:'SF Mono',Menlo,monospace;font-size:11px;line-height:1.6;color:#94A3B8;flex-shrink:0;display:none}
+.console-panel.open{display:block}
+.console-panel::-webkit-scrollbar{width:4px}
+.console-panel::-webkit-scrollbar-thumb{background:#4A5568;border-radius:2px}
+.log-error{color:#FCA5A5}
+.log-ok{color:#86EFAC}
+
 /* Messages */
 .msg{display:flex;gap:10px;animation:fadeIn .3s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -682,6 +706,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
       <div class="preview-frame-wrap" id="previewWrap">
         <div class="preview-empty">エンジニアがモックを<br>ビルドすると表示されます</div>
       </div>
+      <div class="console-toggle" onclick="toggleConsole()"><span id="consoleArrow">▶</span> Console</div>
+      <div class="console-panel" id="consolePanel"></div>
     </div>
   </div>
   <div class="footer">
@@ -934,6 +960,32 @@ async function poll(){
   const speakerInfo=speaker&&AGENTS[speaker]?`${AGENTS[speaker].icon} ${AGENTS[speaker].label} 応答中...`:'';
   document.getElementById('elapsed').textContent=`Elapsed: ${Math.floor(el/60)}:${String(el%60).padStart(2,'0')}${speakerInfo?' | '+speakerInfo:''}`;
 }
+// Console
+let consoleOpen=false;
+function toggleConsole(){
+  consoleOpen=!consoleOpen;
+  document.getElementById('consolePanel').classList.toggle('open',consoleOpen);
+  document.getElementById('consoleArrow').textContent=consoleOpen?'▼':'▶';
+}
+let prevLogCount=0;
+async function pollLogs(){
+  if(!consoleOpen)return;
+  try{
+    const r=await fetch('/api/logs');
+    const lines=await r.json();
+    if(lines.length!==prevLogCount){
+      prevLogCount=lines.length;
+      const cp=document.getElementById('consolePanel');
+      cp.innerHTML=lines.map(l=>{
+        const cls=l.includes('✗')||l.includes('エラー')||l.includes('Error')?'log-error':l.includes('完了')||l.includes('OK')?'log-ok':'';
+        return `<div class="${cls}">${l.replace(/</g,'&lt;')}</div>`;
+      }).join('');
+      cp.scrollTop=cp.scrollHeight;
+    }
+  }catch(e){}
+}
+setInterval(pollLogs,1500);
+
 // poll is started by switchToMeeting()
 </script>
 </body>
@@ -957,6 +1009,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             with meeting_lock:
                 data = {"messages": list(meeting_log), "status": dict(meeting_status)}
             self.wfile.write(json.dumps(data).encode("utf-8"))
+        elif self.path == "/api/logs":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            self.wfile.write(json.dumps(_log_lines).encode("utf-8"))
         elif self.path.startswith("/mockup/v"):
             version = self.path.split("/v")[-1]
             path = MOCK_DIR / f"mockup_v{version}.html"
@@ -1072,17 +1130,27 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             new_topic = data.get("topic", "").strip()
 
             old_session = SESSIONS_DIR / session_id
-            log_file = old_session / "meeting_log.json"
 
-            if not log_file.exists():
+            if not old_session.exists():
                 self.send_response(404)
                 self.end_headers()
                 return
 
-            # 前回のログを読み込み
-            old_data = json.loads(log_file.read_text(encoding="utf-8"))
-            old_messages = old_data.get("messages", [])
-            old_mockup_ver = old_data.get("status", {}).get("mockup_version", 0)
+            # 前回のログを読み込み（なければ空）
+            log_file = old_session / "meeting_log.json"
+            old_messages = []
+            old_mockup_ver = 0
+            if log_file.exists():
+                old_data = json.loads(log_file.read_text(encoding="utf-8"))
+                old_messages = old_data.get("messages", [])
+                old_mockup_ver = old_data.get("status", {}).get("mockup_version", 0)
+
+            # ログがなくてもモックアップがあればバージョンを検出
+            old_mockup_dir = old_session / "mockups"
+            if old_mockup_ver == 0 and old_mockup_dir.exists():
+                versions = [int(f.stem.split("_v")[-1]) for f in old_mockup_dir.glob("mockup_v*.html")]
+                if versions:
+                    old_mockup_ver = max(versions)
 
             # 新セッション作成
             create_session()
@@ -1167,10 +1235,11 @@ def save_session_log():
 
 
 def main():
+    global _log_file
     session_dir = create_session()
 
     # サーバーログもセッションフォルダに
-    server_log = open(session_dir / "server.log", "w", encoding="utf-8")
+    _log_file = open(session_dir / "server.log", "w", encoding="utf-8")
 
     # CLIから直接お題を渡された場合は即開始
     topic = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else None
