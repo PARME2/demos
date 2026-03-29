@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=375, maximum-scale=1, user-scalable=no">
+<title>AI深掘りダイアログ - ミラー</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--primary:#7F77DD;--primary-light:#9B94E8;--primary-dark:#6059B3;--bg:#EEEDFE;--bg-card:#F7F6FF;--white:#FFFFFF;--text:#2D2B3D;--text-light:#6B6880;--text-muted:#A09DAF;--bubble-ai:#FFFFFF;--bubble-user:#7F77DD;--shadow:0 2px 12px rgba(127,119,221,0.12);--shadow-lg:0 8px 32px rgba(127,119,221,0.18)}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:375px;margin:0 auto;background:var(--bg);position:relative}
+
+/* Header */
+.header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10;box-shadow:0 2px 16px rgba(127,119,221,0.25)}
+.header-avatar{width:40px;height:40px;background:rgba(255,255,255,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.header-info{flex:1}
+.header-name{color:#fff;font-size:16px;font-weight:700;letter-spacing:0.3px}
+.header-status{color:rgba(255,255,255,0.8);font-size:11px;display:flex;align-items:center;gap:4px}
+.header-status::before{content:'';width:6px;height:6px;background:#6FE8A0;border-radius:50%;display:inline-block}
+.header-actions{display:flex;gap:8px}
+.header-btn{width:36px;height:36px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
+.header-btn:active{background:rgba(255,255,255,0.3)}
+
+/* Chat Area */
+.chat-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:4px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.chat-area::-webkit-scrollbar{display:none}
+
+/* Date Divider */
+.date-divider{text-align:center;margin:8px 0 12px;position:relative}
+.date-divider span{background:var(--bg);color:var(--text-muted);font-size:11px;padding:0 12px;position:relative;z-index:1}
+.date-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(127,119,221,0.15)}
+
+/* Messages */
+.msg-group{display:flex;flex-direction:column;gap:4px;margin-bottom:4px}
+.msg-row{display:flex;gap:8px;align-items:flex-end;max-width:88%}
+.msg-row.ai{align-self:flex-start}
+.msg-row.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-bottom:2px}
+.msg-row.user .msg-avatar{display:none}
+.msg-content{display:flex;flex-direction:column;gap:2px}
+.msg-bubble{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.65;word-break:break-word;animation:bubbleIn 0.3s cubic-bezier(0.175,0.885,0.32,1.1)}
+@keyframes bubbleIn{from{opacity:0;transform:scale(0.8) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.msg-row.ai .msg-bubble{background:var(--bubble-ai);color:var(--text);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
+.msg-row.user .msg-bubble{background:var(--bubble-user);color:#fff;border-bottom-right-radius:6px;box-shadow:0 2px 12px rgba(127,119,221,0.3)}
+.msg-time{font-size:10px;color:var(--text-muted);padding:0 4px;margin-top:1px}
+.msg-row.user .msg-time{text-align:right}
+
+/* Save Button */
+.save-btn{display:inline-flex;align-items:center;gap:4px;background:var(--bg-card);border:1.5px solid var(--primary);color:var(--primary);font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px;margin-top:4px;cursor:pointer;transition:all 0.2s;width:fit-content}
+.save-btn:active,.save-btn.saved{background:var(--primary);color:#fff}
+.save-btn.saved{border-color:var(--primary);pointer-events:none}
+
+/* Typing Indicator */
+.typing-indicator{display:flex;gap:4px;padding:12px 16px;align-items:center}
+.typing-indicator .dot{width:7px;height:7px;background:var(--text-muted);border-radius:50%;animation:typingDot 1.4s ease-in-out infinite}
+.typing-indicator .dot:nth-child(2){animation-delay:0.2s}
+.typing-indicator .dot:nth-child(3){animation-delay:0.4s}
+@keyframes typingDot{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* Quick Replies */
+.quick-replies-wrap{padding:6px 16px 4px;overflow-x:auto;white-space:nowrap;display:flex;gap:8px;scrollbar-width:none;-ms-overflow-style:none}
+.quick-replies-wrap::-webkit-scrollbar{display:none}
+.chip{display:inline-block;background:var(--white);border:1.5px solid var(--primary);color:var(--primary);padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;flex-shrink:0;user-select:none}
+.chip:active{background:var(--primary);color:#fff;transform:scale(0.95)}
+
+/* Input Bar */
+.input-bar{padding:8px 12px 12px;background:var(--white);border-top:1px solid rgba(127,119,221,0.1);display:flex;align-items:flex-end;gap:8px}
+.input-bar textarea{flex:1;border:1.5px solid rgba(127,119,221,0.2);border-radius:22px;padding:10px 16px;font-size:14px;font-family:inherit;resize:none;outline:none;max-height:100px;min-height:40px;line-height:1.5;transition:border-color 0.2s;background:var(--bg-card)}
+.input-bar textarea:focus{border-color:var(--primary)}
+.input-bar textarea::placeholder{color:var(--text-muted)}
+.send-btn{width:40px;height:40px;background:var(--primary);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;box-shadow:0 2px 8px rgba(127,119,221,0.3)}
+.send-btn:active{transform:scale(0.9)}
+.send-btn:disabled{background:var(--text-muted);box-shadow:none}
+
+/* Insight Card */
+.insight-card{background:linear-gradient(135deg,#F7F6FF 0%,#EEEDFE 100%);border:1.5px solid rgba(127,119,221,0.2);border-radius:16px;padding:16px;margin:8px 0;animation:cardIn 0.5s ease}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.insight-card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.insight-card-icon{font-size:20px}
+.insight-card-title{font-size:14px;font-weight:700;color:var(--primary-dark)}
+.insight-card-body{font-size:13px;color:var(--text);line-height:1.7;background:var(--white);border-radius:10px;padding:12px;margin-bottom:10px}
+
+/* Emotion Graph */
+.emotion-graph{background:var(--white);border-radius:12px;padding:14px;margin-top:8px}
+.emotion-graph-title{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.graph-container{height:100px;display:flex;align-items:flex-end;gap:4px;padding-top:8px;position:relative}
+.graph-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.graph-bar{width:100%;border-radius:6px 6px 2px 2px;transition:height 0.6s cubic-bezier(0.175,0.885,0.32,1.275);position:relative}
+.graph-label{font-size:9px;color:var(--text-muted);white-space:nowrap}
+.graph-value{font-size:9px;color:var(--text-light);font-weight:600;position:absolute;top:-14px;left:50%;transform:translateX(-50%)}
+
+/* Saved Insights */
+.saved-insights{background:var(--white);border-radius:12px;padding:14px;margin-top:8px}
+.saved-insights-title{font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:8px}
+.saved-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(127,119,221,0.08)}
+.saved-item:last-child{border-bottom:none}
+.saved-dot{width:8px;height:8px;background:var(--primary);border-radius:50%;margin-top:5px;flex-shrink:0}
+.saved-text{font-size:12px;color:var(--text);line-height:1.6}
+.saved-date{font-size:10px;color:var(--text-muted);margin-top:2px}
+
+/* Overlay / Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.overlay.show{opacity:1;pointer-events:auto}
+.modal{background:var(--white);border-radius:20px 20px 0 0;max-width:375px;width:100%;max-height:70vh;overflow-y:auto;padding:20px 16px 32px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.22,1,0.36,1)}
+.overlay.show .modal{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--text-muted);border-radius:2px;margin:0 auto 16px;opacity:0.4}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:16px;text-align:center}
+
+/* Safe space notice */
+.safe-notice{text-align:center;padding:8px 24px;margin-bottom:8px}
+.safe-notice p{font-size:11px;color:var(--text-muted);line-height:1.5;background:rgba(127,119,221,0.06);padding:8px 12px;border-radius:12px;display:inline-block}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-avatar">🪞</div>
+    <div class="header-info">
+      <div class="header-name">ミラー</div>
+      <div class="header-status">オンライン</div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" onclick="showInsights()" title="気づき一覧">💡</button>
+      <button class="header-btn" onclick="showGraph()" title="感情グラフ">📊</button>
+    </div>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="chat-area" id="chatArea">
+    <div class="safe-notice">
+      <p>🔒 ここでの会話は安全に保護されています。<br>あなたの気持ちを自由に話してね。</p>
+    </div>
+    <div class="date-divider"><span>今日</span></div>
+  </div>
+
+  <!-- Quick Replies -->
+  <div class="quick-replies-wrap" id="quickReplies"></div>
+
+  <!-- Input Bar -->
+  <div class="input-bar">
+    <textarea id="userInput" rows="1" placeholder="気持ちを話してみて..." oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 20V14L11 12L3 10V4L22 12L3 20Z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Insights Modal -->
+<div class="overlay" id="insightsModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💡 保存した気づき</div>
+    <div id="insightsList"></div>
+  </div>
+</div>
+
+<!-- Graph Modal -->
+<div class="overlay" id="graphModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📊 感情の変化（過去4週間）</div>
+    <div id="graphContent"></div>
+  </div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chatArea');
+const quickRepliesEl = document.getElementById('quickReplies');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+let conversationState = 'initial';
+let savedInsights = [
+  { text: '「頑張らなきゃ」と思うほど動けなくなることがある', date: '3月10日' },
+  { text: '友達といる時は自然体でいられる自分がいる', date: '3月3日' }
+];
+let currentPath = null;
+let pathStep = 0;
+
+// Conversation trees
+const conversations = {
+  'なんかやる気出ない': [
+    { ai: ['そうなんだね。やる気が出ないって感じるの、しんどいよね 😢', 'それっていつ頃からそう感じてる？'], chips: ['今週から', 'もうしばらく', '今日だけ'] },
+    {
+      '今週から': { ai: ['今週からなんだね。何か今週あった？テストとか、友達のこととか...', '無理に思い出さなくていいけど、心当たりあるかな？'], chips: ['テストのことかも', '特に思い当たらない', '人間関係かな'] },
+      'もうしばらく': { ai: ['そっか、しばらく続いてるんだね。それは辛いね。', '3週間前にも似たようなこと言ってたね。あの時は何があったの？'], chips: ['覚えてない', 'あの時と似てるかも', '今回は違う感じ'] },
+      '今日だけ': { ai: ['今日だけなら、体が疲れてるのかも？', '最近ちゃんと寝れてる？ 😴'], chips: ['寝不足かも', 'よく寝てるけど...', '夜ふかししちゃった'] }
+    },
+    {
+      'テストのことかも': { ai: ['テストか〜。プレッシャー感じてるのかな。', 'やらなきゃって思うほど手がつかないこと、あるよね。', '「やる気が出ない」のは、実は脳が「守ろう」としてるサインでもあるんだよ 🧠'], chips: ['そうかも...', 'もっと聞きたい'] },
+      '特に思い当たらない': { ai: ['はっきりした理由がないのに気分が沈む、ってこともあるよ。', '理由がないからこそモヤモヤするよね。', 'それ自体はおかしくないからね 😊'], chips: ['ちょっと安心した', '他にも聞いてほしいことがある'] },
+      '人間関係かな': { ai: ['人間関係って、すごくエネルギー使うよね。', '具体的に話せなくてもOK。「なんか疲れた」だけでも十分だよ。'], chips: ['ありがとう', 'もう少し話したい'] },
+      '覚えてない': { ai: ['覚えてなくて全然OK！大事なのは今の気持ちだからね。', 'やる気が出ない時期が続いてるのは、身体からのメッセージかも。'], chips: ['どういうこと？', 'たしかにそうかも'] },
+      'あの時と似てるかも': { ai: ['似てるんだね。同じパターンかもしれないね。', '前回は時間が解決してくれた？それとも何かきっかけで変わった？'], chips: ['自然に戻った', '何かあって変わった'] },
+      '今回は違う感じ': { ai: ['違う感じなんだね。その「違い」を感じ取れてるのすごいよ 👀', 'どんなふうに違う？'], chips: ['もっと重い感じ', 'うまく言えない'] },
+      '寝不足かも': { ai: ['寝不足はやる気に直結するよ！😴', '人間、寝てないと脳が50%しか動かないらしいよ。今日は早く寝よう！'], chips: ['がんばる！', 'それだけじゃない気もする'] },
+      'よく寝てるけど...': { ai: ['寝てるのにだるいんだね。それは体のSOSかも。', '季節の変わり目って自律神経が乱れやすいんだよ 🌸'], chips: ['なるほど', '他にも原因ありそう'] },
+      '夜ふかししちゃった': { ai: ['あるある！📱 スマホ見てたらいつの間に...ってやつ？笑', 'でもそれ、「現実から逃げたい」サインのこともあるんだよね。'], chips: ['たしかに...', 'ただの夜ふかしだよ笑'] }
+    },
+    {
+      _default: { ai: ['ここまで話してくれてありがとう 🙏', 'やる気が出ない自分を責めなくていいからね。', 'ミラーはいつでも聞くから、また話したくなったら来てね 😊'], insight: '「やる気が出ない」は自分を守ろうとするサインかもしれない。自分を責めず、今の気持ちをそのまま受け入れてみよう。', chips: [] }
+    }
+  ],
+  'モヤモヤする': [
+    { ai: ['モヤモヤかぁ... そういう時あるよね 🌀', 'そのモヤモヤ、もうちょっと言葉にしてみない？\nどんな感じに近い？'], chips: ['イライラに近い', '悲しさに近い', 'よくわからない'] },
+    {
+      'イライラに近い': { ai: ['イライラ寄りなんだね。', '何かに対してムカつく感じ？それとも全体的にイラつく感じ？'], chips: ['特定の何かに', '全体的に', '自分自身に'] },
+      '悲しさに近い': { ai: ['悲しさに近いんだね。それを正直に言えるの、えらいよ 😢', '何かきっかけがあった？それとも、じわじわ来た感じ？'], chips: ['きっかけがあった', 'じわじわ来た'] },
+      'よくわからない': { ai: ['わからなくて全然OK！むしろそれが普通だよ 😊', '感情って一つじゃないこと多いからね。', '「なんかモヤモヤ」って、実は色んな気持ちが混ざってることが多いんだ。'], chips: ['そうかもしれない', '混ざってる感じ'] }
+    },
+    {
+      _default: { ai: ['たくさん話してくれてありがとう 💜', '「モヤモヤ」の正体が少し見えてきたかも？', '言葉にできなくても、気づこうとすること自体がすごいことだよ 🌟'], insight: 'モヤモヤは複数の感情が混ざっている状態かもしれない。無理に名前をつけなくてもOK。気づこうとしている自分を認めよう。', chips: [] }
+    }
+  ],
+  '嬉しいことがあった': [
+    { ai: ['おー！いいね！✨', '聞かせて聞かせて！何があったの？'], chips: ['テストがうまくいった', '友達に褒められた', 'なんとなく嬉しい'] },
+    {
+      'テストがうまくいった': { ai: ['やったー！おめでとう 🎉', '頑張った自分をちゃんと褒めてあげて！', 'ちなみに、どうやって頑張ったの？'], chips: ['コツコツやった', '直前に集中した', '得意科目だった'] },
+      '友達に褒められた': { ai: ['嬉しいよね、それ 🥰', '何て褒められたの？'], chips: ['性格のこと', '見た目のこと', '頑張りを認めてくれた'] },
+      'なんとなく嬉しい': { ai: ['理由なく嬉しいって最高じゃん！🌈', 'そういう日を覚えておくのって大事だよ。', '何してる時にそう感じた？'], chips: ['散歩してた', '音楽聴いてた', '特に何もしてない'] }
+    },
+    {
+      _default: { ai: ['嬉しい気持ちをシェアしてくれてありがとう 🌟', '嬉しい時に「嬉しい」って言えるの、実はすごいことなんだよ。', 'この気持ち、ちゃんと記録しておこうね 📝'], insight: '嬉しいと感じた瞬間を言語化できた！ポジティブな感情も大切にしよう。嬉しい瞬間のパターンが見えてくるかも。', chips: [] }
+    }
+  ],
+  '将来が不安': [
+    { ai: ['将来のこと考えると不安になるよね... 🤔', '高校生の時期ってそういうこと考えやすいし、考えること自体は全然おかしくないよ。', 'どんなことが一番気になる？'], chips: ['進路のこと', '自分に何ができるか', '漠然とした不安'] },
+    {
+      '進路のこと': { ai: ['進路かぁ。周りがどんどん決めていくと焦るよね。', 'でもね、今の段階で「わからない」は普通だからね。', '何が一番引っかかってる？'], chips: ['選択肢が多すぎる', '何がしたいかわからない', '親の期待'] },
+      '自分に何ができるか': { ai: ['それ、すごく大事な問いだよ 💡', '「何ができるか」って、意外と自分じゃわからなかったりするんだよね。', '周りの人に聞いてみたことある？「私の良いところって何？」って。'], chips: ['聞いたことない', '恥ずかしくて聞けない', '聞いてみたい'] },
+      '漠然とした不安': { ai: ['漠然としてるからこそ怖いよね。', '実はね、不安の80%は実際には起こらないって研究があるんだよ 📚', 'でも今感じてる気持ちは本物だから、大事にしようね。'], chips: ['そうなんだ', 'でもやっぱり怖い'] }
+    },
+    {
+      _default: { ai: ['将来の不安について話してくれてありがとう 💜', '不安を感じるのは、ちゃんと自分の将来を考えてる証拠だよ。', '一人で抱え込まなくていいからね。ミラーはいつでもここにいるよ 🤗'], insight: '将来の不安は「ちゃんと考えている」証拠。不安の80%は実際には起こらない。今この瞬間を大切にしよう。', chips: [] }
+    }
+  ]
+};
+
+// Initial greeting
+const initialChips = ['なんかやる気出ない', 'モヤモヤする', '嬉しいことがあった', '将来が不安'];
+
+// Initialize
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    addTypingThenMessage(['やっほー！ミラーだよ 🪞', '今日はどんな気分？なんでも話してOKだよ 😊'], () => {
+      showChips(initialChips);
+    });
+  }, 600);
+});
+
+// Input handling
+userInput.addEventListener('input', () => {
+  sendBtn.disabled = userInput.value.trim() === '';
+});
+userInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (userInput.value.trim()) sendMessage();
+  }
+});
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  addUserMessage(text);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  sendBtn.disabled = true;
+  hideChips();
+  processUserInput(text);
+}
+
+function addUserMessage(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = `<div class="msg-content"><div class="msg-bubble">${escapeHtml(text)}</div><div class="msg-time">${getCurrentTime()}</div></div>`;
+  chatArea.appendChild(row);
+  scrollToBottom();
+}
+
+function addAIMessage(text, showSave = false) {
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  let saveHTML = '';
+  if (showSave) {
+    saveHTML = `<button class="save-btn" onclick="saveInsightFromBtn(this, '${escapeAttr(text)}')">💡 気づきを保存</button>`;
+  }
+  row.innerHTML = `<div class="msg-avatar">🪞</div><div class="msg-content"><div class="msg-bubble">${text}</div>${saveHTML}<div class="msg-time">${getCurrentTime()}</div></div>`;
+  chatArea.appendChild(row);
+  scrollToBottom();
+}
+
+function addTypingIndicator() {
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  row.id = 'typingRow';
+  row.innerHTML = `<div class="msg-avatar">🪞</div><div class="msg-content"><div class="msg-bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+  chatArea.appendChild(row);
+  scrollToBottom();
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typingRow');
+  if (el) el.remove();
+}
+
+function addTypingThenMessage(messages, callback, showSaveOnLast = false) {
+  let i = 0;
+  function next() {
+    if (i >= messages.length) {
+      if (callback) callback();
+      return;
+    }
+    addTypingIndicator();
+    const delay = 800 + Math.random() * 1200 + messages[i].length * 25;
+    setTimeout(() => {
+      removeTypingIndicator();
+      const isLast = i === messages.length - 1;
+      addAIMessage(messages[i], showSaveOnLast && isLast);
+      i++;
+      setTimeout(next, 300);
+    }, delay);
+  }
+  next();
+}
+
+function showChips(chips) {
+  quickRepliesEl.innerHTML = '';
+  chips.forEach(text => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = text;
+    chip.onclick = () => chipClicked(text);
+    quickRepliesEl.appendChild(chip);
+  });
+  quickRepliesEl.style.display = chips.length ? 'flex' : 'none';
+}
+
+function hideChips() {
+  quickRepliesEl.innerHTML = '';
+  quickRepliesEl.style.display = 'none';
+}
+
+function chipClicked(text) {
+  addUserMessage(text);
+  hideChips();
+  processUserInput(text);
+}
+
+function processUserInput(text) {
+  // Check if this starts a new conversation path
+  if (conversations[text] && !currentPath) {
+    currentPath = text;
+    pathStep = 0;
+    handleConversationStep();
+    return;
+  }
+
+  // Continue current path
+  if (currentPath) {
+    pathStep++;
+    handleConversationStep(text);
+    return;
+  }
+
+  // Free text fallback
+  const fallbackResponses = [
+    ['そうなんだね。もう少し詳しく聞かせてくれる？ 😊', 'どんな時にそう感じるの？'],
+    ['教えてくれてありがとう 💜', 'それって最近よく感じること？'],
+    ['なるほどね。その気持ち、大事にしてほしいな。', '他にも気になってることある？']
+  ];
+  const resp = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+  addTypingThenMessage(resp, () => {
+    showChips(initialChips);
+  });
+}
+
+function handleConversationStep(userChoice) {
+  const tree = conversations[currentPath];
+  const step = tree[pathStep];
+
+  if (!step) {
+    // End of conversation
+    currentPath = null;
+    pathStep = 0;
+    showChips(initialChips);
+    return;
+  }
+
+  // First step
+  if (pathStep === 0) {
+    addTypingThenMessage(step.ai, () => {
+      if (step.chips && step.chips.length) showChips(step.chips);
+    });
+    return;
+  }
+
+  // Check for specific response or default
+  let responseData = null;
+  if (step[userChoice]) {
+    responseData = step[userChoice];
+  } else if (step._default) {
+    responseData = step._default;
+  } else {
+    // Try to find a matching key
+    const keys = Object.keys(step).filter(k => k !== '_default');
+    if (keys.length > 0) {
+      responseData = step[keys[0]];
+    }
+  }
+
+  if (!responseData) {
+    currentPath = null;
+    pathStep = 0;
+    addTypingThenMessage(['そうなんだね 😊 話してくれてありがとう！', 'また何かあったらいつでも話しかけてね 💜'], () => {
+      showChips(initialChips);
+    });
+    return;
+  }
+
+  const hasInsight = !!responseData.insight;
+  addTypingThenMessage(responseData.ai, () => {
+    if (hasInsight) {
+      setTimeout(() => {
+        showInsightCard(responseData.insight);
+        setTimeout(() => {
+          currentPath = null;
+          pathStep = 0;
+          showChips(initialChips);
+        }, 1000);
+      }, 500);
+    } else if (responseData.chips && responseData.chips.length) {
+      showChips(responseData.chips);
+    } else {
+      currentPath = null;
+      pathStep = 0;
+      showChips(initialChips);
+    }
+  }, false);
+}
+
+function showInsightCard(insightText) {
+  const card = document.createElement('div');
+  card.className = 'insight-card';
+  card.innerHTML = `
+    <div class="insight-card-header">
+      <span class="insight-card-icon">💡</span>
+      <span class="insight-card-title">今日の気づき</span>
+    </div>
+    <div class="insight-card-body">${insightText}</div>
+    <button class="save-btn" onclick="saveInsightFromBtn(this, '${escapeAttr(insightText)}')">💡 気づきを保存</button>
+  `;
+  chatArea.appendChild(card);
+  scrollToBottom();
+}
+
+function saveInsightFromBtn(btn, text) {
+  if (btn.classList.contains('saved')) return;
+  btn.classList.add('saved');
+  btn.textContent = '✅ 保存しました';
+  savedInsights.unshift({ text: text, date: getTodayStr() });
+}
+
+function showInsights() {
+  const modal = document.getElementById('insightsModal');
+  const list = document.getElementById('insightsList');
+  if (savedInsights.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:var(--text-muted);font-size:13px;padding:24px 0">まだ気づきが保存されていません</p>';
+  } else {
+    list.innerHTML = '<div class="saved-insights">' + savedInsights.map(item => `
+      <div class="saved-item">
+        <div class="saved-dot"></div>
+        <div>
+          <div class="saved-text">${item.text}</div>
+          <div class="saved-date">${item.date}</div>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  }
+  modal.classList.add('show');
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('show'); };
+}
+
+function showGraph() {
+  const modal = document.getElementById('graphModal');
+  const content = document.getElementById('graphContent');
+  const emotions = [
+    { label: '3/3', value: 45, color: '#9B94E8' },
+    { label: '3/7', value: 30, color: '#7F77DD' },
+    { label: '3/10', value: 55, color: '#9B94E8' },
+    { label: '3/14', value: 35, color: '#7F77DD' },
+    { label: '3/17', value: 60, color: '#9B94E8' },
+    { label: '3/21', value: 40, color: '#7F77DD' },
+    { label: '3/24', value: 50, color: '#6059B3' }
+  ];
+  content.innerHTML = `
+    <div class="emotion-graph">
+      <div class="emotion-graph-title">📈 気分スコア（10段階）</div>
+      <div class="graph-container" id="graphBars"></div>
+    </div>
+    <div style="margin-top:12px;padding:12px;background:var(--bg-card);border-radius:12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-light);margin-bottom:6px">📋 傾向メモ</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.7">
+        週の前半に気分が下がりやすい傾向があるよ。週末にかけて回復するパターンかも 🌤️
+      </div>
+    </div>
+  `;
+  modal.classList.add('show');
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('show'); };
+
+  setTimeout(() => {
+    const container = document.getElementById('graphBars');
+    if (!container) return;
+    container.innerHTML = emotions.map(e => `
+      <div class="graph-bar-wrap">
+        <div class="graph-bar" style="height:0%;background:${e.color};width:100%">
+          <div class="graph-value">${e.value / 10}</div>
+        </div>
+        <div class="graph-label">${e.label}</div>
+      </div>
+    `).join('');
+    setTimeout(() => {
+      container.querySelectorAll('.graph-bar').forEach((bar, i) => {
+        bar.style.height = emotions[i].value + '%';
+      });
+    }, 100);
+  }, 350);
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => {
+    chatArea.scrollTop = chatArea.scrollHeight;
+  });
+}
+
+function getCurrentTime() {
+  const now = new Date();
+  return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+}
+
+function getTodayStr() {
+  const now = new Date();
+  return `${now.getMonth() + 1}月${now.getDate()}日`;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function escapeAttr(text) {
+  return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

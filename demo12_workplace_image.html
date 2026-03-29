@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>職場環境イメージ選択</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--primary:#1D9E75;--primary-light:#2CC48E;--bg:#E1F5EE;--card-radius:18px;--text:#1A3A2F;--text-light:#5A7A6E;--green-glow:rgba(29,158,117,.25);--reject:#E8594F}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:110px}
+.header{position:sticky;top:0;z-index:100;background:rgba(225,245,238,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:16px 20px 12px;border-bottom:1px solid rgba(29,158,117,.12)}
+.header-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,#1D9E75,#0D7A5F);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{font-size:13px;color:var(--text-light);line-height:1.4}
+.guide-row{display:flex;gap:12px;margin-top:8px}
+.guide-chip{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;display:flex;align-items:center;gap:4px}
+.guide-chip.yes{background:rgba(29,158,117,.12);color:var(--primary)}
+.guide-chip.no{background:rgba(232,89,79,.1);color:var(--reject)}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px 14px 20px}
+@media(min-width:420px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+.wcard{border-radius:var(--card-radius);overflow:hidden;position:relative;cursor:pointer;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;-webkit-user-select:none;user-select:none;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.wcard:active{transform:scale(.96)}
+.wcard.liked{box-shadow:0 0 0 3px var(--primary),0 6px 20px var(--green-glow);transform:scale(.98)}
+.wcard.disliked{opacity:.45;transform:scale(.95)}
+.wcard-visual{height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.wcard-emoji{font-size:40px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.12));margin-bottom:6px;transition:transform .2s}
+.wcard.liked .wcard-emoji{transform:scale(1.15)}
+.wcard-name{font-size:11px;color:rgba(255,255,255,.95);font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.25);text-align:center;padding:0 8px}
+.wcard-actions{display:flex;border-top:1px solid rgba(0,0,0,.06)}
+.wcard-btn{flex:1;padding:10px 0;font-size:12px;font-weight:700;border:none;background:transparent;cursor:pointer;transition:background .15s,color .15s;display:flex;align-items:center;justify-content:center;gap:4px}
+.wcard-btn.like{color:var(--primary)}
+.wcard-btn.like:active{background:rgba(29,158,117,.1)}
+.wcard-btn.skip{color:#aaa;border-left:1px solid rgba(0,0,0,.06)}
+.wcard-btn.skip:active{background:rgba(232,89,79,.06)}
+.wcard.liked .wcard-btn.like{background:rgba(29,158,117,.1)}
+.wcard.disliked .wcard-btn.skip{background:rgba(232,89,79,.06);color:var(--reject)}
+
+.liked-badge{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0);transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.wcard.liked .liked-badge{opacity:1;transform:scale(1)}
+.liked-badge svg{width:16px;height:16px;color:#fff}
+
+.disliked-badge{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:var(--reject);display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0);transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.wcard.disliked .disliked-badge{opacity:1;transform:scale(1)}
+.disliked-badge span{color:#fff;font-size:16px;font-weight:700;line-height:1}
+
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid rgba(29,158,117,.1);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;z-index:200;transform:translateY(0);transition:transform .3s}
+.bottom-bar.hidden{transform:translateY(100%)}
+.stat-row{display:flex;gap:12px}
+.stat-chip{font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
+.stat-chip.liked-stat{color:var(--primary)}
+.stat-chip.skipped-stat{color:#aaa}
+.btn-result{background:linear-gradient(135deg,#1D9E75,#0D7A5F);color:#fff;border:none;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .2s,opacity .2s;opacity:.4;pointer-events:none}
+.btn-result.active{opacity:1;pointer-events:auto;animation:pulse-g 2s infinite}
+.btn-result:active{transform:scale(.95)}
+@keyframes pulse-g{0%,100%{box-shadow:0 4px 16px rgba(29,158,117,.25)}50%{box-shadow:0 4px 24px rgba(29,158,117,.45)}}
+
+/* Results */
+.results-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;background:var(--bg);overflow-y:auto;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);padding:0 0 40px}
+.results-overlay.show{transform:translateY(0)}
+.results-header{padding:60px 24px 20px;text-align:center}
+.results-header h2{font-size:22px;font-weight:800;background:linear-gradient(135deg,#1D9E75,#0D7A5F);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.results-header p{font-size:13px;color:var(--text-light)}
+.result-card{background:#fff;margin:12px 16px;border-radius:20px;padding:24px 20px;box-shadow:0 2px 12px rgba(29,158,117,.06)}
+.result-card h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.radar-container{position:relative;width:260px;height:260px;margin:0 auto 16px}
+.radar-canvas{width:100%;height:100%}
+.axis-row{display:flex;flex-direction:column;gap:12px}
+.axis-item{display:flex;align-items:center;gap:10px}
+.axis-label{font-size:12px;font-weight:700;width:70px;text-align:right;color:var(--text-light);flex-shrink:0}
+.axis-bar-track{flex:1;height:28px;border-radius:14px;background:rgba(29,158,117,.06);overflow:hidden;position:relative}
+.axis-bar-fill{height:100%;border-radius:14px;display:flex;align-items:center;padding:0 10px;font-size:11px;font-weight:700;color:#fff;transition:width .8s cubic-bezier(.16,1,.3,1);min-width:32px;justify-content:flex-end}
+.match-list{display:flex;flex-direction:column;gap:10px}
+.match-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:linear-gradient(135deg,rgba(29,158,117,.06),rgba(29,158,117,.02));border-radius:14px;border:1px solid rgba(29,158,117,.1)}
+.match-rank{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1D9E75,#0D7A5F);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.match-info{flex:1}
+.match-title{font-size:14px;font-weight:700}
+.match-desc{font-size:11px;color:var(--text-light);margin-top:2px}
+.insight-box{background:linear-gradient(135deg,rgba(29,158,117,.06),rgba(13,122,95,.04));border:1px solid rgba(29,158,117,.15);border-radius:16px;padding:16px;margin-top:12px}
+.insight-box p{font-size:13px;line-height:1.7;color:var(--text)}
+.insight-arrow{color:var(--primary);font-weight:700}
+.btn-back{display:block;margin:24px auto 0;background:linear-gradient(135deg,#1D9E75,#0D7A5F);color:#fff;border:none;padding:14px 40px;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer}
+.btn-back:active{transform:scale(.96)}
+.selected-workplaces{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.sw-chip{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(29,158,117,.1);color:var(--primary)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span style="font-size:28px">💼</span>
+    <h1>職場環境イメージ選択</h1>
+  </div>
+  <p>気になる職場をタップしてね。あなたの環境志向がわかるよ！</p>
+  <div class="guide-row">
+    <div class="guide-chip yes">💼 ここで働きたい → タップ</div>
+    <div class="guide-chip no">✕ ちがうかも → 右ボタン</div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="bottom-bar hidden" id="bottomBar">
+  <div class="stat-row">
+    <div class="stat-chip liked-stat">💼 <span id="likedCount">0</span></div>
+    <div class="stat-chip skipped-stat">✕ <span id="skipCount">0</span></div>
+  </div>
+  <button class="btn-result" id="btnResult" onclick="showResults()">結果を見る ✨</button>
+</div>
+
+<div class="results-overlay" id="resultsOverlay">
+  <div class="results-header">
+    <p>あなたの</p>
+    <h2>職場環境タイプ</h2>
+  </div>
+  <div id="resultsContent"></div>
+  <button class="btn-back" onclick="hideResults()">もう一度えらぶ 🔄</button>
+</div>
+
+<script>
+const workplaces = [
+  {emoji:'🏢',name:'モダンなオフィス',grad:'linear-gradient(135deg,#667eea,#764ba2)',tags:{indoor:1,quiet:.5,team:.7,clean:1}},
+  {emoji:'🌾',name:'広い農場',grad:'linear-gradient(135deg,#56ab2f,#a8e063)',tags:{indoor:0,quiet:.7,team:.3,clean:.3}},
+  {emoji:'🏥',name:'病院の廊下',grad:'linear-gradient(135deg,#bdc3c7,#2c3e50)',tags:{indoor:1,quiet:.6,team:.8,clean:1}},
+  {emoji:'🪵',name:'木工のアトリエ',grad:'linear-gradient(135deg,#c0392b,#e74c3c)',tags:{indoor:.7,quiet:.6,team:.2,clean:.3}},
+  {emoji:'🍳',name:'レストランのキッチン',grad:'linear-gradient(135deg,#f12711,#f5af19)',tags:{indoor:1,quiet:0,team:.9,clean:.5}},
+  {emoji:'🏗️',name:'屋外の建設現場',grad:'linear-gradient(135deg,#f7971e,#ffd200)',tags:{indoor:0,quiet:0,team:.8,clean:0}},
+  {emoji:'🐾',name:'動物病院',grad:'linear-gradient(135deg,#a18cd1,#fbc2eb)',tags:{indoor:.8,quiet:.4,team:.6,clean:.7}},
+  {emoji:'💻',name:'サーバールーム',grad:'linear-gradient(135deg,#0f0c29,#302b63)',tags:{indoor:1,quiet:.8,team:.1,clean:1}},
+  {emoji:'👶',name:'保育園の教室',grad:'linear-gradient(135deg,#fbc2eb,#a6c1ee)',tags:{indoor:.8,quiet:0,team:.7,clean:.6}},
+  {emoji:'🌷',name:'花畑',grad:'linear-gradient(135deg,#ee9ca7,#ffdde1)',tags:{indoor:0,quiet:.8,team:.3,clean:.4}},
+  {emoji:'🎨',name:'デザインスタジオ',grad:'linear-gradient(135deg,#a18cd1,#fbc2eb)',tags:{indoor:1,quiet:.5,team:.5,clean:.9}},
+  {emoji:'🔬',name:'研究室',grad:'linear-gradient(135deg,#00b09b,#96c93d)',tags:{indoor:1,quiet:.7,team:.3,clean:.9}},
+  {emoji:'☕',name:'カフェのカウンター',grad:'linear-gradient(135deg,#c0392b,#8e44ad)',tags:{indoor:.9,quiet:.3,team:.5,clean:.7}},
+  {emoji:'🏭',name:'工場のライン',grad:'linear-gradient(135deg,#bdc3c7,#2c3e50)',tags:{indoor:.9,quiet:0,team:.8,clean:.4}},
+  {emoji:'🚒',name:'消防署',grad:'linear-gradient(135deg,#eb5757,#f78ca0)',tags:{indoor:.5,quiet:0,team:1,clean:.5}},
+  {emoji:'📚',name:'図書館',grad:'linear-gradient(135deg,#ada996,#f2f2f2)',tags:{indoor:1,quiet:1,team:.1,clean:1}},
+  {emoji:'💡',name:'コワーキングスペース',grad:'linear-gradient(135deg,#667eea,#764ba2)',tags:{indoor:1,quiet:.4,team:.6,clean:.9}},
+  {emoji:'🚢',name:'漁船の上',grad:'linear-gradient(135deg,#2193b0,#6dd5ed)',tags:{indoor:0,quiet:.3,team:.7,clean:0}},
+];
+
+const liked = new Set();
+const disliked = new Set();
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  workplaces.forEach((w,i) => {
+    const div = document.createElement('div');
+    div.className = 'wcard';
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div class="wcard-visual" style="background:${w.grad}">
+        <div class="wcard-emoji">${w.emoji}</div>
+        <div class="wcard-name">${w.name}</div>
+        <div class="liked-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <div class="disliked-badge"><span>✕</span></div>
+      </div>
+      <div class="wcard-actions">
+        <button class="wcard-btn like" data-action="like" data-idx="${i}">💼 働きたい</button>
+        <button class="wcard-btn skip" data-action="skip" data-idx="${i}">ちがうかも</button>
+      </div>`;
+    grid.appendChild(div);
+  });
+
+  grid.addEventListener('click', e => {
+    const btn = e.target.closest('.wcard-btn');
+    if(!btn) return;
+    const idx = parseInt(btn.dataset.idx);
+    const action = btn.dataset.action;
+    const card = btn.closest('.wcard');
+    handleAction(idx, action, card);
+  });
+}
+
+function handleAction(idx, action, card){
+  if(action === 'like'){
+    if(liked.has(idx)){
+      liked.delete(idx);
+      card.classList.remove('liked');
+    } else {
+      disliked.delete(idx);
+      card.classList.remove('disliked');
+      liked.add(idx);
+      card.classList.add('liked');
+      card.style.transform = 'scale(1.04)';
+      setTimeout(() => card.style.transform = '', 200);
+    }
+  } else {
+    if(disliked.has(idx)){
+      disliked.delete(idx);
+      card.classList.remove('disliked');
+    } else {
+      liked.delete(idx);
+      card.classList.remove('liked');
+      disliked.add(idx);
+      card.classList.add('disliked');
+    }
+  }
+  updateBar();
+}
+
+function updateBar(){
+  const bar = document.getElementById('bottomBar');
+  document.getElementById('likedCount').textContent = liked.size;
+  document.getElementById('skipCount').textContent = disliked.size;
+  const total = liked.size + disliked.size;
+  if(total > 0) bar.classList.remove('hidden');
+  else bar.classList.add('hidden');
+  const btn = document.getElementById('btnResult');
+  if(liked.size >= 5) btn.classList.add('active');
+  else btn.classList.remove('active');
+}
+
+function showResults(){
+  if(liked.size < 5) return;
+
+  // Calculate axes
+  let axes = {indoor:0,quiet:0,team:0,clean:0};
+  let count = liked.size;
+  liked.forEach(idx => {
+    const t = workplaces[idx].tags;
+    for(let k in t) axes[k] += t[k];
+  });
+  for(let k in axes) axes[k] = Math.round(axes[k] / count * 100);
+
+  const axisLabels = {indoor:'屋内',quiet:'静か',team:'チーム',clean:'きれい'};
+  const axisOppo = {indoor:'屋外',quiet:'活気',team:'一人',clean:'ワイルド'};
+  const barColors = [
+    'linear-gradient(90deg,#1D9E75,#2CC48E)',
+    'linear-gradient(90deg,#0D7A5F,#1D9E75)',
+    'linear-gradient(90deg,#38ef7d,#11998e)',
+    'linear-gradient(90deg,#43e97b,#38f9d7)'
+  ];
+
+  // Top workplaces selected
+  const selectedNames = [];
+  liked.forEach(idx => selectedNames.push(workplaces[idx].name));
+
+  // Match jobs
+  const jobs = [];
+  if(axes.indoor > 60 && axes.quiet > 60) jobs.push({title:'IT・プログラマー',desc:'静かなオフィスでの集中作業が得意',emoji:'💻'});
+  if(axes.indoor > 60 && axes.team > 60) jobs.push({title:'医療・看護',desc:'チームで協力する室内ワーク',emoji:'🏥'});
+  if(axes.indoor < 50 && axes.clean < 50) jobs.push({title:'農業・建設・漁業',desc:'屋外で体を使うアクティブな仕事',emoji:'🌾'});
+  if(axes.indoor < 50 && axes.quiet > 50) jobs.push({title:'農業・園芸',desc:'自然の中で穏やかに働く',emoji:'🌿'});
+  if(axes.team > 60 && axes.quiet < 40) jobs.push({title:'飲食・サービス業',desc:'人と関わり活気ある現場',emoji:'🍳'});
+  if(axes.clean > 70) jobs.push({title:'デザイン・クリエイティブ',desc:'整った環境で創造性を発揮',emoji:'🎨'});
+  if(axes.quiet > 60 && axes.team < 40) jobs.push({title:'研究・学術',desc:'一人で深く探究する仕事',emoji:'🔬'});
+  if(axes.team > 50 && axes.indoor > 50) jobs.push({title:'教育・保育',desc:'人を育てる温かい環境',emoji:'👶'});
+  if(jobs.length === 0) jobs.push({title:'マルチフィールドワーカー',desc:'多様な環境に適応できる柔軟性',emoji:'✨'});
+
+  // Generate insight
+  let insight = '';
+  if(axes.indoor < 40) insight = '屋外で体を動かす環境を好む傾向 → 農業・建設・スポーツ関連がマッチするかも';
+  else if(axes.quiet > 65) insight = '静かに集中できる環境を重視 → 研究・IT・クリエイティブ分野が向いています';
+  else if(axes.team > 65) insight = 'チームで活動する環境が好き → 医療・教育・サービス業がマッチ';
+  else if(axes.clean > 70) insight = '整った環境を好む傾向 → オフィスワーク・デザイン分野が得意分野';
+  else insight = 'バランスの取れた環境志向 → 幅広い職種に適応できるタイプです';
+
+  let html = '';
+
+  // Selected workplaces
+  html += `<div class="result-card"><h3>✅ 選んだ職場</h3><div class="selected-workplaces">`;
+  selectedNames.forEach(n => html += `<div class="sw-chip">${n}</div>`);
+  html += `</div></div>`;
+
+  // Axis chart
+  html += `<div class="result-card"><h3>📊 環境志向チャート</h3><div class="axis-row">`;
+  const axisKeys = ['indoor','quiet','team','clean'];
+  axisKeys.forEach((k,i) => {
+    html += `<div class="axis-item">
+      <div class="axis-label">${axisOppo[k]} ← ${axisLabels[k]}</div>
+      <div class="axis-bar-track"><div class="axis-bar-fill" style="width:0%;background:${barColors[i]}" data-width="${axes[k]}%">${axes[k]}%</div></div>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // Top matches
+  html += `<div class="result-card"><h3>🎯 マッチする分野 TOP3</h3><div class="match-list">`;
+  jobs.slice(0,3).forEach((j,i) => {
+    html += `<div class="match-item"><div class="match-rank">${j.emoji}</div><div class="match-info"><div class="match-title">${j.title}</div><div class="match-desc">${j.desc}</div></div></div>`;
+  });
+  html += `</div></div>`;
+
+  // Insight
+  html += `<div class="result-card"><h3>💡 AIインサイト</h3><div class="insight-box"><p>${insight}</p></div></div>`;
+
+  document.getElementById('resultsContent').innerHTML = html;
+  const overlay = document.getElementById('resultsOverlay');
+  overlay.classList.add('show');
+  overlay.scrollTop = 0;
+
+  setTimeout(() => {
+    document.querySelectorAll('.axis-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.width;
+    });
+  }, 300);
+}
+
+function hideResults(){
+  document.getElementById('resultsOverlay').classList.remove('show');
+}
+
+render();
+</script>
+</body>
+</html>

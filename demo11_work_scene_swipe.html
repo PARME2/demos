@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>仕事現場スワイプ</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --primary: #1D9E75;
+  --primary-light: #34D399;
+  --primary-dark: #167A5B;
+  --bg: #E1F5EE;
+  --bg-dark: #C7EDE1;
+  --text: #0F3D2E;
+  --text-light: #4A8B74;
+  --like-color: #FBBF24;
+  --nope-color: #94A3B8;
+  --card-radius: 20px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 375px;
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Splash */
+.splash {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  background: linear-gradient(135deg, #1D9E75 0%, #34D399 50%, #6EE7B7 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 1000; transition: opacity 0.5s, transform 0.5s;
+}
+.splash.hide { opacity: 0; transform: scale(1.05); pointer-events: none; }
+.splash-icon { font-size: 64px; margin-bottom: 16px; animation: bounce 2s ease-in-out infinite; }
+@keyframes bounce { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-12px); } }
+.splash h1 { color: white; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.splash p { color: rgba(255,255,255,0.85); font-size: 14px; margin-bottom: 8px; text-align: center; padding: 0 32px; }
+.splash-sub { color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 32px; }
+.splash-btn {
+  background: white; color: var(--primary); border: none; border-radius: 50px;
+  padding: 14px 40px; font-size: 16px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: transform 0.2s;
+}
+.splash-btn:active { transform: scale(0.95); }
+
+/* Header */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; max-width: 375px; margin: 0 auto;
+  z-index: 50; padding: 12px 20px 8px; background: var(--bg);
+}
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.header-title { font-size: 14px; font-weight: 700; color: var(--primary-dark); }
+.header-likes { font-size: 12px; color: var(--like-color); font-weight: 600; }
+.progress-bar { height: 4px; background: var(--bg-dark); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+.counter { text-align: center; font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+/* Card Stack */
+.card-area {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  padding: 72px 16px 110px;
+}
+.card-stack { position: relative; width: 100%; max-width: 350px; height: 500px; }
+.card {
+  position: absolute; inset: 0;
+  background: white; border-radius: var(--card-radius);
+  box-shadow: 0 8px 30px rgba(29,158,117,0.12);
+  overflow: hidden; cursor: grab; touch-action: none; user-select: none;
+  will-change: transform;
+}
+.card.animating { transition: transform 0.4s ease, opacity 0.4s ease; }
+.card[data-depth="1"] { transform: scale(0.95) translateY(10px); opacity: 0.6; }
+.card[data-depth="2"] { transform: scale(0.90) translateY(20px); opacity: 0.3; }
+
+.card-visual {
+  height: 240px; position: relative; display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.card-icon { font-size: 72px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1)); }
+.card-play-btn {
+  position: absolute; bottom: 14px; right: 14px;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.card-time {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(0,0,0,0.5); color: white;
+  padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+}
+.card-industry {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(255,255,255,0.9); color: var(--primary);
+  padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: 700;
+}
+
+.card-info { padding: 18px 20px; }
+.card-job-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; line-height: 1.3; }
+.card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-mini-tag {
+  background: var(--bg); color: var(--primary); padding: 3px 8px;
+  border-radius: 6px; font-size: 10px; font-weight: 600;
+}
+.card-scene { font-size: 13px; color: var(--text-light); line-height: 1.6; }
+
+/* Swipe Labels */
+.swipe-label {
+  position: absolute; inset: 0; border-radius: var(--card-radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 900; letter-spacing: 2px;
+  opacity: 0; pointer-events: none; z-index: 5;
+}
+.swipe-label.like { background: rgba(251,191,36,0.15); color: #F59E0B; border: 4px solid #FBBF24; }
+.swipe-label.pass { background: rgba(148,163,184,0.15); color: #64748B; border: 4px solid #94A3B8; }
+
+/* Bottom controls */
+.controls {
+  position: fixed; bottom: 0; left: 0; right: 0; max-width: 375px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 36px 34px;
+  background: linear-gradient(transparent, var(--bg) 30%);
+}
+.ctrl-btn {
+  width: 60px; height: 60px; border-radius: 50%; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; cursor: pointer; transition: transform 0.2s;
+}
+.ctrl-btn:active { transform: scale(0.88); }
+.ctrl-pass { background: white; box-shadow: 0 4px 15px rgba(148,163,184,0.3); }
+.ctrl-like { background: white; box-shadow: 0 4px 15px rgba(251,191,36,0.3); }
+.ctrl-label { font-size: 11px; color: var(--text-light); text-align: center; margin-top: 4px; }
+
+/* Flash */
+.flash {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  pointer-events: none; z-index: 40; opacity: 0; transition: opacity 0.15s;
+}
+.flash.gold { background: rgba(251,191,36,0.25); opacity: 1; }
+.flash.gray { background: rgba(148,163,184,0.25); opacity: 1; }
+
+/* Results */
+.results {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  background: var(--bg); z-index: 60;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  padding: 40px 20px 40px;
+}
+.results.show { transform: translateY(0); }
+
+.res-header { text-align: center; margin-bottom: 24px; }
+.res-header .big-emoji { font-size: 52px; display: block; margin-bottom: 10px; animation: bounce 2s ease-in-out infinite; }
+.res-header h2 { font-size: 22px; font-weight: 800; }
+.res-header p { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+
+.res-card {
+  background: white; border-radius: 16px; padding: 20px; margin-bottom: 14px;
+  box-shadow: 0 4px 15px rgba(29,158,117,0.08);
+  opacity: 0; transform: translateY(20px); transition: all 0.5s;
+}
+.res-card.visible { opacity: 1; transform: translateY(0); }
+.res-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+/* AI Insight box */
+.ai-insight {
+  background: linear-gradient(135deg, #1D9E75, #34D399);
+  color: white; border-radius: 16px; padding: 20px; margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(29,158,117,0.3);
+}
+.ai-insight .label { font-size: 11px; opacity: 0.8; margin-bottom: 8px; }
+.ai-insight p { font-size: 14px; line-height: 1.7; font-weight: 500; }
+
+/* Bubble chart */
+.bubble-chart { position: relative; width: 100%; height: 250px; margin: 8px 0; }
+.bubble {
+  position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; text-align: center;
+  transition: transform 0.3s; cursor: default;
+  animation: popIn 0.5s cubic-bezier(0.4,0,0.2,1) both;
+}
+.bubble:hover { transform: scale(1.08); }
+.bubble-label { font-size: 10px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.bubble-icon { font-size: 22px; }
+@keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* Top 3 jobs */
+.top-job {
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px 0;
+  border-bottom: 1px solid var(--bg);
+}
+.top-job:last-child { border-bottom: none; }
+.top-rank {
+  width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.top-job-info { flex: 1; }
+.top-job-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.top-job-desc { font-size: 12px; color: var(--text-light); line-height: 1.5; }
+
+.restart-btn {
+  display: block; width: 100%; padding: 16px;
+  background: var(--primary); color: white; border: none; border-radius: 14px;
+  font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  transition: transform 0.2s;
+}
+.restart-btn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+
+<div class="splash" id="splash">
+  <div class="splash-icon">🏢</div>
+  <h1>仕事現場スワイプ</h1>
+  <p>知らなかった仕事に出会おう！1日密着ドキュメンタリーをスワイプ</p>
+  <div class="splash-sub">12本の動画 / 約2分で完了</div>
+  <button class="splash-btn" onclick="startApp()">スタート</button>
+</div>
+
+<div class="header" id="header" style="display:none">
+  <div class="header-top">
+    <span class="header-title">🏢 仕事現場スワイプ</span>
+    <span class="header-likes" id="likeCount">✨ 0 気になる</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="counter" id="counter">1 / 12</div>
+</div>
+
+<div class="card-area" id="cardArea" style="display:none">
+  <div class="card-stack" id="cardStack"></div>
+</div>
+
+<div class="controls" id="controls" style="display:none">
+  <div>
+    <button class="ctrl-btn ctrl-pass" onclick="doSwipe('left')">😐</button>
+    <div class="ctrl-label">パス</div>
+  </div>
+  <div style="font-size:12px;color:var(--text-light);font-weight:600">← スワイプ →</div>
+  <div>
+    <button class="ctrl-btn ctrl-like" onclick="doSwipe('right')">✨</button>
+    <div class="ctrl-label">気になる</div>
+  </div>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<div class="results" id="results">
+  <div class="res-header">
+    <span class="big-emoji">🗺️</span>
+    <h2>あなたの興味職種マップ</h2>
+    <p>スワイプから見えたキャリアの方向性</p>
+  </div>
+  <div id="resContent"></div>
+</div>
+
+<script>
+const JOBS = [
+  { title: '農業法人スタッフ', industry: '農業', icon: '🌱', gradient: 'linear-gradient(135deg, #22c55e, #86efac)', desc: '広大な畑で最新のスマート農業を実践。ドローンで農薬散布し、データで生育を管理する次世代の農業。', tags: ['自然', '体を動かす', 'テクノロジー'], category: '現場系', time: '0:28' },
+  { title: 'Webデザイナー', industry: 'IT・Web', icon: '🎨', gradient: 'linear-gradient(135deg, #8b5cf6, #c4b5fd)', desc: 'カフェでMacBookを開き、クライアントのWebサイトをデザイン。配色やレイアウトを何度も調整する1日。', tags: ['クリエイティブ', 'デスクワーク', 'リモート'], category: 'クリエイティブ系', time: '0:32' },
+  { title: '看護師', industry: '医療', icon: '🏥', gradient: 'linear-gradient(135deg, #ec4899, #f9a8d4)', desc: '朝の申し送りから始まる忙しい1日。患者さんの笑顔と「ありがとう」が明日への活力になる。', tags: ['人と関わる', '専門職', 'チーム'], category: '対人サポート系', time: '0:35' },
+  { title: '建築士', industry: '建設', icon: '🏗️', gradient: 'linear-gradient(135deg, #f59e0b, #fcd34d)', desc: '図面を引き、模型を作り、クライアントと対話する。空間をデザインし、街の風景を作る仕事。', tags: ['クリエイティブ', '専門職', 'ものづくり'], category: 'クリエイティブ系', time: '0:30' },
+  { title: 'パティシエ', industry: '飲食', icon: '🍰', gradient: 'linear-gradient(135deg, #f43f5e, #fda4af)', desc: '朝4時からキッチンに立ち、ケーキを仕込む。繊細な技術と芸術的センスが求められる甘い世界。', tags: ['ものづくり', '職人技', '体を動かす'], category: '現場系', time: '0:29' },
+  { title: 'データサイエンティスト', industry: 'IT', icon: '📊', gradient: 'linear-gradient(135deg, #3b82f6, #93c5fd)', desc: '大量のデータからパターンを見つけ出す。Pythonでコードを書き、AIモデルを構築する知的な作業。', tags: ['テクノロジー', 'デスクワーク', '分析'], category: 'テック系', time: '0:31' },
+  { title: '消防士', industry: '公務', icon: '🚒', gradient: 'linear-gradient(135deg, #ef4444, #fca5a5)', desc: '訓練に明け暮れる日常。いつ来るかわからない出動に備え、仲間と切磋琢磨する熱い現場。', tags: ['体を動かす', 'チーム', '社会貢献'], category: '現場系', time: '0:33' },
+  { title: '動物園飼育員', industry: 'サービス', icon: '🦁', gradient: 'linear-gradient(135deg, #a3e635, #d9f99d)', desc: '早朝から動物のエサの準備。健康チェック、展示の工夫、来園者への解説まで動物づくしの毎日。', tags: ['自然', '体を動かす', '専門職'], category: '現場系', time: '0:27' },
+  { title: '地方公務員', industry: '行政', icon: '🏛️', gradient: 'linear-gradient(135deg, #6366f1, #a5b4fc)', desc: '地域の課題に向き合う行政の最前線。住民の声を聞き、制度を作り、街をより良くする地道な仕事。', tags: ['社会貢献', 'デスクワーク', '安定'], category: '対人サポート系', time: '0:34' },
+  { title: '映像クリエイター', industry: 'メディア', icon: '🎬', gradient: 'linear-gradient(135deg, #f97316, #fdba74)', desc: 'カメラを担いでロケに出発。撮影、編集、カラーグレーディング。映像で人の心を動かすプロの技。', tags: ['クリエイティブ', 'テクノロジー', '自由'], category: 'クリエイティブ系', time: '0:30' },
+  { title: '自動車整備士', industry: '製造', icon: '🔧', gradient: 'linear-gradient(135deg, #64748b, #cbd5e1)', desc: '車の下に潜り込み、エンジンを分解。原因を特定し修理する、まさに車のドクター。', tags: ['ものづくり', '体を動かす', '専門職'], category: '現場系', time: '0:28' },
+  { title: '保育士', industry: '教育', icon: '👶', gradient: 'linear-gradient(135deg, #fb923c, #fed7aa)', desc: '元気いっぱいの子どもたちと歌い、踊り、遊ぶ。成長の瞬間に立ち会える、やりがい溢れる現場。', tags: ['人と関わる', '体を動かす', '社会貢献'], category: '対人サポート系', time: '0:31' },
+];
+
+let idx = 0, liked = [], passed = [];
+let dragging = false, sx = 0, dx = 0, activeEl = null;
+
+function startApp() {
+  document.getElementById('splash').classList.add('hide');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('header').style.display = 'block';
+    document.getElementById('cardArea').style.display = 'flex';
+    document.getElementById('controls').style.display = 'flex';
+    render();
+  }, 500);
+}
+
+function render() {
+  const stack = document.getElementById('cardStack');
+  stack.innerHTML = '';
+  for (let i = Math.min(idx + 2, JOBS.length - 1); i >= idx; i--) {
+    if (i >= JOBS.length) continue;
+    const j = JOBS[i], d = i - idx;
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.setAttribute('data-depth', d);
+    el.innerHTML = `
+      <div class="card-visual" style="background:${j.gradient}">
+        <div class="card-icon">${j.icon}</div>
+        <div class="card-play-btn">▶</div>
+        <div class="card-time">${j.time}</div>
+        <div class="card-industry">${j.industry}</div>
+      </div>
+      <div class="card-info">
+        <div class="card-job-title">${j.title}</div>
+        <div class="card-tags">${j.tags.map(t => `<span class="card-mini-tag">${t}</span>`).join('')}</div>
+        <div class="card-scene">${j.desc}</div>
+      </div>
+      <div class="swipe-label like">気になる ✨</div>
+      <div class="swipe-label pass">パス 😐</div>
+    `;
+    stack.appendChild(el);
+    if (d === 0) { activeEl = el; bindDrag(el); }
+  }
+  updateUI();
+}
+
+function bindDrag(el) {
+  el.addEventListener('pointerdown', e => {
+    dragging = true; sx = e.clientX; dx = 0;
+    el.setPointerCapture(e.pointerId);
+    el.style.transition = 'none';
+  }, { passive: false });
+  el.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    e.preventDefault();
+    dx = e.clientX - sx;
+    el.style.transform = `translateX(${dx}px) rotate(${dx * 0.07}deg)`;
+    const p = Math.min(Math.abs(dx) / 100, 1);
+    el.querySelector('.swipe-label.like').style.opacity = dx > 0 ? p : 0;
+    el.querySelector('.swipe-label.pass').style.opacity = dx < 0 ? p : 0;
+  }, { passive: false });
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (Math.abs(dx) > 80) {
+      finishSwipe(el, dx > 0 ? 'right' : 'left');
+    } else {
+      el.style.transition = 'transform 0.3s ease';
+      el.style.transform = '';
+      el.querySelector('.swipe-label.like').style.opacity = 0;
+      el.querySelector('.swipe-label.pass').style.opacity = 0;
+    }
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+}
+
+function doSwipe(dir) { if (activeEl && !dragging) finishSwipe(activeEl, dir); }
+
+function finishSwipe(el, dir) {
+  const fly = dir === 'right' ? 500 : -500;
+  el.classList.add('animating');
+  el.style.transform = `translateX(${fly}px) rotate(${fly * 0.07}deg)`;
+  el.style.opacity = '0';
+
+  const f = document.getElementById('flash');
+  f.className = 'flash ' + (dir === 'right' ? 'gold' : 'gray');
+  setTimeout(() => f.className = 'flash', 200);
+
+  if (dir === 'right') liked.push(JOBS[idx]);
+  else passed.push(JOBS[idx]);
+  idx++;
+
+  setTimeout(() => {
+    if (idx >= JOBS.length) showResults();
+    else render();
+  }, 300);
+}
+
+function updateUI() {
+  document.getElementById('progressFill').style.width = (idx / JOBS.length * 100) + '%';
+  document.getElementById('counter').textContent = `${idx + 1} / ${JOBS.length}`;
+  document.getElementById('likeCount').textContent = `✨ ${liked.length} 気になる`;
+}
+
+function showResults() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('cardArea').style.display = 'none';
+  document.getElementById('controls').style.display = 'none';
+
+  const catCount = {};
+  liked.forEach(j => { catCount[j.category] = (catCount[j.category] || 0) + 1; });
+  const tagCount = {};
+  liked.forEach(j => j.tags.forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+  const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]);
+  const topCats = Object.entries(catCount).sort((a, b) => b[1] - a[1]);
+
+  let insightText = '';
+  if (topTags.length > 0) {
+    const top = topTags.slice(0, 2).map(t => `「${t[0]}」`).join('と');
+    insightText = `あなたが気になったのは${top}に関わる仕事が多いです。`;
+    if (topCats.length > 0) insightText += `特に「${topCats[0][0]}」のジャンルに強い興味を持っています。`;
+    insightText += '自分では気づかなかった仕事の魅力を発見できたかもしれません！';
+  } else {
+    insightText = '今回はパスが多かったですね。もう一度試して、少しでも気になるものを選んでみましょう！';
+  }
+
+  const bubbleColors = ['#1D9E75', '#34D399', '#6EE7B7', '#A7F3D0', '#059669'];
+  const bubbleData = topCats.map((c, i) => ({ label: c[0], count: c[1], color: bubbleColors[i % bubbleColors.length] }));
+
+  let html = '';
+  html += `<div class="ai-insight res-card"><div class="label">🤖 AI分析</div><p>${insightText}</p></div>`;
+
+  // Bubble chart
+  html += `<div class="res-card"><h3>🗺️ 興味職種マップ</h3><div class="bubble-chart" id="bubbleChart"></div></div>`;
+
+  // Top 3
+  const rankColors = ['#1D9E75', '#34D399', '#6EE7B7'];
+  html += `<div class="res-card"><h3>🏆 マッチ度トップ3カテゴリ</h3>`;
+  topCats.slice(0, 3).forEach(([cat, count], i) => {
+    const descs = {
+      '現場系': '手を動かし、体を使って現場で活躍する仕事。達成感を直接感じられるのが魅力。',
+      'クリエイティブ系': 'アイデアと技術で新しいものを生み出す仕事。自己表現と創造性が活きる世界。',
+      'テック系': 'テクノロジーの力で課題を解決する仕事。論理的思考と好奇心が武器になる。',
+      '対人サポート系': '人と直接関わり、支える仕事。感謝の言葉がやりがいにつながる。',
+    };
+    html += `<div class="top-job"><div class="top-rank" style="background:${rankColors[i]}">${i + 1}</div><div class="top-job-info"><div class="top-job-name">${cat}</div><div class="top-job-desc">${descs[cat] || '多様なスキルが求められる魅力的な分野です。'}</div></div></div>`;
+  });
+  html += `</div>`;
+
+  // Liked list
+  if (liked.length > 0) {
+    html += `<div class="res-card"><h3>✨ 気になった仕事</h3>`;
+    liked.forEach(j => {
+      html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:30px">${j.icon}</span><div><div style="font-size:14px;font-weight:700">${j.title}</div><div style="font-size:11px;color:var(--text-light)">${j.industry}</div></div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<button class="restart-btn" onclick="restart()">もう一度やる 🔄</button>`;
+
+  document.getElementById('resContent').innerHTML = html;
+  const rs = document.getElementById('results');
+  rs.classList.add('show');
+
+  setTimeout(() => {
+    drawBubbles(bubbleData);
+    rs.querySelectorAll('.res-card').forEach((c, i) => setTimeout(() => c.classList.add('visible'), 100 + i * 150));
+  }, 500);
+}
+
+function drawBubbles(data) {
+  const container = document.getElementById('bubbleChart');
+  if (!container || data.length === 0) return;
+  const maxCount = Math.max(...data.map(d => d.count));
+  const positions = [
+    { x: 40, y: 35 }, { x: 65, y: 60 }, { x: 20, y: 70 }, { x: 55, y: 20 }, { x: 80, y: 45 }
+  ];
+  data.forEach((d, i) => {
+    const size = 60 + (d.count / maxCount) * 60;
+    const pos = positions[i % positions.length];
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.style.cssText = `width:${size}px;height:${size}px;background:${d.color};left:calc(${pos.x}% - ${size / 2}px);top:calc(${pos.y}% - ${size / 2}px);animation-delay:${i * 0.15}s`;
+    bubble.innerHTML = `<span class="bubble-icon">${data.length > 0 ? ['🔧', '🎨', '💻', '🤝', '📊'][i % 5] : ''}</span><span class="bubble-label">${d.label}</span>`;
+    container.appendChild(bubble);
+  });
+}
+
+function restart() {
+  idx = 0; liked = []; passed = [];
+  document.getElementById('results').classList.remove('show');
+  setTimeout(() => {
+    document.getElementById('header').style.display = 'block';
+    document.getElementById('cardArea').style.display = 'flex';
+    document.getElementById('controls').style.display = 'flex';
+    render();
+  }, 500);
+}
+</script>
+</body>
+</html>

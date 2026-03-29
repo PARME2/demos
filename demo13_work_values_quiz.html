@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>仕事価値観クイズ</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideOutLeft { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-50px); } }
+@keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(29,158,117,0.4); } 50% { box-shadow: 0 0 0 12px rgba(29,158,117,0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes growBar { from { width: 0; } }
+@keyframes naruhodo { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 60% { transform: scale(1.15) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes fillBar { from { width: 0%; } }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  background: #E1F5EE;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  color: #333;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-container {
+  max-width: 375px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Start Screen */
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+  text-align: center;
+  animation: fadeIn 0.6s ease;
+}
+.start-emoji { font-size: 72px; margin-bottom: 16px; animation: float 2s ease-in-out infinite; }
+.start-title { font-size: 28px; font-weight: 800; color: #1D9E75; margin-bottom: 8px; line-height: 1.3; }
+.start-subtitle { font-size: 15px; color: #888; margin-bottom: 32px; line-height: 1.6; }
+.start-btn {
+  background: linear-gradient(135deg, #1D9E75, #2BC48F);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 48px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  animation: pulse 2s infinite;
+  transition: transform 0.2s;
+}
+.start-btn:active { transform: scale(0.95); }
+.start-info { margin-top: 20px; display: flex; gap: 16px; font-size: 13px; color: #999; }
+.start-info span { display: flex; align-items: center; gap: 4px; }
+
+/* Quiz Screen */
+.quiz-screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 16px;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  background: #C8E8DC;
+  border-radius: 10px;
+  height: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1D9E75, #2BC48F);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.quiz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.question-count { font-size: 14px; font-weight: 700; color: #1D9E75; }
+.category-tag {
+  background: rgba(29,158,117,0.12);
+  color: #1D9E75;
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Question Card */
+.question-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px 22px;
+  box-shadow: 0 8px 32px rgba(29,158,117,0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+.question-card.exit { animation: slideOutLeft 0.3s ease forwards; }
+.question-emoji { font-size: 40px; margin-bottom: 12px; text-align: center; }
+.question-text {
+  font-size: 19px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 24px;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Choices */
+.choices { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.choice-btn {
+  background: #F0FAF5;
+  border: 2px solid #D0E8DD;
+  border-radius: 16px;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+.choice-btn .choice-icon { font-size: 20px; flex-shrink: 0; }
+.choice-btn:active { transform: scale(0.97); }
+.choice-btn.selected {
+  background: #1D9E75;
+  border-color: #1D9E75;
+  color: #fff;
+  animation: bounce 0.3s ease;
+}
+
+/* Naruhodo Feedback */
+.naruhodo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: linear-gradient(135deg, #1D9E75, #2BC48F);
+  color: #fff;
+  border-radius: 20px;
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+}
+.naruhodo.show {
+  animation: naruhodo 0.4s ease forwards, fadeOut 0.3s ease 0.8s forwards;
+}
+
+/* Results */
+.results-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px 40px;
+  min-height: 100vh;
+  animation: fadeIn 0.6s ease;
+}
+.results-header { text-align: center; margin-bottom: 24px; }
+.results-emoji { font-size: 64px; margin-bottom: 8px; }
+.results-title { font-size: 24px; font-weight: 800; color: #1D9E75; }
+.results-subtitle { font-size: 14px; color: #888; margin-top: 4px; }
+
+/* Values Chart */
+.chart-container {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(29,158,117,0.1);
+  margin-bottom: 20px;
+  animation: popIn 0.5s ease 0.2s both;
+}
+.chart-title {
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1D9E75;
+}
+.chart-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 10px;
+}
+.chart-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  width: 75px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.chart-bar-bg {
+  flex: 1;
+  height: 28px;
+  background: #F0FAF5;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+}
+.chart-bar-fill {
+  height: 100%;
+  border-radius: 14px;
+  animation: fillBar 1s ease forwards;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+.chart-bar-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Top Values */
+.top-values {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+  animation: popIn 0.5s ease 0.4s both;
+}
+.value-tag {
+  background: linear-gradient(135deg, #1D9E75, #2BC48F);
+  color: #fff;
+  border-radius: 50px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Company Cards */
+.companies-section {
+  width: 100%;
+  margin-bottom: 20px;
+  animation: popIn 0.5s ease 0.6s both;
+}
+.companies-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1D9E75;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.company-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(29,158,117,0.08);
+  border-left: 4px solid #1D9E75;
+}
+.company-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.company-name { font-size: 16px; font-weight: 700; color: #333; }
+.company-match {
+  background: linear-gradient(135deg, #1D9E75, #2BC48F);
+  color: #fff;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.company-industry {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.company-reason {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  background: #F0FAF5;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.retry-btn {
+  background: #fff;
+  color: #1D9E75;
+  border: 2px solid #1D9E75;
+  border-radius: 50px;
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  animation: popIn 0.5s ease 0.8s both;
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Start Screen -->
+  <div class="start-screen" id="startScreen">
+    <div class="start-emoji">💼</div>
+    <div class="start-title">仕事価値観クイズ</div>
+    <div class="start-subtitle">キミが大切にしたい「働き方」は？<br>価値観から相性のいい企業がわかる！</div>
+    <button class="start-btn" onclick="startQuiz()">スタート！</button>
+    <div class="start-info">
+      <span>📝 全10問</span>
+      <span>🏢 企業マッチ</span>
+      <span>⚡ 約3分</span>
+    </div>
+  </div>
+
+  <!-- Quiz Screen -->
+  <div class="quiz-screen" id="quizScreen">
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <div class="quiz-header">
+      <div class="question-count" id="questionCount">1/10</div>
+      <div class="category-tag" id="categoryTag"></div>
+    </div>
+    <div class="question-card" id="questionCard">
+      <div class="question-emoji" id="questionEmoji"></div>
+      <div class="question-text" id="questionText"></div>
+      <div class="choices" id="choices"></div>
+      <div class="naruhodo" id="naruhodo">なるほど！ 💡</div>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div class="results-screen" id="resultsScreen">
+    <div class="results-header">
+      <div class="results-emoji">🎯</div>
+      <div class="results-title">あなたの仕事価値観</div>
+      <div class="results-subtitle">キミが大切にしたい働き方が見えた！</div>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title">📊 仕事価値観チャート</div>
+      <div id="chartRows"></div>
+    </div>
+    <div class="top-values" id="topValues"></div>
+    <div class="companies-section">
+      <div class="companies-title">🏢 相性のいい企業</div>
+      <div id="companyCards"></div>
+    </div>
+    <button class="retry-btn" onclick="location.reload()">もう一度やる 🔄</button>
+  </div>
+</div>
+
+<script>
+const valueLabels = {
+  income: '💰 収入',
+  purpose: '🔥 やりがい',
+  people: '👥 人間関係',
+  freedom: '🕊 自由度',
+  growth: '📈 成長',
+  stability: '🛡 安定'
+};
+const valueKeys = ['income', 'purpose', 'people', 'freedom', 'growth', 'stability'];
+const valueColors = ['#FFB74D', '#F06292', '#4FC3F7', '#81C784', '#BA68C8', '#4DB6AC'];
+
+const questions = [
+  {
+    emoji: '🎯',
+    tag: '価値観',
+    text: '仕事で一番\n大事にしたいのは？',
+    choices: [
+      { icon: '💰', text: '給料が高い', scores: { income: 3, purpose: 0, people: 0, freedom: 0, growth: 1, stability: 1 } },
+      { icon: '🔥', text: 'やりがいがある', scores: { income: 0, purpose: 3, people: 0, freedom: 1, growth: 2, stability: 0 } },
+      { icon: '👥', text: '人間関係がいい', scores: { income: 0, purpose: 1, people: 3, freedom: 0, growth: 0, stability: 2 } },
+      { icon: '🌍', text: '社会に貢献できる', scores: { income: 0, purpose: 2, people: 1, freedom: 0, growth: 2, stability: 0 } }
+    ]
+  },
+  {
+    emoji: '🖥',
+    tag: '働き方',
+    text: '理想の働き方は？',
+    choices: [
+      { icon: '🧑‍💻', text: '一人で集中', scores: { income: 0, purpose: 1, people: 0, freedom: 3, growth: 1, stability: 1 } },
+      { icon: '🎉', text: 'チームでわいわい', scores: { income: 0, purpose: 1, people: 3, freedom: 0, growth: 1, stability: 1 } },
+      { icon: '🏠', text: 'リモートで自由に', scores: { income: 0, purpose: 0, people: 0, freedom: 3, growth: 1, stability: 1 } },
+      { icon: '🏃', text: '現場で体を動かす', scores: { income: 1, purpose: 2, people: 1, freedom: 1, growth: 0, stability: 1 } }
+    ]
+  },
+  {
+    emoji: '👔',
+    tag: '評価',
+    text: '上司にどう\n思われたい？',
+    choices: [
+      { icon: '💪', text: '頼れるやつ', scores: { income: 1, purpose: 1, people: 1, freedom: 0, growth: 2, stability: 2 } },
+      { icon: '💡', text: '発想が面白い', scores: { income: 0, purpose: 2, people: 0, freedom: 2, growth: 2, stability: 0 } },
+      { icon: '📋', text: '真面目で確実', scores: { income: 1, purpose: 0, people: 1, freedom: 0, growth: 1, stability: 3 } },
+      { icon: '😊', text: 'ムードメーカー', scores: { income: 0, purpose: 1, people: 3, freedom: 1, growth: 0, stability: 1 } }
+    ]
+  },
+  {
+    emoji: '😰',
+    tag: 'メンタル',
+    text: '失敗した時\nどうする？',
+    choices: [
+      { icon: '🔍', text: '原因を分析する', scores: { income: 0, purpose: 1, people: 0, freedom: 0, growth: 3, stability: 1 } },
+      { icon: '🔄', text: 'すぐ切り替える', scores: { income: 0, purpose: 1, people: 0, freedom: 2, growth: 1, stability: 1 } },
+      { icon: '💬', text: '誰かに相談する', scores: { income: 0, purpose: 0, people: 3, freedom: 0, growth: 1, stability: 1 } },
+      { icon: '✊', text: '二度と同じミスしない', scores: { income: 1, purpose: 2, people: 0, freedom: 0, growth: 2, stability: 2 } }
+    ]
+  },
+  {
+    emoji: '🚫',
+    tag: '適性',
+    text: 'やりたくない仕事は？',
+    choices: [
+      { icon: '🖥', text: 'デスクワーク', scores: { income: 0, purpose: 0, people: 1, freedom: 2, growth: 0, stability: 0 } },
+      { icon: '🛎', text: '接客', scores: { income: 1, purpose: 0, people: 0, freedom: 2, growth: 0, stability: 1 } },
+      { icon: '🏋', text: '力仕事', scores: { income: 0, purpose: 0, people: 1, freedom: 1, growth: 1, stability: 1 } },
+      { icon: '🔬', text: '細かい作業', scores: { income: 1, purpose: 1, people: 1, freedom: 1, growth: 0, stability: 0 } }
+    ]
+  },
+  {
+    emoji: '🍱',
+    tag: 'ライフスタイル',
+    text: 'お昼休みの\n過ごし方は？',
+    choices: [
+      { icon: '👫', text: '同僚とランチ', scores: { income: 0, purpose: 0, people: 3, freedom: 0, growth: 0, stability: 2 } },
+      { icon: '📖', text: '一人で読書', scores: { income: 0, purpose: 1, people: 0, freedom: 3, growth: 2, stability: 0 } },
+      { icon: '🚶', text: '外を散歩', scores: { income: 0, purpose: 0, people: 0, freedom: 3, growth: 0, stability: 1 } },
+      { icon: '💻', text: '仕事の続き', scores: { income: 2, purpose: 2, people: 0, freedom: 0, growth: 2, stability: 0 } }
+    ]
+  },
+  {
+    emoji: '🔮',
+    tag: 'キャリア',
+    text: '10年後の理想は？',
+    choices: [
+      { icon: '🚀', text: '独立起業', scores: { income: 2, purpose: 2, people: 0, freedom: 3, growth: 3, stability: 0 } },
+      { icon: '🎓', text: '専門家になる', scores: { income: 1, purpose: 2, people: 0, freedom: 1, growth: 3, stability: 1 } },
+      { icon: '👨‍💼', text: '管理職', scores: { income: 3, purpose: 1, people: 2, freedom: 0, growth: 2, stability: 2 } },
+      { icon: '🏝', text: 'のんびり暮らす', scores: { income: 0, purpose: 0, people: 1, freedom: 3, growth: 0, stability: 3 } }
+    ]
+  },
+  {
+    emoji: '🚃',
+    tag: '環境',
+    text: '通勤について\nどう思う？',
+    choices: [
+      { icon: '🏙', text: '都会の電車OK', scores: { income: 1, purpose: 1, people: 1, freedom: 0, growth: 1, stability: 1 } },
+      { icon: '🚗', text: '車通勤がいい', scores: { income: 0, purpose: 0, people: 0, freedom: 2, growth: 0, stability: 2 } },
+      { icon: '🚶', text: '歩いて行きたい', scores: { income: 0, purpose: 0, people: 0, freedom: 2, growth: 0, stability: 3 } },
+      { icon: '🏠', text: 'リモートがいい', scores: { income: 0, purpose: 0, people: 0, freedom: 3, growth: 1, stability: 1 } }
+    ]
+  },
+  {
+    emoji: '⚖',
+    tag: '優先度',
+    text: '給料 vs やりがい\nどっちを取る？',
+    choices: [
+      { icon: '💰', text: '絶対に給料', scores: { income: 3, purpose: 0, people: 0, freedom: 0, growth: 0, stability: 3 } },
+      { icon: '🔥', text: '絶対にやりがい', scores: { income: 0, purpose: 3, people: 0, freedom: 1, growth: 2, stability: 0 } },
+      { icon: '🤝', text: 'バランス重視', scores: { income: 1, purpose: 1, people: 1, freedom: 1, growth: 1, stability: 2 } },
+      { icon: '🤷', text: '時期による', scores: { income: 1, purpose: 1, people: 0, freedom: 2, growth: 1, stability: 1 } }
+    ]
+  },
+  {
+    emoji: '🏢',
+    tag: '雰囲気',
+    text: '理想の職場の\n雰囲気は？',
+    choices: [
+      { icon: '🎊', text: 'ワイワイ系', scores: { income: 0, purpose: 1, people: 3, freedom: 1, growth: 0, stability: 0 } },
+      { icon: '🤫', text: '静か集中系', scores: { income: 1, purpose: 1, people: 0, freedom: 2, growth: 2, stability: 2 } },
+      { icon: '🏠', text: 'アットホーム', scores: { income: 0, purpose: 0, people: 3, freedom: 1, growth: 0, stability: 3 } },
+      { icon: '⚡', text: '刺激的・ベンチャー系', scores: { income: 1, purpose: 2, people: 0, freedom: 2, growth: 3, stability: 0 } }
+    ]
+  }
+];
+
+const companies = [
+  { name: '山田農園', industry: '🌾 農業', values: { income: 1, purpose: 3, people: 3, freedom: 2, growth: 1, stability: 2 }, reason: '自然の中で仲間と一緒に働ける環境。やりがいと人のつながりを大切にする社風。' },
+  { name: 'テックラボ信州', industry: '💻 IT', values: { income: 2, purpose: 2, people: 1, freedom: 3, growth: 3, stability: 1 }, reason: 'リモートOK・フレックス制度あり。最新技術に触れながら自由に成長できる。' },
+  { name: '地元信用金庫', industry: '🏦 金融', values: { income: 2, purpose: 1, people: 2, freedom: 1, growth: 1, stability: 3 }, reason: '安定した環境で地域に貢献。福利厚生が充実していて長く働ける。' },
+  { name: 'クリエイト工房', industry: '🎨 デザイン', values: { income: 1, purpose: 3, people: 2, freedom: 3, growth: 2, stability: 1 }, reason: '自分のアイデアを形にできる。自由な社風でクリエイティブに働ける。' },
+  { name: 'まるごと観光', industry: '🗺 観光', values: { income: 1, purpose: 2, people: 3, freedom: 2, growth: 2, stability: 1 }, reason: '地元の魅力を発信する仕事。人と接するのが好きな人にぴったり。' },
+  { name: '太陽電機', industry: '⚡ 製造業', values: { income: 3, purpose: 1, people: 2, freedom: 1, growth: 2, stability: 3 }, reason: '安定した収入と確かな技術力。ものづくりの達成感を味わえる。' }
+];
+
+let currentQ = 0;
+let answers = [];
+let scores = {};
+valueKeys.forEach(k => scores[k] = 0);
+
+const naruhodoTexts = ['なるほど！ 💡', 'いいね！ 👍', 'わかる〜！ 😊', 'おもしろい！ ✨', 'いい選択！ 🎯'];
+
+function startQuiz() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'flex';
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[currentQ];
+  document.getElementById('progressBar').style.width = `${(currentQ / questions.length) * 100}%`;
+  document.getElementById('questionCount').textContent = `${currentQ + 1}/10`;
+  document.getElementById('categoryTag').textContent = q.tag;
+  document.getElementById('questionEmoji').textContent = q.emoji;
+  document.getElementById('questionText').textContent = q.text;
+
+  const card = document.getElementById('questionCard');
+  card.classList.remove('exit');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'slideInRight 0.4s ease';
+
+  const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-icon">${c.icon}</span>${c.text}`;
+    btn.onclick = () => selectChoice(i);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function selectChoice(idx) {
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((b, i) => {
+    if (i === idx) b.classList.add('selected');
+    b.style.pointerEvents = 'none';
+  });
+
+  const q = questions[currentQ];
+  const chosen = q.choices[idx];
+  answers.push(idx);
+  Object.keys(chosen.scores).forEach(k => { scores[k] += chosen.scores[k]; });
+
+  // Show naruhodo
+  const nh = document.getElementById('naruhodo');
+  nh.textContent = naruhodoTexts[Math.floor(Math.random() * naruhodoTexts.length)];
+  nh.classList.remove('show');
+  void nh.offsetHeight;
+  nh.classList.add('show');
+
+  setTimeout(() => {
+    const card = document.getElementById('questionCard');
+    card.classList.add('exit');
+    setTimeout(() => {
+      currentQ++;
+      if (currentQ >= questions.length) {
+        showResults();
+      } else {
+        showQuestion();
+      }
+    }, 300);
+  }, 700);
+}
+
+function showResults() {
+  document.getElementById('quizScreen').style.display = 'none';
+  const rs = document.getElementById('resultsScreen');
+  rs.style.display = 'flex';
+
+  document.getElementById('progressBar').style.width = '100%';
+
+  const maxScore = Math.max(...valueKeys.map(k => scores[k]));
+
+  // Chart
+  const chartDiv = document.getElementById('chartRows');
+  chartDiv.innerHTML = '';
+  valueKeys.forEach((k, i) => {
+    const pct = Math.max(10, Math.round((scores[k] / Math.max(maxScore, 1)) * 100));
+    const row = document.createElement('div');
+    row.className = 'chart-row';
+    row.innerHTML = `
+      <div class="chart-label">${valueLabels[k]}</div>
+      <div class="chart-bar-bg">
+        <div class="chart-bar-fill" style="width:${pct}%; background: ${valueColors[i]}; animation-delay: ${i * 0.15}s;">
+          <span class="chart-bar-value">${pct}%</span>
+        </div>
+      </div>
+    `;
+    chartDiv.appendChild(row);
+  });
+
+  // Top values
+  const sorted = valueKeys.map(k => ({ key: k, score: scores[k] })).sort((a, b) => b.score - a.score);
+  const topDiv = document.getElementById('topValues');
+  topDiv.innerHTML = '';
+  sorted.slice(0, 3).forEach(s => {
+    const tag = document.createElement('div');
+    tag.className = 'value-tag';
+    tag.textContent = valueLabels[s.key];
+    topDiv.appendChild(tag);
+  });
+
+  // Company matching
+  const userVector = valueKeys.map(k => scores[k] / Math.max(maxScore, 1));
+  const companyScores = companies.map(c => {
+    const cMax = Math.max(...valueKeys.map(k => c.values[k]));
+    const cVector = valueKeys.map(k => c.values[k] / Math.max(cMax, 1));
+    let dot = 0, magA = 0, magB = 0;
+    for (let i = 0; i < 6; i++) {
+      dot += userVector[i] * cVector[i];
+      magA += userVector[i] ** 2;
+      magB += cVector[i] ** 2;
+    }
+    const similarity = dot / (Math.sqrt(magA) * Math.sqrt(magB) + 0.001);
+    return { ...c, match: Math.round(similarity * 100) };
+  }).sort((a, b) => b.match - a.match);
+
+  const cardsDiv = document.getElementById('companyCards');
+  cardsDiv.innerHTML = '';
+  companyScores.slice(0, 3).forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'company-card';
+    card.style.animationDelay = `${0.8 + i * 0.15}s`;
+    card.innerHTML = `
+      <div class="company-header">
+        <div class="company-name">${c.name}</div>
+        <div class="company-match">${c.match}% マッチ</div>
+      </div>
+      <div class="company-industry">${c.industry}</div>
+      <div class="company-reason">💬 ${c.reason}</div>
+    `;
+    cardsDiv.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>

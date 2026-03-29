@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>地元発見動画選択</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --primary: #D85A30;
+  --primary-light: #F0845A;
+  --primary-pale: #FAECE7;
+  --bg: #FAECE7;
+  --bg-dark: #F5D8CE;
+  --text: #3D1E0E;
+  --text-light: #8B6050;
+  --heart: #EF4444;
+  --card-radius: 16px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 375px;
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+/* Splash */
+.splash {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  background: linear-gradient(135deg, #D85A30 0%, #F0845A 40%, #FBBF24 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 1000; transition: opacity 0.5s, transform 0.5s;
+}
+.splash.hide { opacity: 0; transform: scale(1.05); pointer-events: none; }
+.splash-icon { font-size: 64px; margin-bottom: 16px; animation: wiggle 1.5s ease-in-out infinite; }
+@keyframes wiggle { 0%,100%{ transform: rotate(0); } 25%{ transform: rotate(-8deg); } 75%{ transform: rotate(8deg); } }
+.splash h1 { color: white; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.splash p { color: rgba(255,255,255,0.9); font-size: 14px; text-align: center; padding: 0 32px; margin-bottom: 6px; }
+.splash-sub { color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 32px; }
+.splash-btn {
+  background: white; color: var(--primary); border: none; border-radius: 50px;
+  padding: 14px 40px; font-size: 16px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: transform 0.2s;
+}
+.splash-btn:active { transform: scale(0.95); }
+
+/* Fixed header */
+.app-header {
+  position: fixed; top: 0; left: 0; right: 0; max-width: 375px; margin: 0 auto;
+  background: var(--bg); z-index: 50; padding-top: 8px;
+}
+.app-title {
+  text-align: center; font-size: 14px; font-weight: 700; color: var(--primary);
+  padding: 4px 0 8px;
+}
+
+/* Filter tabs */
+.filter-tabs {
+  display: flex; gap: 6px; padding: 0 12px 10px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-tabs::-webkit-scrollbar { display: none; }
+.filter-tab {
+  flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+  font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+  transition: all 0.25s; background: white; color: var(--text-light);
+  box-shadow: 0 1px 4px rgba(216,90,48,0.08);
+}
+.filter-tab.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(216,90,48,0.3); }
+
+/* Score bar */
+.score-bar-wrap {
+  padding: 0 16px 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.score-label { font-size: 11px; color: var(--text-light); white-space: nowrap; font-weight: 600; }
+.score-track { flex: 1; height: 6px; background: var(--bg-dark); border-radius: 3px; overflow: hidden; }
+.score-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #FBBF24); border-radius: 3px; transition: width 0.5s ease; width: 0; }
+.score-num { font-size: 12px; font-weight: 800; color: var(--primary); min-width: 28px; text-align: right; }
+
+/* Feed */
+.feed { padding: 0 12px; }
+.feed-card {
+  background: white; border-radius: var(--card-radius); margin-bottom: 14px;
+  overflow: hidden; box-shadow: 0 4px 15px rgba(216,90,48,0.07);
+  opacity: 0; transform: translateY(20px);
+  animation: cardIn 0.4s ease forwards;
+  transition: transform 0.2s;
+}
+.feed-card:active { transform: scale(0.98); }
+@keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
+
+.feed-visual {
+  height: 160px; position: relative; display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.feed-emoji { font-size: 56px; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.1)); }
+.feed-play {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,0.85); display: flex; align-items: center; justify-content: center;
+  font-size: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); opacity: 0;
+  transition: opacity 0.2s;
+}
+.feed-card:hover .feed-play { opacity: 1; }
+.feed-time {
+  position: absolute; bottom: 8px; left: 8px;
+  background: rgba(0,0,0,0.5); color: white;
+  padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 600;
+}
+.feed-cat-badge {
+  position: absolute; top: 8px; left: 8px;
+  padding: 3px 10px; border-radius: 10px; font-size: 10px; font-weight: 700;
+  color: white;
+}
+
+.feed-body { padding: 14px 16px; }
+.feed-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; line-height: 1.3; }
+.feed-desc { font-size: 12px; color: var(--text-light); line-height: 1.6; margin-bottom: 12px; }
+.feed-footer { display: flex; align-items: center; justify-content: space-between; }
+.feed-meta { font-size: 11px; color: var(--text-light); }
+.heart-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 8px 16px; border-radius: 20px; border: 2px solid #F5D8CE;
+  background: white; font-size: 13px; font-weight: 700; color: var(--text-light);
+  cursor: pointer; transition: all 0.3s;
+}
+.heart-btn.liked {
+  background: #FEF2F2; border-color: var(--heart); color: var(--heart);
+  animation: heartPop 0.35s ease;
+}
+@keyframes heartPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.2); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* Hidden cards */
+.feed-card.hidden { display: none; }
+
+/* Results overlay */
+.results {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  background: var(--bg); z-index: 60;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  padding: 36px 16px 40px;
+}
+.results.show { transform: translateY(0); }
+
+.res-head { text-align: center; margin-bottom: 24px; }
+.res-head .icon { font-size: 52px; display: block; margin-bottom: 8px; animation: wiggle 1.5s ease-in-out infinite; }
+.res-head h2 { font-size: 22px; font-weight: 800; }
+.res-head p { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+
+.r-card {
+  background: white; border-radius: 16px; padding: 20px; margin-bottom: 14px;
+  box-shadow: 0 4px 15px rgba(216,90,48,0.08);
+  opacity: 0; transform: translateY(20px); transition: all 0.5s;
+}
+.r-card.vis { opacity: 1; transform: translateY(0); }
+.r-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+/* AI box */
+.ai-box {
+  background: linear-gradient(135deg, #D85A30, #F0845A);
+  color: white; border-radius: 16px; padding: 20px; margin-bottom: 14px;
+  box-shadow: 0 4px 20px rgba(216,90,48,0.3);
+}
+.ai-box .lbl { font-size: 11px; opacity: 0.8; margin-bottom: 8px; }
+.ai-box p { font-size: 14px; line-height: 1.7; }
+
+/* Score ring */
+.score-ring-wrap { display: flex; justify-content: center; margin: 8px 0 12px; }
+.score-ring { position: relative; width: 140px; height: 140px; }
+.score-ring svg { transform: rotate(-90deg); }
+.score-ring-label {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.score-ring-num { font-size: 36px; font-weight: 900; color: var(--primary); }
+.score-ring-text { font-size: 11px; color: var(--text-light); }
+
+/* Map-like viz */
+.map-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0;
+}
+.map-cell {
+  background: var(--bg); border-radius: 12px; padding: 12px 8px;
+  text-align: center; transition: all 0.3s;
+  animation: popIn 0.4s cubic-bezier(0.4,0,0.2,1) both;
+}
+.map-cell.active { background: linear-gradient(135deg, #FDDCCC, #FEF3C7); border: 2px solid var(--primary); }
+.map-cell .cell-emoji { font-size: 24px; display: block; margin-bottom: 4px; }
+.map-cell .cell-name { font-size: 11px; font-weight: 700; }
+.map-cell .cell-count { font-size: 10px; color: var(--text-light); margin-top: 2px; }
+@keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Suggestion list */
+.suggest-item {
+  display: flex; gap: 12px; align-items: center; padding: 12px 0;
+  border-bottom: 1px solid var(--bg);
+}
+.suggest-item:last-child { border-bottom: none; }
+.suggest-icon {
+  width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.suggest-info { flex: 1; }
+.suggest-name { font-size: 14px; font-weight: 700; }
+.suggest-desc { font-size: 11px; color: var(--text-light); margin-top: 2px; }
+.suggest-new {
+  font-size: 10px; font-weight: 700; color: var(--primary);
+  background: var(--primary-pale); padding: 2px 8px; border-radius: 8px;
+}
+
+.restart-btn {
+  display: block; width: 100%; padding: 16px;
+  background: var(--primary); color: white; border: none; border-radius: 14px;
+  font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  transition: transform 0.2s;
+}
+.restart-btn:active { transform: scale(0.97); }
+
+/* See results floating btn */
+.see-results-btn {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  max-width: 375px; z-index: 45;
+  padding: 14px 32px; border-radius: 50px; border: none;
+  background: linear-gradient(135deg, var(--primary), #F0845A);
+  color: white; font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(216,90,48,0.4);
+  transition: all 0.3s; opacity: 0; pointer-events: none;
+}
+.see-results-btn.show { opacity: 1; pointer-events: auto; animation: float 2s ease-in-out infinite; }
+@keyframes float { 0%,100%{ transform: translateX(-50%) translateY(0); } 50%{ transform: translateX(-50%) translateY(-4px); } }
+</style>
+</head>
+<body>
+
+<div class="splash" id="splash">
+  <div class="splash-icon">📍</div>
+  <h1>地元発見動画選択</h1>
+  <p>知らなかった地元の魅力を動画で発見しよう</p>
+  <div class="splash-sub">10本の動画 / タップで「気になる」を選ぶだけ</div>
+  <button class="splash-btn" onclick="startApp()">発見スタート</button>
+</div>
+
+<div class="app-header" id="appHeader" style="display:none">
+  <div class="app-title">📍 地元発見動画選択</div>
+  <div class="filter-tabs" id="filterTabs"></div>
+  <div class="score-bar-wrap">
+    <span class="score-label">地元発見スコア</span>
+    <div class="score-track"><div class="score-fill" id="scoreFill"></div></div>
+    <span class="score-num" id="scoreNum">0</span>
+  </div>
+</div>
+
+<div class="feed" id="feed" style="display:none; padding-top: 120px;"></div>
+
+<button class="see-results-btn" id="seeResults" onclick="showResults()">結果を見る 🔮</button>
+
+<div class="results" id="results">
+  <div class="res-head">
+    <span class="icon">📍</span>
+    <h2>あなたの地元発見レポート</h2>
+    <p>選んだ動画からわかる、あなたの興味マップ</p>
+  </div>
+  <div id="resContent"></div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id: 'all', label: 'すべて', emoji: '🌟' },
+  { id: 'people', label: '人', emoji: '👤' },
+  { id: 'places', label: '場所', emoji: '📍' },
+  { id: 'industry', label: '産業', emoji: '🏭' },
+  { id: 'history', label: '歴史', emoji: '🏯' },
+  { id: 'challenges', label: '課題', emoji: '💡' },
+];
+
+const ITEMS = [
+  { title: '100年続く醤油蔵', desc: '明治時代から続く醤油蔵の5代目。木桶仕込みの伝統製法を守りながら、新しい商品開発にも挑戦中。', emoji: '🫙', gradient: 'linear-gradient(135deg, #92400e, #d97706)', cat: 'industry', catLabel: '産業', time: '0:45', badge: '#92400e' },
+  { title: '廃校をリノベしたカフェ', desc: '10年前に廃校になった小学校が、地域の交流拠点として生まれ変わった。教室がおしゃれなカフェに。', emoji: '☕', gradient: 'linear-gradient(135deg, #7c3aed, #a78bfa)', cat: 'places', catLabel: '場所', time: '0:38', badge: '#7c3aed' },
+  { title: '地元の若手農家集団', desc: '20代〜30代の若者が集まって結成した農業グループ。SNSで発信しながら、新しい農業のカタチを模索。', emoji: '🌾', gradient: 'linear-gradient(135deg, #16a34a, #86efac)', cat: 'people', catLabel: '人', time: '0:42', badge: '#16a34a' },
+  { title: '知られざる絶景スポット', desc: '地元民しか知らない秘密の展望台。山道を30分歩いた先に広がる、息を飲むほどの景色。', emoji: '🏔️', gradient: 'linear-gradient(135deg, #0284c7, #7dd3fc)', cat: 'places', catLabel: '場所', time: '0:35', badge: '#0284c7' },
+  { title: '伝統工芸の職人', desc: '70歳を超える陶芸職人。後継者不足に悩みながらも、毎日窯の前に立ち続ける姿に密着。', emoji: '🏺', gradient: 'linear-gradient(135deg, #b45309, #fbbf24)', cat: 'history', catLabel: '歴史', time: '0:48', badge: '#b45309' },
+  { title: '地域おこし協力隊の活動', desc: '東京から移住してきた協力隊員の日常。地域の課題に真正面から向き合う1日に密着。', emoji: '🙋', gradient: 'linear-gradient(135deg, #dc2626, #fca5a5)', cat: 'challenges', catLabel: '課題', time: '0:40', badge: '#dc2626' },
+  { title: '地元発のスタートアップ', desc: '地方都市からユニークなサービスを展開するスタートアップ。少人数で世界に挑戦する姿。', emoji: '🚀', gradient: 'linear-gradient(135deg, #2563eb, #93c5fd)', cat: 'industry', catLabel: '産業', time: '0:36', badge: '#2563eb' },
+  { title: '昔ながらの商店街の今', desc: 'シャッター商店街と呼ばれた街に、若者が新しい店を次々オープン。レトロ×新しさの融合。', emoji: '🏪', gradient: 'linear-gradient(135deg, #ea580c, #fdba74)', cat: 'challenges', catLabel: '課題', time: '0:44', badge: '#ea580c' },
+  { title: '地元の祭りの裏側', desc: '華やかな祭りの裏で準備に奔走する人々。半年前から始まる準備と、受け継がれる熱い思い。', emoji: '🎆', gradient: 'linear-gradient(135deg, #db2777, #f9a8d4)', cat: 'history', catLabel: '歴史', time: '0:50', badge: '#db2777' },
+  { title: '海沿いのサーフスポット', desc: '朝5時、サーファーたちが集まるビーチ。波の情報を共有し合うコミュニティの温かさ。', emoji: '🏄', gradient: 'linear-gradient(135deg, #0891b2, #67e8f9)', cat: 'people', catLabel: '人', time: '0:33', badge: '#0891b2' },
+];
+
+let likedIds = new Set();
+let activeFilter = 'all';
+
+function startApp() {
+  document.getElementById('splash').classList.add('hide');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('appHeader').style.display = 'block';
+    document.getElementById('feed').style.display = 'block';
+    renderTabs();
+    renderFeed();
+  }, 500);
+}
+
+function renderTabs() {
+  const wrap = document.getElementById('filterTabs');
+  wrap.innerHTML = CATEGORIES.map(c =>
+    `<button class="filter-tab ${c.id === activeFilter ? 'active' : ''}" onclick="setFilter('${c.id}')">${c.emoji} ${c.label}</button>`
+  ).join('');
+}
+
+function setFilter(id) {
+  activeFilter = id;
+  renderTabs();
+  renderFeed();
+}
+
+function renderFeed() {
+  const feed = document.getElementById('feed');
+  const filtered = activeFilter === 'all' ? ITEMS : ITEMS.filter(it => it.cat === activeFilter);
+  feed.innerHTML = filtered.map((it, i) => {
+    const liked = likedIds.has(it.title);
+    return `<div class="feed-card" style="animation-delay:${i * 0.06}s">
+      <div class="feed-visual" style="background:${it.gradient}">
+        <div class="feed-emoji">${it.emoji}</div>
+        <div class="feed-play">▶</div>
+        <div class="feed-time">${it.time}</div>
+        <div class="feed-cat-badge" style="background:${it.badge}">${it.catLabel}</div>
+      </div>
+      <div class="feed-body">
+        <div class="feed-title">${it.title}</div>
+        <div class="feed-desc">${it.desc}</div>
+        <div class="feed-footer">
+          <span class="feed-meta">${it.catLabel} / ${it.time}</span>
+          <button class="heart-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${it.title}', this)">
+            ${liked ? '❤️ 気になる' : '🤍 気になる'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateScore();
+}
+
+function toggleLike(title, btn) {
+  if (likedIds.has(title)) {
+    likedIds.delete(title);
+    btn.classList.remove('liked');
+    btn.innerHTML = '🤍 気になる';
+  } else {
+    likedIds.add(title);
+    btn.classList.add('liked');
+    btn.innerHTML = '❤️ 気になる';
+  }
+  updateScore();
+}
+
+function updateScore() {
+  const score = Math.round((likedIds.size / ITEMS.length) * 100);
+  document.getElementById('scoreFill').style.width = score + '%';
+  document.getElementById('scoreNum').textContent = score;
+  const btn = document.getElementById('seeResults');
+  if (likedIds.size >= 2) btn.classList.add('show');
+  else btn.classList.remove('show');
+}
+
+function showResults() {
+  const likedItems = ITEMS.filter(it => likedIds.has(it.title));
+  const catCounts = {};
+  likedItems.forEach(it => { catCounts[it.cat] = (catCounts[it.cat] || 0) + 1; });
+  const score = Math.round((likedIds.size / ITEMS.length) * 100);
+
+  const catMeta = {
+    people: { label: '人', emoji: '👤', color: '#16a34a' },
+    places: { label: '場所', emoji: '📍', color: '#7c3aed' },
+    industry: { label: '産業', emoji: '🏭', color: '#2563eb' },
+    history: { label: '歴史', emoji: '🏯', color: '#b45309' },
+    challenges: { label: '課題', emoji: '💡', color: '#dc2626' },
+  };
+
+  // AI insight
+  const topCat = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+  let insight = '';
+  if (topCat.length > 0) {
+    const top = catMeta[topCat[0][0]];
+    insight = `あなたは「${top.label}」に関する地元の動画に特に興味を持ちました。`;
+    if (topCat.length > 1) {
+      const second = catMeta[topCat[1][0]];
+      insight += `「${second.label}」にも関心があり、地元の多面的な魅力に目を向けています。`;
+    }
+    insight += '普段は見過ごしていた地元の一面を、もっと深く探ってみましょう！';
+  }
+
+  // Suggestions (items NOT liked)
+  const notLiked = ITEMS.filter(it => !likedIds.has(it.title)).slice(0, 3);
+
+  let html = '';
+
+  // Score ring
+  html += `<div class="r-card"><h3>🏆 地元発見スコア</h3>
+    <div class="score-ring-wrap">
+      <div class="score-ring">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="#F5D8CE" stroke-width="10"/>
+          <circle cx="70" cy="70" r="60" fill="none" stroke="url(#scoreGrad)" stroke-width="10"
+            stroke-linecap="round" stroke-dasharray="${Math.round(score * 3.77)} 377"
+            style="transition: stroke-dasharray 1.5s ease"/>
+          <defs><linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#D85A30"/><stop offset="100%" stop-color="#FBBF24"/>
+          </linearGradient></defs>
+        </svg>
+        <div class="score-ring-label">
+          <div class="score-ring-num">${score}</div>
+          <div class="score-ring-text">/ 100</div>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:13px;color:var(--text-light)">${ITEMS.length}本中${likedIds.size}本の動画に興味を持ちました</p>
+  </div>`;
+
+  // AI insight
+  html += `<div class="ai-box r-card"><div class="lbl">🤖 AI分析</div><p>${insight}</p></div>`;
+
+  // Interest map
+  html += `<div class="r-card"><h3>🗺️ 興味エリアマップ</h3><div class="map-grid">`;
+  Object.entries(catMeta).forEach(([id, meta], i) => {
+    const count = catCounts[id] || 0;
+    const isActive = count > 0;
+    html += `<div class="map-cell ${isActive ? 'active' : ''}" style="animation-delay:${i * 0.1}s">
+      <span class="cell-emoji">${meta.emoji}</span>
+      <div class="cell-name">${meta.label}</div>
+      <div class="cell-count">${count > 0 ? count + '本選択' : '未選択'}</div>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // Liked items
+  html += `<div class="r-card"><h3>❤️ 気になった動画</h3>`;
+  likedItems.forEach(it => {
+    html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:28px">${it.emoji}</span>
+      <div><div style="font-size:14px;font-weight:700">${it.title}</div>
+      <div style="font-size:11px;color:var(--text-light)">${it.catLabel}</div></div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Suggestions
+  if (notLiked.length > 0) {
+    html += `<div class="r-card"><h3>🔍 あなたがまだ知らない地元</h3>`;
+    notLiked.forEach(it => {
+      html += `<div class="suggest-item">
+        <div class="suggest-icon" style="background:${it.gradient}">${it.emoji}</div>
+        <div class="suggest-info">
+          <div class="suggest-name">${it.title}</div>
+          <div class="suggest-desc">${it.desc.slice(0, 30)}...</div>
+        </div>
+        <span class="suggest-new">NEW</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `<button class="restart-btn" onclick="restart()">もう一度やる 🔄</button>`;
+
+  document.getElementById('resContent').innerHTML = html;
+  document.getElementById('results').classList.add('show');
+  document.getElementById('seeResults').classList.remove('show');
+
+  setTimeout(() => {
+    document.querySelectorAll('.r-card').forEach((c, i) => setTimeout(() => c.classList.add('vis'), 100 + i * 150));
+  }, 400);
+}
+
+function restart() {
+  likedIds.clear();
+  activeFilter = 'all';
+  document.getElementById('results').classList.remove('show');
+  setTimeout(() => {
+    renderTabs();
+    renderFeed();
+  }, 500);
+}
+</script>
+</body>
+</html>

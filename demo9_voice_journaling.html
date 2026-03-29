@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>音声ジャーナリング</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --primary:#7F77DD;--primary-light:#9B94E8;--primary-dark:#6A62C4;
+    --bg:#EEEDFE;--bg-card:#fff;--text:#2D2B3D;--text-light:#6E6B8A;
+    --accent:#E8B4F8;--success:#6DD49E;--warn:#F5C76D;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN',sans-serif;
+    background:var(--bg);color:var(--text);max-width:375px;margin:0 auto;
+    min-height:100vh;overflow-x:hidden;position:relative;
+  }
+  /* Header */
+  .header{
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    padding:48px 20px 20px;color:#fff;border-radius:0 0 24px 24px;
+    position:relative;overflow:hidden;
+  }
+  .header::after{
+    content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;
+    background:rgba(255,255,255,0.1);border-radius:50%;
+  }
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .header h1{font-size:18px;font-weight:700;letter-spacing:0.5px}
+  .header-sub{font-size:12px;opacity:0.85}
+  .streak-badge{
+    background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:20px;
+    font-size:12px;display:flex;align-items:center;gap:4px;
+  }
+  /* Stats Bar */
+  .stats-bar{
+    display:flex;gap:12px;padding:16px 20px;margin-top:-1px;
+  }
+  .stat-card{
+    flex:1;background:var(--bg-card);border-radius:16px;padding:14px 10px;
+    text-align:center;box-shadow:0 2px 12px rgba(127,119,221,0.08);
+  }
+  .stat-num{font-size:22px;font-weight:700;color:var(--primary)}
+  .stat-label{font-size:10px;color:var(--text-light);margin-top:2px}
+  /* Emotion bar */
+  .emotion-bar{
+    margin:0 20px;background:var(--bg-card);border-radius:16px;padding:14px 16px;
+    box-shadow:0 2px 12px rgba(127,119,221,0.08);
+  }
+  .emotion-bar-title{font-size:11px;color:var(--text-light);margin-bottom:8px;font-weight:600}
+  .emotion-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .emotion-tag{
+    padding:4px 10px;border-radius:20px;font-size:11px;
+    background:var(--bg);color:var(--primary);font-weight:500;
+  }
+  .emotion-tag.hot{background:rgba(127,119,221,0.15)}
+  /* Prompt Card */
+  .prompt-section{padding:20px}
+  .prompt-card{
+    background:var(--bg-card);border-radius:20px;padding:24px 20px;
+    box-shadow:0 4px 20px rgba(127,119,221,0.1);position:relative;overflow:hidden;
+  }
+  .prompt-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg,var(--primary),var(--accent));
+  }
+  .prompt-label{
+    font-size:11px;color:var(--primary);font-weight:600;
+    text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;
+  }
+  .prompt-text{
+    font-size:18px;font-weight:600;line-height:1.6;color:var(--text);
+  }
+  .prompt-counter{
+    font-size:11px;color:var(--text-light);margin-top:12px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .prompt-dots{display:flex;gap:4px}
+  .prompt-dot{
+    width:6px;height:6px;border-radius:50%;background:var(--bg);
+    transition:all 0.3s;
+  }
+  .prompt-dot.active{background:var(--primary);width:18px;border-radius:3px}
+  /* Record Area */
+  .record-area{
+    display:flex;flex-direction:column;align-items:center;
+    padding:10px 20px 20px;
+  }
+  .record-btn{
+    width:88px;height:88px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    color:#fff;font-size:32px;display:flex;align-items:center;justify-content:center;
+    position:relative;transition:all 0.3s;box-shadow:0 4px 24px rgba(127,119,221,0.3);
+  }
+  .record-btn:active{transform:scale(0.95)}
+  .record-btn .mic-icon{transition:all 0.3s}
+  .record-btn.recording{
+    background:linear-gradient(135deg,#E85D75,#F08A9E);
+    box-shadow:0 4px 24px rgba(232,93,117,0.4);
+  }
+  .record-btn.recording .mic-icon{display:none}
+  .record-btn.recording .stop-icon{display:block}
+  .stop-icon{display:none;width:22px;height:22px;background:#fff;border-radius:4px}
+  /* Pulse rings */
+  .pulse-ring{
+    position:absolute;width:100%;height:100%;border-radius:50%;
+    border:2px solid var(--primary);opacity:0;
+  }
+  .recording .pulse-ring{animation:pulse-out 1.5s ease-out infinite}
+  .recording .pulse-ring:nth-child(2){animation-delay:0.5s}
+  .recording .pulse-ring:nth-child(3){animation-delay:1s}
+  @keyframes pulse-out{
+    0%{transform:scale(1);opacity:0.6}
+    100%{transform:scale(2.2);opacity:0}
+  }
+  .recording .pulse-ring{border-color:#E85D75}
+  /* Waveform */
+  .waveform{
+    display:flex;align-items:center;gap:3px;height:40px;
+    margin-top:16px;opacity:0;transition:opacity 0.3s;
+  }
+  .waveform.visible{opacity:1}
+  .wave-bar{
+    width:3px;background:var(--primary);border-radius:2px;
+    height:8px;transition:height 0.1s;
+  }
+  .waveform.active .wave-bar{animation:wave 0.6s ease-in-out infinite alternate}
+  .wave-bar:nth-child(1){animation-delay:0s}
+  .wave-bar:nth-child(2){animation-delay:0.1s}
+  .wave-bar:nth-child(3){animation-delay:0.05s}
+  .wave-bar:nth-child(4){animation-delay:0.15s}
+  .wave-bar:nth-child(5){animation-delay:0.02s}
+  .wave-bar:nth-child(6){animation-delay:0.12s}
+  .wave-bar:nth-child(7){animation-delay:0.07s}
+  .wave-bar:nth-child(8){animation-delay:0.18s}
+  .wave-bar:nth-child(9){animation-delay:0.03s}
+  .wave-bar:nth-child(10){animation-delay:0.14s}
+  .wave-bar:nth-child(11){animation-delay:0.08s}
+  .wave-bar:nth-child(12){animation-delay:0.16s}
+  .wave-bar:nth-child(13){animation-delay:0.04s}
+  .wave-bar:nth-child(14){animation-delay:0.11s}
+  .wave-bar:nth-child(15){animation-delay:0.06s}
+  .wave-bar:nth-child(16){animation-delay:0.13s}
+  .wave-bar:nth-child(17){animation-delay:0.09s}
+  .wave-bar:nth-child(18){animation-delay:0.17s}
+  .wave-bar:nth-child(19){animation-delay:0.01s}
+  .wave-bar:nth-child(20){animation-delay:0.19s}
+  @keyframes wave{
+    0%{height:6px}
+    100%{height:32px}
+  }
+  .waveform.recording-wave .wave-bar{background:#E85D75}
+  .timer{
+    font-size:14px;color:var(--text-light);margin-top:8px;
+    font-variant-numeric:tabular-nums;opacity:0;transition:opacity 0.3s;
+  }
+  .timer.visible{opacity:1}
+  .record-hint{font-size:12px;color:var(--text-light);margin-top:8px}
+  /* Transcription */
+  .transcription-area{
+    padding:0 20px 20px;display:none;
+  }
+  .transcription-area.visible{display:block}
+  .transcript-card{
+    background:var(--bg-card);border-radius:16px;padding:16px;
+    box-shadow:0 2px 12px rgba(127,119,221,0.08);margin-bottom:12px;
+  }
+  .transcript-label{
+    font-size:11px;color:var(--text-light);font-weight:600;margin-bottom:8px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .transcript-text{
+    font-size:14px;line-height:1.7;color:var(--text);
+    border-left:3px solid var(--primary-light);padding-left:12px;
+  }
+  .transcript-text .cursor{
+    display:inline-block;width:2px;height:14px;background:var(--primary);
+    animation:blink 0.8s infinite;vertical-align:middle;margin-left:2px;
+  }
+  @keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+  /* Analysis Card */
+  .analysis-card{
+    background:var(--bg-card);border-radius:16px;padding:18px;
+    box-shadow:0 2px 12px rgba(127,119,221,0.08);
+    border:1px solid rgba(127,119,221,0.1);display:none;
+  }
+  .analysis-card.visible{display:block;animation:slideUp 0.5s ease}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .analysis-header{
+    font-size:13px;font-weight:700;color:var(--primary);margin-bottom:14px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .analysis-section{margin-bottom:14px}
+  .analysis-section:last-child{margin-bottom:0}
+  .analysis-section-title{
+    font-size:11px;color:var(--text-light);font-weight:600;margin-bottom:8px;
+  }
+  .analysis-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .a-tag{
+    padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;
+  }
+  .a-tag.emotion{background:rgba(232,180,248,0.2);color:#9B5FBF}
+  .a-tag.keyword{background:rgba(127,119,221,0.1);color:var(--primary)}
+  .a-tag.pattern{background:rgba(109,212,158,0.15);color:#2E8B57}
+  .analysis-note{
+    font-size:12px;line-height:1.6;color:var(--text-light);
+    background:var(--bg);padding:10px 12px;border-radius:10px;
+  }
+  /* Next button */
+  .next-prompt-btn{
+    display:none;width:calc(100% - 40px);margin:0 20px 24px;padding:14px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    color:#fff;border:none;border-radius:14px;font-size:14px;font-weight:600;
+    cursor:pointer;letter-spacing:0.5px;
+    box-shadow:0 4px 16px rgba(127,119,221,0.25);
+  }
+  .next-prompt-btn.visible{display:block;animation:slideUp 0.4s ease}
+  .next-prompt-btn:active{transform:scale(0.98)}
+  /* Monthly change */
+  .monthly-section{
+    margin:0 20px 24px;background:var(--bg-card);border-radius:16px;
+    padding:16px;box-shadow:0 2px 12px rgba(127,119,221,0.08);
+  }
+  .monthly-title{font-size:11px;color:var(--text-light);font-weight:600;margin-bottom:10px}
+  .monthly-chart{display:flex;align-items:end;gap:6px;height:60px}
+  .monthly-bar{
+    flex:1;background:var(--bg);border-radius:4px 4px 0 0;position:relative;
+    transition:height 0.6s ease;
+  }
+  .monthly-bar .fill{
+    position:absolute;bottom:0;left:0;right:0;border-radius:4px 4px 0 0;
+    background:linear-gradient(to top,var(--primary),var(--primary-light));
+    transition:height 0.8s ease;
+  }
+  .monthly-bar .day{
+    position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+    font-size:9px;color:var(--text-light);
+  }
+  /* Safe space notice */
+  .safe-notice{
+    margin:0 20px 20px;text-align:center;padding:12px;
+    background:rgba(127,119,221,0.05);border-radius:12px;
+  }
+  .safe-notice p{font-size:11px;color:var(--text-light);line-height:1.5}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>音声ジャーナリング</h1>
+      <div class="header-sub">声で自分を知る、毎日の記録</div>
+    </div>
+    <div class="streak-badge">🔥 <span id="streakCount">5</span>日連続</div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-num" id="recordCount">12</div>
+    <div class="stat-label">記録回数</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="font-size:18px" id="totalTime">23:45</div>
+    <div class="stat-label">合計時間</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num" style="font-size:16px">😊</div>
+    <div class="stat-label">今週の気分</div>
+  </div>
+</div>
+
+<div class="emotion-bar">
+  <div class="emotion-bar-title">よく使う感情語 TOP5</div>
+  <div class="emotion-tags">
+    <span class="emotion-tag hot">嬉しい 😊</span>
+    <span class="emotion-tag hot">疲れた 😮‍💨</span>
+    <span class="emotion-tag">楽しい ✨</span>
+    <span class="emotion-tag">不安 😟</span>
+    <span class="emotion-tag">ワクワク 🤩</span>
+  </div>
+</div>
+
+<div class="prompt-section">
+  <div class="prompt-card">
+    <div class="prompt-label">💬 今日のお題</div>
+    <div class="prompt-text" id="promptText">今週、一番頑張ったことを話してみて 💪</div>
+    <div class="prompt-counter">
+      <div class="prompt-dots" id="promptDots">
+        <div class="prompt-dot active"></div>
+        <div class="prompt-dot"></div>
+        <div class="prompt-dot"></div>
+        <div class="prompt-dot"></div>
+        <div class="prompt-dot"></div>
+      </div>
+      <span id="promptNum">1 / 5</span>
+    </div>
+  </div>
+</div>
+
+<div class="record-area">
+  <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
+    <span class="pulse-ring"></span>
+    <span class="pulse-ring"></span>
+    <span class="pulse-ring"></span>
+    <span class="mic-icon">🎙️</span>
+    <div class="stop-icon"></div>
+  </button>
+  <div class="waveform" id="waveform">
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+    <div class="wave-bar"></div><div class="wave-bar"></div>
+  </div>
+  <div class="timer" id="timer">00:00</div>
+  <div class="record-hint" id="recordHint">タップして話し始めよう</div>
+</div>
+
+<div class="transcription-area" id="transcriptionArea">
+  <div class="transcript-card">
+    <div class="transcript-label">📝 あなたの声</div>
+    <div class="transcript-text" id="transcriptText"></div>
+  </div>
+  <div class="analysis-card" id="analysisCard">
+    <div class="analysis-header">🔍 AIの分析</div>
+    <div class="analysis-section">
+      <div class="analysis-section-title">感情タグ</div>
+      <div class="analysis-tags" id="emotionTags"></div>
+    </div>
+    <div class="analysis-section">
+      <div class="analysis-section-title">キーワード</div>
+      <div class="analysis-tags" id="keywordTags"></div>
+    </div>
+    <div class="analysis-section">
+      <div class="analysis-section-title">言葉のクセ</div>
+      <div class="analysis-note" id="patternNote"></div>
+    </div>
+  </div>
+</div>
+
+<button class="next-prompt-btn" id="nextBtn" onclick="nextPrompt()">次のお題へ ✨</button>
+
+<div class="monthly-section">
+  <div class="monthly-title">📊 今月の変化</div>
+  <div class="monthly-chart" id="monthlyChart"></div>
+</div>
+
+<div class="safe-notice">
+  <p>🔒 あなたの声と記録は安全に保管されています<br>誰にも共有されません。安心して話してね。</p>
+</div>
+
+<script>
+const prompts = [
+  { text: "今週、一番頑張ったことを話してみて 💪", transcript: "えーっと、今週は数学のテスト勉強を頑張ったかな。毎日2時間くらいやって、友達と一緒に問題出し合ったりして。結果はまだわかんないけど、やりきった感じはある。あと部活の大会に向けて朝練も頑張った。眠かったけど、みんなで声かけ合って乗り越えられた。", emotions: ["達成感 🎯","充実 ✨","疲労 😮‍💨"], keywords: ["テスト勉強","友達","部活","朝練"], pattern: "「〜かな」という控えめな表現が多いですね。自分の頑張りをもっと認めてあげていいかも！友達との協力を大切にしている様子が伝わります 😊" },
+  { text: "最近ムカッとしたことある？ 😤", transcript: "あー、あるある。先週、グループワークで自分がいろいろ準備したのに、発表のとき全然違うこと言われて。なんか、ちゃんと話聞いてた？って思っちゃった。でもその場では何も言えなくて、あとからモヤモヤしてた。言えばよかったなぁ。", emotions: ["怒り 😤","もどかしさ 😣","後悔 😔"], keywords: ["グループワーク","発表","モヤモヤ","言えなかった"], pattern: "感情を正直に表現できていますね。「でも」の後に自分の気持ちを抑える傾向がありそう。自分の意見を伝えることも大切ですよ 💪" },
+  { text: "将来のことを考えるとどんな気持ち？ 🤔", transcript: "うーん、正直よくわかんない。周りはみんな進路決めてるっぽいけど、自分はまだ迷ってて。デザインとか興味あるけど、安定した仕事のほうがいいのかなとか。でもワクワクする方を選びたい気持ちもある。とりあえず、いろんなこと試してみたいかな。", emotions: ["不安 😟","期待 🌟","迷い 🤔"], keywords: ["進路","デザイン","ワクワク","迷い"], pattern: "将来への不安と期待が入り混じっていますね。「よくわかんない」は今の時期、自然なこと。「ワクワクする方」という言葉に本音が見えます ✨" },
+  { text: "一番リラックスできる場所を教えて 🌿", transcript: "自分の部屋かな。特にベッドの上。音楽聴きながらぼーっとする時間が一番好き。あと、学校の屋上も好き。放課後に誰もいないとき、空がきれいで風が気持ちいい。なんか、全部忘れられる感じがする。", emotions: ["安心 😌","穏やか 🌊","解放感 🕊️"], keywords: ["自分の部屋","音楽","屋上","空"], pattern: "一人の時間を大切にしているんですね。「全部忘れられる」という表現から、日常のプレッシャーを感じているのかも。リラックスタイムをもっと作ってあげてね 🌿" },
+  { text: "友達に「ありがとう」と思った瞬間は？ 🙏", transcript: "この前テスト前に全然わかんなくて焦ってたら、友達がノート見せてくれて。しかも「一緒にやろう」って言ってくれて、すごく嬉しかった。あと、部活で失敗したとき、怒るんじゃなくて「大丈夫」って言ってくれた先輩にも感謝してる。", emotions: ["感謝 🙏","嬉しさ 😊","安心 😌"], keywords: ["友達","ノート","先輩","大丈夫"], pattern: "人の優しさに敏感に気づけるのは素敵な感性ですね。「してくれた」という受け取る力と「感謝してる」という気持ちを言葉にできる力、両方持っています 💖" }
+];
+
+let currentPrompt = 0;
+let isRecording = false;
+let timerInterval = null;
+let seconds = 0;
+let recordCount = 12;
+
+// Build monthly chart
+function buildChart(){
+  const chart = document.getElementById('monthlyChart');
+  const days = ['月','火','水','木','金','土','日'];
+  const vals = [40,65,30,80,55,70,45];
+  chart.innerHTML = '';
+  days.forEach((d,i) => {
+    const bar = document.createElement('div');
+    bar.className = 'monthly-bar';
+    bar.style.height = '60px';
+    bar.innerHTML = `<div class="fill" style="height:${vals[i]}%"></div><span class="day">${d}</span>`;
+    chart.appendChild(bar);
+  });
+}
+buildChart();
+
+function updatePromptDots(){
+  const dots = document.getElementById('promptDots');
+  dots.innerHTML = '';
+  for(let i=0;i<5;i++){
+    const d = document.createElement('div');
+    d.className = 'prompt-dot' + (i===currentPrompt?' active':'');
+    dots.appendChild(d);
+  }
+  document.getElementById('promptNum').textContent = `${currentPrompt+1} / 5`;
+}
+
+function toggleRecording(){
+  if(!isRecording) startRecording();
+  else stopRecording();
+}
+
+function startRecording(){
+  isRecording = true;
+  seconds = 0;
+  const btn = document.getElementById('recordBtn');
+  btn.classList.add('recording');
+  const wf = document.getElementById('waveform');
+  wf.classList.add('visible','active','recording-wave');
+  const tm = document.getElementById('timer');
+  tm.classList.add('visible');
+  document.getElementById('recordHint').textContent = 'タップして終了';
+  document.getElementById('transcriptionArea').classList.remove('visible');
+  document.getElementById('analysisCard').classList.remove('visible');
+  document.getElementById('nextBtn').classList.remove('visible');
+  document.getElementById('transcriptText').textContent = '';
+
+  timerInterval = setInterval(()=>{
+    seconds++;
+    const m = String(Math.floor(seconds/60)).padStart(2,'0');
+    const s = String(seconds%60).padStart(2,'0');
+    tm.textContent = `${m}:${s}`;
+  },1000);
+}
+
+function stopRecording(){
+  isRecording = false;
+  clearInterval(timerInterval);
+  const btn = document.getElementById('recordBtn');
+  btn.classList.remove('recording');
+  const wf = document.getElementById('waveform');
+  wf.classList.remove('active','recording-wave');
+  setTimeout(()=>wf.classList.remove('visible'),300);
+  document.getElementById('timer').classList.remove('visible');
+  document.getElementById('recordHint').textContent = 'タップして話し始めよう';
+
+  // Increment record count
+  recordCount++;
+  document.getElementById('recordCount').textContent = recordCount;
+
+  // Show transcription
+  showTranscription();
+}
+
+function showTranscription(){
+  const area = document.getElementById('transcriptionArea');
+  area.classList.add('visible');
+  const textEl = document.getElementById('transcriptText');
+  const fullText = prompts[currentPrompt].transcript;
+  let idx = 0;
+  textEl.innerHTML = '<span class="cursor"></span>';
+
+  const typeInterval = setInterval(()=>{
+    if(idx < fullText.length){
+      const char = fullText[idx];
+      textEl.innerHTML = fullText.substring(0,idx+1) + '<span class="cursor"></span>';
+      idx++;
+    } else {
+      clearInterval(typeInterval);
+      textEl.innerHTML = fullText;
+      setTimeout(showAnalysis, 600);
+    }
+  }, 30);
+}
+
+function showAnalysis(){
+  const p = prompts[currentPrompt];
+  const card = document.getElementById('analysisCard');
+
+  // Emotion tags
+  const emotionContainer = document.getElementById('emotionTags');
+  emotionContainer.innerHTML = '';
+  p.emotions.forEach(e => {
+    const tag = document.createElement('span');
+    tag.className = 'a-tag emotion';
+    tag.textContent = e;
+    emotionContainer.appendChild(tag);
+  });
+
+  // Keyword tags
+  const kwContainer = document.getElementById('keywordTags');
+  kwContainer.innerHTML = '';
+  p.keywords.forEach(k => {
+    const tag = document.createElement('span');
+    tag.className = 'a-tag keyword';
+    tag.textContent = k;
+    kwContainer.appendChild(tag);
+  });
+
+  // Pattern
+  document.getElementById('patternNote').textContent = p.pattern;
+
+  card.classList.add('visible');
+  setTimeout(()=>{
+    document.getElementById('nextBtn').classList.add('visible');
+  }, 400);
+}
+
+function nextPrompt(){
+  currentPrompt = (currentPrompt + 1) % 5;
+  document.getElementById('promptText').textContent = prompts[currentPrompt].text;
+  updatePromptDots();
+  document.getElementById('transcriptionArea').classList.remove('visible');
+  document.getElementById('analysisCard').classList.remove('visible');
+  document.getElementById('nextBtn').classList.remove('visible');
+  document.getElementById('transcriptText').textContent = '';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

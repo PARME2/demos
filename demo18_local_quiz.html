@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>地元クイズ＆議論タネ</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideOutLeft { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-50px); } }
+@keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bounce { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(216,90,48,0.4); } 50% { box-shadow: 0 0 0 12px rgba(216,90,48,0); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes growRight { from { width: 0%; } }
+@keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes highlightPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(216,90,48,0.3); } 50% { box-shadow: 0 0 0 8px rgba(216,90,48,0); } }
+@keyframes countUp { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+  background: #FAECE7;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  color: #333;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-container {
+  max-width: 375px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Start Screen */
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+  text-align: center;
+  animation: fadeIn 0.6s ease;
+}
+.start-emoji { font-size: 72px; margin-bottom: 16px; animation: float 2s ease-in-out infinite; }
+.start-title { font-size: 28px; font-weight: 800; color: #D85A30; margin-bottom: 8px; line-height: 1.3; }
+.start-subtitle { font-size: 15px; color: #888; margin-bottom: 32px; line-height: 1.6; }
+.start-btn {
+  background: linear-gradient(135deg, #D85A30, #F07840);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 48px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  animation: pulse 2s infinite;
+  transition: transform 0.2s;
+}
+.start-btn:active { transform: scale(0.95); }
+.start-info { margin-top: 20px; display: flex; gap: 16px; font-size: 13px; color: #999; }
+.start-info span { display: flex; align-items: center; gap: 4px; }
+
+/* Quiz Screen */
+.quiz-screen {
+  display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 16px;
+}
+
+/* Progress */
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.progress-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #F0D6CC;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #D85A30, #F07840);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.progress-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #D85A30;
+  flex-shrink: 0;
+}
+
+/* Question Card */
+.question-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px 22px;
+  box-shadow: 0 8px 32px rgba(216,90,48,0.1);
+  animation: slideInRight 0.4s ease;
+  margin-bottom: 16px;
+}
+.question-card.exit { animation: slideOutLeft 0.3s ease forwards; }
+.question-emoji { font-size: 40px; margin-bottom: 12px; text-align: center; }
+.question-label {
+  font-size: 12px;
+  color: #D85A30;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+.question-text {
+  font-size: 19px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 24px;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Choices */
+.choices { display: flex; flex-direction: column; gap: 10px; }
+.choice-btn {
+  background: #FFF5F0;
+  border: 2px solid #F0D6CC;
+  border-radius: 16px;
+  padding: 16px 18px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+.choice-btn .choice-icon { font-size: 20px; flex-shrink: 0; }
+.choice-btn:active { transform: scale(0.97); }
+.choice-btn.selected {
+  background: #D85A30;
+  border-color: #D85A30;
+  color: #fff;
+  animation: bounce 0.3s ease;
+}
+
+/* Distribution Card */
+.distribution-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: 0 8px 32px rgba(216,90,48,0.1);
+  margin-bottom: 16px;
+  display: none;
+  animation: popIn 0.5s ease;
+}
+.distribution-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #D85A30;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.dist-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+.dist-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  width: 90px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.dist-bar-bg {
+  flex: 1;
+  height: 32px;
+  background: #FFF5F0;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.dist-bar-fill {
+  height: 100%;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  transition: width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  width: 0%;
+}
+.dist-bar-fill.mine {
+  background: linear-gradient(90deg, #D85A30, #F07840);
+}
+.dist-bar-fill.other {
+  background: #F0D6CC;
+}
+.dist-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+.dist-count.dark { color: #D85A30; }
+.dist-your-badge {
+  position: absolute;
+  right: -36px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+}
+.next-btn-container {
+  display: none;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.next-btn {
+  background: linear-gradient(135deg, #D85A30, #F07840);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  animation: popIn 0.3s ease;
+}
+.next-btn:active { transform: scale(0.95); }
+
+/* Results Screen */
+.results-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px 40px;
+  min-height: 100vh;
+  animation: fadeIn 0.6s ease;
+}
+.results-header { text-align: center; margin-bottom: 24px; }
+.results-emoji { font-size: 64px; margin-bottom: 8px; }
+.results-title { font-size: 24px; font-weight: 800; color: #D85A30; }
+.results-subtitle { font-size: 14px; color: #888; margin-top: 4px; }
+
+/* Score Card */
+.score-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 28px 24px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(216,90,48,0.1);
+  margin-bottom: 20px;
+  text-align: center;
+  animation: popIn 0.5s ease 0.2s both;
+}
+.score-label { font-size: 14px; color: #888; font-weight: 600; margin-bottom: 8px; }
+.score-value {
+  font-size: 56px;
+  font-weight: 800;
+  color: #D85A30;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.score-unit { font-size: 18px; color: #D85A30; font-weight: 700; }
+.score-comment { font-size: 14px; color: #888; margin-top: 8px; line-height: 1.5; }
+
+/* Trends Card */
+.trends-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(216,90,48,0.1);
+  margin-bottom: 20px;
+  animation: popIn 0.5s ease 0.4s both;
+}
+.trends-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #D85A30;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.trend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #FFF5F0;
+  border-radius: 16px;
+  margin-bottom: 10px;
+}
+.trend-emoji { font-size: 28px; flex-shrink: 0; }
+.trend-text { font-size: 14px; color: #555; line-height: 1.5; font-weight: 600; }
+
+/* Discussion Card */
+.discussion-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 24px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(216,90,48,0.1);
+  margin-bottom: 20px;
+  animation: popIn 0.5s ease 0.6s both;
+}
+.discussion-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #D85A30;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.discussion-item {
+  border-left: 4px solid #D85A30;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: #FFF5F0;
+  border-radius: 0 16px 16px 0;
+}
+.discussion-q {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+.discussion-reason {
+  font-size: 13px;
+  color: #888;
+}
+
+.retry-btn {
+  background: #fff;
+  color: #D85A30;
+  border: 2px solid #D85A30;
+  border-radius: 50px;
+  padding: 14px 40px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  animation: popIn 0.5s ease 0.8s both;
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Start Screen -->
+  <div class="start-screen" id="startScreen">
+    <div class="start-emoji">🏘</div>
+    <div class="start-title">地元クイズ＆議論タネ</div>
+    <div class="start-subtitle">地元のこと、どう思ってる？<br>クラスのみんなの意見も見てみよう！</div>
+    <button class="start-btn" onclick="startQuiz()">スタート！</button>
+    <div class="start-info">
+      <span>📝 全10問</span>
+      <span>📊 クラス比較</span>
+      <span>💬 議論タネ</span>
+    </div>
+  </div>
+
+  <!-- Quiz Screen -->
+  <div class="quiz-screen" id="quizScreen">
+    <div class="progress-container">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">1/10</div>
+    </div>
+
+    <div class="question-card" id="questionCard">
+      <div class="question-emoji" id="questionEmoji"></div>
+      <div class="question-label" id="questionLabel"></div>
+      <div class="question-text" id="questionText"></div>
+      <div class="choices" id="choices"></div>
+    </div>
+
+    <div class="distribution-card" id="distributionCard">
+      <div class="distribution-title">📊 クラスの回答分布（30人）</div>
+      <div id="distributionBars"></div>
+    </div>
+
+    <div class="next-btn-container" id="nextBtnContainer">
+      <button class="next-btn" id="nextBtn" onclick="nextQuestion()">次の質問へ ➡️</button>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div class="results-screen" id="resultsScreen">
+    <div class="results-header">
+      <div class="results-emoji">🏆</div>
+      <div class="results-title">診断結果</div>
+      <div class="results-subtitle">キミの地元意識がわかった！</div>
+    </div>
+    <div class="score-card">
+      <div class="score-label">🏘 地元意識スコア</div>
+      <div class="score-value" id="scoreValue">0</div>
+      <div class="score-unit">/ 100</div>
+      <div class="score-comment" id="scoreComment"></div>
+    </div>
+    <div class="trends-card">
+      <div class="trends-title">📈 クラスの傾向</div>
+      <div id="trendsContent"></div>
+    </div>
+    <div class="discussion-card">
+      <div class="discussion-title">💬 議論のタネ TOP3</div>
+      <div id="discussionContent"></div>
+    </div>
+    <button class="retry-btn" onclick="location.reload()">もう一度やる 🔄</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    emoji: '🏙',
+    label: 'Q1 / 地域課題',
+    text: 'この地域の\n一番の課題は？',
+    choices: [
+      { icon: '🚶', text: '若者の流出', localScore: 3 },
+      { icon: '💼', text: '仕事が少ない', localScore: 2 },
+      { icon: '🚌', text: '交通が不便', localScore: 2 },
+      { icon: '🎮', text: '娯楽が少ない', localScore: 1 }
+    ],
+    classDist: [9, 7, 8, 6]
+  },
+  {
+    emoji: '🏠',
+    label: 'Q2 / 定住意識',
+    text: '10年後も\nここに住みたい？',
+    choices: [
+      { icon: '😊', text: '住みたい', localScore: 4 },
+      { icon: '✈️', text: '出ていきたい', localScore: 0 },
+      { icon: '🤔', text: 'わからない', localScore: 2 },
+      { icon: '📋', text: '条件次第', localScore: 2 }
+    ],
+    classDist: [6, 10, 8, 6]
+  },
+  {
+    emoji: '🔧',
+    label: 'Q3 / 改善意識',
+    text: '地元で一番\n変えたいこと',
+    choices: [
+      { icon: '🚃', text: '交通', localScore: 2 },
+      { icon: '🏪', text: 'お店の数', localScore: 1 },
+      { icon: '🎪', text: 'イベント', localScore: 2 },
+      { icon: '💼', text: '仕事の種類', localScore: 3 }
+    ],
+    classDist: [11, 5, 6, 8]
+  },
+  {
+    emoji: '✨',
+    label: 'Q4 / 愛着',
+    text: '地元の一番の魅力は？',
+    choices: [
+      { icon: '🌿', text: '自然が豊か', localScore: 3 },
+      { icon: '🤗', text: '人の温かさ', localScore: 4 },
+      { icon: '🍜', text: '食べ物がおいしい', localScore: 3 },
+      { icon: '🏡', text: '住みやすさ', localScore: 3 }
+    ],
+    classDist: [8, 7, 10, 5]
+  },
+  {
+    emoji: '🏃',
+    label: 'Q5 / 居場所',
+    text: '若者が集まれる\n場所はある？',
+    choices: [
+      { icon: '⭕', text: 'ある', localScore: 3 },
+      { icon: '❌', text: 'ない', localScore: 1 },
+      { icon: '△', text: '少しある', localScore: 2 },
+      { icon: '❓', text: '知らない', localScore: 0 }
+    ],
+    classDist: [4, 12, 9, 5]
+  },
+  {
+    emoji: '🏭',
+    label: 'Q6 / 産業',
+    text: '地元の産業で\n気になるのは？',
+    choices: [
+      { icon: '🌾', text: '農業', localScore: 3 },
+      { icon: '💻', text: 'IT', localScore: 1 },
+      { icon: '🗺', text: '観光', localScore: 2 },
+      { icon: '🔩', text: '製造業', localScore: 2 }
+    ],
+    classDist: [7, 8, 9, 6]
+  },
+  {
+    emoji: '📸',
+    label: 'Q7 / 発信',
+    text: '地元を友達に\n紹介するなら？',
+    choices: [
+      { icon: '🍣', text: '食べ物', localScore: 3 },
+      { icon: '🏔', text: '景色', localScore: 3 },
+      { icon: '👨‍👩‍👦', text: '人', localScore: 4 },
+      { icon: '🎿', text: '体験', localScore: 3 }
+    ],
+    classDist: [10, 8, 4, 8]
+  },
+  {
+    emoji: '🚀',
+    label: 'Q8 / 起業',
+    text: '地元で起業するなら？',
+    choices: [
+      { icon: '☕', text: 'カフェ', localScore: 2 },
+      { icon: '🌱', text: '農業', localScore: 3 },
+      { icon: '💻', text: 'IT', localScore: 1 },
+      { icon: '🗺', text: '観光', localScore: 3 }
+    ],
+    classDist: [8, 5, 10, 7]
+  },
+  {
+    emoji: '🤝',
+    label: 'Q9 / つながり',
+    text: '地域の大人との関わりは？',
+    choices: [
+      { icon: '😊', text: 'よくある', localScore: 4 },
+      { icon: '🙂', text: 'たまにある', localScore: 3 },
+      { icon: '😐', text: 'ほぼない', localScore: 1 },
+      { icon: '🙅', text: '関わりたくない', localScore: 0 }
+    ],
+    classDist: [5, 11, 10, 4]
+  },
+  {
+    emoji: '💡',
+    label: 'Q10 / 未来',
+    text: '地元に一番\n必要なものは？',
+    choices: [
+      { icon: '📶', text: 'Wi-Fi環境', localScore: 1 },
+      { icon: '🚌', text: 'バス・交通', localScore: 2 },
+      { icon: '🎬', text: '映画館', localScore: 1 },
+      { icon: '💻', text: 'コワーキングスペース', localScore: 2 }
+    ],
+    classDist: [6, 11, 7, 6]
+  }
+];
+
+let currentQ = 0;
+let answers = [];
+let totalLocalScore = 0;
+let maxPossibleScore = 0;
+
+function startQuiz() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'flex';
+  // Calculate max possible score
+  questions.forEach(q => {
+    maxPossibleScore += Math.max(...q.choices.map(c => c.localScore));
+  });
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[currentQ];
+  document.getElementById('progressBar').style.width = `${(currentQ / questions.length) * 100}%`;
+  document.getElementById('progressLabel').textContent = `${currentQ + 1}/10`;
+  document.getElementById('questionEmoji').textContent = q.emoji;
+  document.getElementById('questionLabel').textContent = q.label;
+  document.getElementById('questionText').textContent = q.text;
+
+  const card = document.getElementById('questionCard');
+  card.classList.remove('exit');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'slideInRight 0.4s ease';
+
+  // Hide distribution and next button
+  document.getElementById('distributionCard').style.display = 'none';
+  document.getElementById('nextBtnContainer').style.display = 'none';
+
+  const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-icon">${c.icon}</span>${c.text}`;
+    btn.onclick = () => selectChoice(i);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function selectChoice(idx) {
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach((b, i) => {
+    if (i === idx) b.classList.add('selected');
+    b.style.pointerEvents = 'none';
+  });
+
+  const q = questions[currentQ];
+  answers.push(idx);
+  totalLocalScore += q.choices[idx].localScore;
+
+  // Show distribution after short delay
+  setTimeout(() => showDistribution(idx), 400);
+}
+
+function showDistribution(userIdx) {
+  const q = questions[currentQ];
+  const distCard = document.getElementById('distributionCard');
+  const barsDiv = document.getElementById('distributionBars');
+  distCard.style.display = 'block';
+  distCard.style.animation = 'none';
+  distCard.offsetHeight;
+  distCard.style.animation = 'popIn 0.5s ease';
+
+  barsDiv.innerHTML = '';
+
+  const total = q.classDist.reduce((a, b) => a + b, 0);
+
+  q.choices.forEach((c, i) => {
+    const count = q.classDist[i];
+    const pct = Math.round((count / total) * 100);
+    const isMine = i === userIdx;
+
+    const row = document.createElement('div');
+    row.className = 'dist-row';
+    row.innerHTML = `
+      <div class="dist-label">${c.icon} ${c.text}</div>
+      <div class="dist-bar-bg" style="position:relative;">
+        <div class="dist-bar-fill ${isMine ? 'mine' : 'other'}" id="distBar${i}" style="width: 0%;">
+          <span class="dist-count ${isMine ? '' : 'dark'}">${count}人 (${pct}%)</span>
+        </div>
+        ${isMine ? '<span class="dist-your-badge">👈 あなた</span>' : ''}
+      </div>
+    `;
+    barsDiv.appendChild(row);
+
+    // Animate bars
+    setTimeout(() => {
+      document.getElementById(`distBar${i}`).style.width = `${Math.max(pct, 12)}%`;
+    }, 100 + i * 150);
+  });
+
+  // Show next button
+  setTimeout(() => {
+    const nextContainer = document.getElementById('nextBtnContainer');
+    nextContainer.style.display = 'flex';
+    const nextBtn = document.getElementById('nextBtn');
+    if (currentQ >= questions.length - 1) {
+      nextBtn.textContent = '結果を見る 🎉';
+    } else {
+      nextBtn.textContent = '次の質問へ ➡️';
+    }
+  }, 800);
+
+  // Scroll to distribution
+  setTimeout(() => {
+    distCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 200);
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) {
+    showResults();
+  } else {
+    showQuestion();
+    // Scroll to top
+    document.getElementById('quizScreen').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function showResults() {
+  document.getElementById('quizScreen').style.display = 'none';
+  const rs = document.getElementById('resultsScreen');
+  rs.style.display = 'flex';
+
+  // Score
+  const scorePercent = Math.round((totalLocalScore / maxPossibleScore) * 100);
+  const scoreEl = document.getElementById('scoreValue');
+  animateNumber(scoreEl, scorePercent, 1500);
+
+  // Score comment
+  let comment = '';
+  if (scorePercent >= 80) comment = '地元愛がめちゃくちゃ強い！🔥 地域のリーダーになれそう！';
+  else if (scorePercent >= 60) comment = '地元のことをしっかり考えてる！💪 バランスの取れた視点を持ってるね。';
+  else if (scorePercent >= 40) comment = '地元への関心は普通くらい。🤔 もう少し地域のことを知ると面白いかも！';
+  else comment = '地元より外の世界に興味があるタイプ。🌍 その視野の広さも大切！';
+  document.getElementById('scoreComment').textContent = comment;
+
+  // Class trends
+  showTrends();
+
+  // Discussion topics
+  showDiscussionTopics();
+}
+
+function animateNumber(el, target, duration) {
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(target * eased);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function showTrends() {
+  const trendsDiv = document.getElementById('trendsContent');
+  trendsDiv.innerHTML = '';
+
+  // Analyze class data
+  const q2Dist = questions[1].classDist; // 10年後もここに住みたい？
+  const stayPct = Math.round((q2Dist[0] / 30) * 100);
+  const leavePct = Math.round((q2Dist[1] / 30) * 100);
+
+  const q4Dist = questions[3].classDist; // 地元の一番の魅力
+  const topCharm = questions[3].choices[q4Dist.indexOf(Math.max(...q4Dist))];
+
+  const q0Dist = questions[0].classDist; // 地域の課題
+  const topIssue = questions[0].choices[q0Dist.indexOf(Math.max(...q0Dist))];
+
+  const trends = [
+    { emoji: '📊', text: `クラスの${leavePct}%が「出ていきたい」と回答。定住意識は分かれている。` },
+    { emoji: '✨', text: `地元の魅力1位は「${topCharm.text}」。みんな${topCharm.icon}が好きみたい！` },
+    { emoji: '⚠️', text: `課題1位は「${topIssue.text}」。地域の大きなテーマになりそう。` }
+  ];
+
+  trends.forEach((t, i) => {
+    const item = document.createElement('div');
+    item.className = 'trend-item';
+    item.style.animation = `slideUp 0.4s ease ${0.5 + i * 0.15}s both`;
+    item.innerHTML = `
+      <div class="trend-emoji">${t.emoji}</div>
+      <div class="trend-text">${t.text}</div>
+    `;
+    trendsDiv.appendChild(item);
+  });
+}
+
+function showDiscussionTopics() {
+  const discDiv = document.getElementById('discussionContent');
+  discDiv.innerHTML = '';
+
+  // Find most divided questions (highest entropy / most even distribution)
+  const divisions = questions.map((q, i) => {
+    const total = q.classDist.reduce((a, b) => a + b, 0);
+    const probs = q.classDist.map(c => c / total);
+    const entropy = -probs.reduce((sum, p) => sum + (p > 0 ? p * Math.log2(p) : 0), 0);
+    return { idx: i, entropy, question: q };
+  }).sort((a, b) => b.entropy - a.entropy);
+
+  const topDiscussions = divisions.slice(0, 3);
+
+  const discussionPrompts = [
+    '意見が大きく分かれた！みんなで話し合ってみよう。',
+    'いろんな考え方がある質問。なぜその答えを選んだ？',
+    '正解のない問い。お互いの意見を聞いてみよう。'
+  ];
+
+  topDiscussions.forEach((d, i) => {
+    const item = document.createElement('div');
+    item.className = 'discussion-item';
+    item.style.animation = `slideUp 0.4s ease ${0.7 + i * 0.15}s both`;
+    item.innerHTML = `
+      <div class="discussion-q">${d.question.emoji} ${d.question.text.replace('\n', '')}</div>
+      <div class="discussion-reason">💬 ${discussionPrompts[i]}</div>
+    `;
+    discDiv.appendChild(item);
+  });
+}
+</script>
+</body>
+</html>

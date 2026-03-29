@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>価値観動画ソート</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --primary: #7F77DD;
+  --primary-light: #9B94E8;
+  --bg: #EEEDFE;
+  --bg-dark: #E0DEFE;
+  --text: #2D2B55;
+  --text-light: #6B68A0;
+  --green: #4ADE80;
+  --red: #F87171;
+  --card-radius: 20px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  max-width: 375px;
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+/* Splash */
+.splash {
+  position: fixed; inset: 0;
+  max-width: 375px; margin: 0 auto;
+  background: linear-gradient(135deg, #7F77DD 0%, #A78BFA 50%, #C4B5FD 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 1000;
+  transition: opacity 0.5s, transform 0.5s;
+}
+.splash.hide { opacity: 0; transform: scale(1.05); pointer-events: none; }
+.splash-icon { font-size: 64px; margin-bottom: 16px; animation: float 2s ease-in-out infinite; }
+@keyframes float { 0%,100%{ transform: translateY(0); } 50%{ transform: translateY(-10px); } }
+.splash h1 { color: white; font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+.splash p { color: rgba(255,255,255,0.85); font-size: 14px; margin-bottom: 32px; }
+.splash-btn {
+  background: white; color: var(--primary); border: none; border-radius: 50px;
+  padding: 14px 40px; font-size: 16px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  transition: transform 0.2s;
+}
+.splash-btn:active { transform: scale(0.95); }
+
+/* Header */
+.header {
+  position: fixed; top: 0; left: 0; right: 0; max-width: 375px; margin: 0 auto;
+  z-index: 50; padding: 12px 20px 8px; background: var(--bg);
+}
+.header-title { font-size: 13px; color: var(--text-light); text-align: center; margin-bottom: 6px; }
+.progress-bar { height: 4px; background: var(--bg-dark); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light)); border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+.counter { text-align: center; font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+/* Card Stack */
+.card-area {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  padding: 70px 20px 100px;
+}
+.card-stack { position: relative; width: 100%; max-width: 340px; height: 480px; }
+.card {
+  position: absolute; inset: 0;
+  background: white; border-radius: var(--card-radius);
+  box-shadow: 0 8px 30px rgba(127,119,221,0.15);
+  overflow: hidden; cursor: grab;
+  transition: transform 0.1s, box-shadow 0.2s;
+  touch-action: none; user-select: none;
+  will-change: transform;
+}
+.card.animating { transition: transform 0.4s ease, opacity 0.4s ease; }
+.card:active { cursor: grabbing; }
+
+.card-bg {
+  height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.card-emoji { font-size: 72px; margin-bottom: 8px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1)); }
+.card-play {
+  position: absolute; bottom: 16px; right: 16px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center;
+  font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.card-duration {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(0,0,0,0.5); color: white;
+  padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+}
+.card-body { padding: 20px; }
+.card-tag {
+  display: inline-block; background: var(--bg); color: var(--primary);
+  padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; margin-bottom: 10px;
+}
+.card-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; line-height: 1.3; }
+.card-desc { font-size: 13px; color: var(--text-light); line-height: 1.6; }
+
+/* Swipe Overlays */
+.swipe-overlay {
+  position: absolute; inset: 0; border-radius: var(--card-radius);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; font-weight: 900; letter-spacing: 2px;
+  opacity: 0; transition: opacity 0.15s; pointer-events: none; z-index: 5;
+}
+.swipe-like { background: rgba(74,222,128,0.2); color: var(--green); border: 4px solid var(--green); }
+.swipe-nope { background: rgba(248,113,113,0.2); color: var(--red); border: 4px solid var(--red); }
+
+/* Bottom hints */
+.hints {
+  position: fixed; bottom: 0; left: 0; right: 0; max-width: 375px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 40px 34px;
+  background: linear-gradient(transparent, var(--bg) 30%);
+}
+.hint-btn {
+  width: 56px; height: 56px; border-radius: 50%; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+}
+.hint-btn:active { transform: scale(0.9); }
+.hint-nope { background: white; box-shadow: 0 4px 15px rgba(248,113,113,0.3); }
+.hint-like { background: white; box-shadow: 0 4px 15px rgba(74,222,128,0.3); }
+.hint-text { font-size: 11px; color: var(--text-light); text-align: center; }
+
+/* Flash overlay */
+.flash-overlay {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  pointer-events: none; z-index: 40; opacity: 0;
+  transition: opacity 0.15s;
+}
+.flash-overlay.green { background: rgba(74,222,128,0.3); opacity: 1; }
+.flash-overlay.red { background: rgba(248,113,113,0.3); opacity: 1; }
+
+/* Results */
+.results-screen {
+  position: fixed; inset: 0; max-width: 375px; margin: 0 auto;
+  background: var(--bg); z-index: 60;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  padding: 40px 20px 40px;
+}
+.results-screen.show { transform: translateY(0); }
+.results-header { text-align: center; margin-bottom: 28px; }
+.results-header .emoji { font-size: 48px; margin-bottom: 12px; display: block; animation: float 2s ease-in-out infinite; }
+.results-header h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.results-header p { font-size: 13px; color: var(--text-light); }
+
+.result-card {
+  background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 4px 15px rgba(127,119,221,0.08);
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s, transform 0.5s;
+}
+.result-card.visible { opacity: 1; transform: translateY(0); }
+.result-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+/* Radar chart */
+.radar-wrap { display: flex; justify-content: center; margin: 8px 0; }
+canvas#radarChart { width: 240px; height: 240px; }
+
+/* Value tags */
+.value-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.value-tag {
+  background: linear-gradient(135deg, var(--bg), #F0EEFF);
+  padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  color: var(--primary); border: 1px solid rgba(127,119,221,0.2);
+}
+
+/* Bars */
+.bar-item { margin-bottom: 12px; }
+.bar-label { font-size: 13px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.bar-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; width: 0; }
+
+.insight-box {
+  background: linear-gradient(135deg, #7F77DD, #A78BFA);
+  color: white; border-radius: 16px; padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(127,119,221,0.3);
+}
+.insight-box p { font-size: 14px; line-height: 1.7; }
+.insight-box .ai-label {
+  font-size: 11px; opacity: 0.8; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+.restart-btn {
+  display: block; width: 100%; padding: 16px;
+  background: var(--primary); color: white; border: none; border-radius: 14px;
+  font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  transition: transform 0.2s;
+}
+.restart-btn:active { transform: scale(0.97); }
+
+/* Stacked cards behind */
+.card[data-index="1"] { transform: scale(0.95) translateY(10px); opacity: 0.7; }
+.card[data-index="2"] { transform: scale(0.90) translateY(20px); opacity: 0.4; }
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div class="splash" id="splash">
+  <div class="splash-icon">🎬</div>
+  <h1>価値観動画ソート</h1>
+  <p>動画をスワイプして、あなたの価値観を発見しよう</p>
+  <button class="splash-btn" onclick="startApp()">はじめる</button>
+</div>
+
+<!-- Header -->
+<div class="header" id="header" style="display:none">
+  <div class="header-title">価値観動画ソート</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="counter" id="counter">1 / 10</div>
+</div>
+
+<!-- Card Area -->
+<div class="card-area" id="cardArea" style="display:none">
+  <div class="card-stack" id="cardStack"></div>
+</div>
+
+<!-- Hints -->
+<div class="hints" id="hints" style="display:none">
+  <div style="text-align:center">
+    <button class="hint-btn hint-nope" onclick="swipeCard('left')">👎</button>
+    <div class="hint-text">ちがう</div>
+  </div>
+  <div class="hint-text" style="color:var(--primary); font-weight:600">← スワイプ →</div>
+  <div style="text-align:center">
+    <button class="hint-btn hint-like" onclick="swipeCard('right')">👍</button>
+    <div class="hint-text">いいな</div>
+  </div>
+</div>
+
+<!-- Flash overlay -->
+<div class="flash-overlay" id="flash"></div>
+
+<!-- Results -->
+<div class="results-screen" id="results">
+  <div class="results-header">
+    <span class="emoji">🔮</span>
+    <h2>あなたの価値観タイプ</h2>
+    <p>スワイプ結果をAIが分析しました</p>
+  </div>
+  <div id="resultsContent"></div>
+</div>
+
+<script>
+const CARDS = [
+  { title: '海外で働くフリーランス', desc: 'バリ島のカフェでノートPCを開き、世界中のクライアントとリモートワーク。自由な時間と場所で働く日常。', emoji: '🌴', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', tag: '自由・海外', duration: '0:32', values: ['自由', '独立', '冒険'] },
+  { title: '地元の農家の朝', desc: '朝5時、霧の中で野菜を収穫。土に触れ、自然のリズムで生きる農家の穏やかな1日の始まり。', emoji: '🌾', gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', tag: '自然・地域', duration: '0:28', values: ['自然', '地域', '安定'] },
+  { title: 'チームで商品開発', desc: '会議室でホワイトボードを囲む5人のチーム。意見をぶつけ合いながら新商品のアイデアを形にしていく。', emoji: '💡', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', tag: 'チーム・創造', duration: '0:35', values: ['協力', '創造', 'チーム'] },
+  { title: '一人で黙々とコード', desc: '静かな部屋で画面に向かい、コードを書き続ける。集中の中から生まれるプロダクトの喜び。', emoji: '💻', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', tag: '技術・集中', duration: '0:30', values: ['集中', '技術', '独立'] },
+  { title: 'ボランティア活動', desc: '被災地で泥をかき出す若者たち。汗だくになりながらも、誰かの役に立てる充実感に満ちた表情。', emoji: '🤝', gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', tag: '社会貢献', duration: '0:33', values: ['貢献', '協力', '社会'] },
+  { title: 'アーティストのアトリエ', desc: '絵の具まみれのアトリエで巨大なキャンバスに向かう。自分の内面を表現し続けるアーティストの日常。', emoji: '🎨', gradient: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)', tag: '表現・創造', duration: '0:29', values: ['創造', '表現', '自由'] },
+  { title: 'スタートアップの日常', desc: '小さなオフィスで深夜まで議論。失敗を恐れず、世界を変えるプロダクトを作ろうとする熱い仲間たち。', emoji: '🚀', gradient: 'linear-gradient(135deg, #f5af19 0%, #f12711 100%)', tag: '挑戦・起業', duration: '0:31', values: ['挑戦', 'チーム', '成長'] },
+  { title: '老舗旅館の仕事', desc: '創業100年の旅館。お客様一人ひとりに心を込めたおもてなし。伝統を守りながら新しい工夫も。', emoji: '🏯', gradient: 'linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%)', tag: '伝統・おもてなし', duration: '0:34', values: ['伝統', '安定', '貢献'] },
+  { title: '研究者の実験室', desc: '顕微鏡を覗きこみ、データをノートに記録。まだ誰も知らない真実を追い求める科学者の静かな情熱。', emoji: '🔬', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', tag: '探求・知識', duration: '0:27', values: ['探求', '集中', '知識'] },
+  { title: 'スポーツトレーナーの1日', desc: '選手のコンディションをチェックし、最適なトレーニングメニューを組む。人の成長を支えるプロの仕事。', emoji: '🏃', gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)', tag: '健康・サポート', duration: '0:30', values: ['健康', '貢献', '成長'] },
+];
+
+let currentIndex = 0;
+let startX = 0, startY = 0, currentX = 0, isDragging = false;
+let liked = [], disliked = [];
+let activeCard = null;
+
+function startApp() {
+  document.getElementById('splash').classList.add('hide');
+  setTimeout(() => {
+    document.getElementById('splash').style.display = 'none';
+    document.getElementById('header').style.display = 'block';
+    document.getElementById('cardArea').style.display = 'flex';
+    document.getElementById('hints').style.display = 'flex';
+    renderCards();
+  }, 500);
+}
+
+function renderCards() {
+  const stack = document.getElementById('cardStack');
+  stack.innerHTML = '';
+  for (let i = Math.min(currentIndex + 2, CARDS.length - 1); i >= currentIndex; i--) {
+    if (i >= CARDS.length) continue;
+    const card = CARDS[i];
+    const depth = i - currentIndex;
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.setAttribute('data-index', depth);
+    el.innerHTML = `
+      <div class="card-bg" style="background:${card.gradient}">
+        <div class="card-emoji">${card.emoji}</div>
+        <div class="card-play">▶</div>
+        <div class="card-duration">${card.duration}</div>
+      </div>
+      <div class="card-body">
+        <span class="card-tag">${card.tag}</span>
+        <div class="card-title">${card.title}</div>
+        <div class="card-desc">${card.desc}</div>
+      </div>
+      <div class="swipe-overlay swipe-like">いいな 👍</div>
+      <div class="swipe-overlay swipe-nope">ちがう 👎</div>
+    `;
+    stack.appendChild(el);
+    if (depth === 0) {
+      activeCard = el;
+      attachDrag(el);
+    }
+  }
+  updateProgress();
+}
+
+function attachDrag(el) {
+  el.addEventListener('pointerdown', onStart, { passive: false });
+  el.addEventListener('pointermove', onMove, { passive: false });
+  el.addEventListener('pointerup', onEnd);
+  el.addEventListener('pointercancel', onEnd);
+}
+
+function onStart(e) {
+  if (isDragging) return;
+  isDragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+  currentX = 0;
+  this.setPointerCapture(e.pointerId);
+  this.style.transition = 'none';
+}
+
+function onMove(e) {
+  if (!isDragging) return;
+  e.preventDefault();
+  currentX = e.clientX - startX;
+  const rotate = currentX * 0.08;
+  this.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
+  const likeOverlay = this.querySelector('.swipe-like');
+  const nopeOverlay = this.querySelector('.swipe-nope');
+  const progress = Math.min(Math.abs(currentX) / 100, 1);
+  if (currentX > 0) {
+    likeOverlay.style.opacity = progress;
+    nopeOverlay.style.opacity = 0;
+  } else {
+    nopeOverlay.style.opacity = progress;
+    likeOverlay.style.opacity = 0;
+  }
+}
+
+function onEnd(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  const threshold = 80;
+  if (Math.abs(currentX) > threshold) {
+    const dir = currentX > 0 ? 'right' : 'left';
+    completeSwipe(this, dir);
+  } else {
+    this.style.transition = 'transform 0.3s ease';
+    this.style.transform = '';
+    this.querySelector('.swipe-like').style.opacity = 0;
+    this.querySelector('.swipe-nope').style.opacity = 0;
+  }
+}
+
+function swipeCard(dir) {
+  if (!activeCard || isDragging) return;
+  completeSwipe(activeCard, dir);
+}
+
+function completeSwipe(card, dir) {
+  const flyX = dir === 'right' ? 500 : -500;
+  card.classList.add('animating');
+  card.style.transform = `translateX(${flyX}px) rotate(${flyX * 0.08}deg)`;
+  card.style.opacity = '0';
+
+  const flash = document.getElementById('flash');
+  flash.className = 'flash-overlay ' + (dir === 'right' ? 'green' : 'red');
+  setTimeout(() => flash.className = 'flash-overlay', 200);
+
+  if (dir === 'right') liked.push(CARDS[currentIndex]);
+  else disliked.push(CARDS[currentIndex]);
+
+  currentIndex++;
+  setTimeout(() => {
+    if (currentIndex >= CARDS.length) {
+      showResults();
+    } else {
+      renderCards();
+    }
+  }, 300);
+}
+
+function updateProgress() {
+  const pct = (currentIndex / CARDS.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('counter').textContent = `${currentIndex + 1} / ${CARDS.length}`;
+}
+
+function showResults() {
+  document.getElementById('header').style.display = 'none';
+  document.getElementById('cardArea').style.display = 'none';
+  document.getElementById('hints').style.display = 'none';
+
+  const valueCounts = {};
+  liked.forEach(c => c.values.forEach(v => { valueCounts[v] = (valueCounts[v] || 0) + 1; }));
+  const sorted = Object.entries(valueCounts).sort((a, b) => b[1] - a[1]);
+  const topValues = sorted.slice(0, 5);
+  const maxVal = topValues.length > 0 ? topValues[0][1] : 1;
+
+  const insights = [];
+  if (valueCounts['自由'] || valueCounts['独立']) insights.push('自由度と独立性を重視するタイプ');
+  if (valueCounts['創造'] || valueCounts['表現']) insights.push('創造性と自己表現を大切にする');
+  if (valueCounts['協力'] || valueCounts['チーム']) insights.push('仲間との協力を通じて成果を出したい');
+  if (valueCounts['貢献'] || valueCounts['社会']) insights.push('社会への貢献に価値を感じる');
+  if (valueCounts['安定'] || valueCounts['伝統']) insights.push('安定と伝統を重んじる堅実派');
+  if (valueCounts['挑戦'] || valueCounts['成長']) insights.push('挑戦と成長を求めるチャレンジャー');
+  if (valueCounts['技術'] || valueCounts['知識'] || valueCounts['探求']) insights.push('知識探求と専門性を追い求める');
+  if (insights.length === 0) insights.push('バランスの取れた価値観の持ち主');
+
+  const colors = ['#7F77DD', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE'];
+  const barColors = ['linear-gradient(90deg, #7F77DD, #A78BFA)', 'linear-gradient(90deg, #A78BFA, #C4B5FD)', 'linear-gradient(90deg, #C4B5FD, #DDD6FE)', 'linear-gradient(90deg, #DDD6FE, #EDE9FE)', 'linear-gradient(90deg, #EDE9FE, #F5F3FF)'];
+
+  let html = '';
+  html += `<div class="insight-box result-card"><div class="ai-label">🤖 AI分析結果</div><p>あなたが「いいな」と感じた${liked.length}本の動画を分析しました。${insights[0]}傾向が見られます。</p></div>`;
+
+  html += `<div class="result-card"><h3>📊 価値観レーダー</h3><div class="radar-wrap"><canvas id="radarChart" width="480" height="480"></canvas></div></div>`;
+
+  html += `<div class="result-card"><h3>🏷️ あなたの価値観キーワード</h3><div class="value-tags">`;
+  insights.forEach(tag => { html += `<span class="value-tag">${tag}</span>`; });
+  html += `</div></div>`;
+
+  html += `<div class="result-card"><h3>📈 価値傾向の内訳</h3>`;
+  topValues.forEach(([name, count], i) => {
+    const pct = Math.round((count / maxVal) * 100);
+    html += `<div class="bar-item"><div class="bar-label"><span>${name}</span><span>${pct}%</span></div><div class="bar-track"><div class="bar-fill" style="background:${barColors[i]}" data-width="${pct}"></div></div></div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="result-card"><h3>👍 いいなと感じた動画</h3>`;
+  liked.forEach(c => { html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:28px">${c.emoji}</span><div><div style="font-size:14px;font-weight:600">${c.title}</div><div style="font-size:11px;color:var(--text-light)">${c.tag}</div></div></div>`; });
+  html += `</div>`;
+
+  html += `<button class="restart-btn" onclick="restart()">もう一度やる 🔄</button>`;
+
+  document.getElementById('resultsContent').innerHTML = html;
+  const rs = document.getElementById('results');
+  rs.classList.add('show');
+
+  setTimeout(() => {
+    drawRadar(topValues, maxVal);
+    const cards = rs.querySelectorAll('.result-card');
+    cards.forEach((c, i) => setTimeout(() => c.classList.add('visible'), 100 + i * 150));
+    setTimeout(() => {
+      rs.querySelectorAll('.bar-fill').forEach(b => { b.style.width = b.dataset.width + '%'; });
+    }, 600);
+  }, 500);
+}
+
+function drawRadar(values, maxVal) {
+  const canvas = document.getElementById('radarChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = 240, cy = 240, r = 180;
+  const labels = values.map(v => v[0]);
+  const data = values.map(v => v[1] / maxVal);
+  const n = labels.length;
+  if (n < 3) return;
+
+  ctx.clearRect(0, 0, 480, 480);
+
+  // Grid
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    const rr = (r / 4) * ring;
+    for (let i = 0; i <= n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const x = cx + rr * Math.cos(angle);
+      const y = cy + rr * Math.sin(angle);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(127,119,221,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axes
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+    ctx.strokeStyle = 'rgba(127,119,221,0.15)';
+    ctx.stroke();
+  }
+
+  // Data
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) {
+    const idx = i % n;
+    const angle = (Math.PI * 2 * idx / n) - Math.PI / 2;
+    const val = data[idx] * r;
+    const x = cx + val * Math.cos(angle);
+    const y = cy + val * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.fillStyle = 'rgba(127,119,221,0.2)';
+  ctx.fill();
+  ctx.strokeStyle = '#7F77DD';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Points + Labels
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const val = data[i] * r;
+    const x = cx + val * Math.cos(angle);
+    const y = cy + val * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#7F77DD';
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    const lx = cx + (r + 28) * Math.cos(angle);
+    const ly = cy + (r + 28) * Math.sin(angle);
+    ctx.fillStyle = '#2D2B55';
+    ctx.font = '600 26px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labels[i], lx, ly);
+  }
+}
+
+function restart() {
+  currentIndex = 0;
+  liked = [];
+  disliked = [];
+  document.getElementById('results').classList.remove('show');
+  setTimeout(() => {
+    document.getElementById('header').style.display = 'block';
+    document.getElementById('cardArea').style.display = 'flex';
+    document.getElementById('hints').style.display = 'flex';
+    renderCards();
+  }, 500);
+}
+</script>
+</body>
+</html>

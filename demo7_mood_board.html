@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ムードボード自己診断</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--primary:#7F77DD;--primary-light:#9B94E8;--bg:#EEEDFE;--card-radius:16px;--text:#2D2A4A;--text-light:#6B6890}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:100px}
+.header{position:sticky;top:0;z-index:100;background:rgba(238,237,254,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:16px 20px 12px;border-bottom:1px solid rgba(127,119,221,.12)}
+.header-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,#7F77DD,#B074D0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{font-size:13px;color:var(--text-light);line-height:1.4}
+.masonry{padding:12px 10px;column-count:2;column-gap:10px}
+@media(min-width:420px){.masonry{column-count:3}}
+.card{break-inside:avoid;margin-bottom:10px;border-radius:var(--card-radius);overflow:hidden;position:relative;cursor:pointer;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;-webkit-user-select:none;user-select:none}
+.card:active{transform:scale(.96)}
+.card.selected{transform:scale(.97);box-shadow:0 0 0 3px var(--primary),0 8px 24px rgba(127,119,221,.3)}
+.card.selected:active{transform:scale(.93)}
+.card-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 12px;text-align:center;position:relative}
+.card-emoji{font-size:36px;margin-bottom:8px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.1))}
+.card-label{font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.2);line-height:1.3}
+.card-sub{font-size:10px;color:rgba(255,255,255,.85);margin-top:3px;font-weight:500}
+.check-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(127,119,221,.25);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s}
+.card.selected .check-overlay{opacity:1}
+.check-circle{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.15);transform:scale(0);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.card.selected .check-circle{transform:scale(1)}
+.check-circle svg{width:20px;height:20px;color:var(--primary)}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid rgba(127,119,221,.12);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;z-index:200;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.bottom-bar.hidden{transform:translateY(100%)}
+.selected-count{font-size:14px;font-weight:700;color:var(--primary)}
+.selected-count span{font-size:24px;margin-right:2px}
+.btn-result{background:linear-gradient(135deg,#7F77DD,#9B6FC7);color:#fff;border:none;padding:12px 28px;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;transition:transform .2s,opacity .2s;opacity:.4;pointer-events:none}
+.btn-result.active{opacity:1;pointer-events:auto}
+.btn-result:active{transform:scale(.95)}
+.btn-result.active{animation:pulse-btn 2s infinite}
+@keyframes pulse-btn{0%,100%{box-shadow:0 4px 16px rgba(127,119,221,.3)}50%{box-shadow:0 4px 24px rgba(127,119,221,.5)}}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);transform:scale(0);animation:ripple-anim .5s ease-out;pointer-events:none}
+@keyframes ripple-anim{to{transform:scale(3);opacity:0}}
+
+/* Results Screen */
+.results-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;background:var(--bg);overflow-y:auto;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);padding:0 0 40px}
+.results-overlay.show{transform:translateY(0)}
+.results-header{padding:60px 24px 24px;text-align:center}
+.results-header h2{font-size:22px;font-weight:800;background:linear-gradient(135deg,#7F77DD,#B074D0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.results-header p{font-size:13px;color:var(--text-light)}
+.result-card{background:#fff;margin:12px 16px;border-radius:20px;padding:24px 20px;box-shadow:0 2px 12px rgba(127,119,221,.08)}
+.result-card h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.keyword-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.keyword-tag{background:linear-gradient(135deg,rgba(127,119,221,.12),rgba(176,116,208,.12));color:var(--primary);padding:8px 16px;border-radius:50px;font-size:13px;font-weight:700;animation:tag-in .4s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes tag-in{from{opacity:0;transform:scale(.7)}}
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:12px;color:var(--text-light);width:80px;text-align:right;flex-shrink:0;font-weight:600}
+.bar-track{flex:1;height:24px;background:rgba(127,119,221,.08);border-radius:12px;overflow:hidden;position:relative}
+.bar-fill{height:100%;border-radius:12px;transition:width .8s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:700;color:#fff;min-width:28px}
+.insight-box{background:linear-gradient(135deg,rgba(127,119,221,.06),rgba(176,116,208,.06));border:1px solid rgba(127,119,221,.15);border-radius:16px;padding:16px;margin-top:12px}
+.insight-box p{font-size:13px;line-height:1.7;color:var(--text)}
+.insight-arrow{color:var(--primary);font-weight:700}
+.btn-back{display:block;margin:24px auto 0;background:linear-gradient(135deg,#7F77DD,#9B6FC7);color:#fff;border:none;padding:14px 40px;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer}
+.btn-back:active{transform:scale(.96)}
+.mood-visual{display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+.mood-dot{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;animation:dot-pop .4s cubic-bezier(.34,1.56,.64,1) both;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+@keyframes dot-pop{from{opacity:0;transform:scale(0)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span style="font-size:28px">🎨</span>
+    <h1>ムードボード自己診断</h1>
+  </div>
+  <p>気になる雰囲気やシーンをタップしてね。5つ以上選ぶと結果が見れるよ！</p>
+</div>
+
+<div class="masonry" id="masonry"></div>
+
+<div class="bottom-bar hidden" id="bottomBar">
+  <div class="selected-count"><span id="countNum">0</span>枚 選択中</div>
+  <button class="btn-result" id="btnResult" onclick="showResults()">結果を見る ✨</button>
+</div>
+
+<div class="results-overlay" id="resultsOverlay">
+  <div class="results-header">
+    <p>あなたの</p>
+    <h2>ムードプロフィール</h2>
+  </div>
+  <div id="resultsContent"></div>
+  <button class="btn-back" onclick="hideResults()">もう一度えらぶ 🔄</button>
+</div>
+
+<script>
+const cards = [
+  {emoji:'🏔️',label:'山の朝霧',sub:'静寂・清澄',cat:'自然',grad:'linear-gradient(135deg,#667eea,#764ba2)',h:160},
+  {emoji:'🌃',label:'都会の夜景',sub:'刺激・エネルギー',cat:'都会',grad:'linear-gradient(135deg,#0f0c29,#302b63)',h:200},
+  {emoji:'🗂️',label:'整理されたデスク',sub:'秩序・集中',cat:'秩序',grad:'linear-gradient(135deg,#c9d6ff,#e2e2e2)',h:140},
+  {emoji:'🎪',label:'カラフルな市場',sub:'活気・多様性',cat:'活気',grad:'linear-gradient(135deg,#f7971e,#ffd200)',h:180},
+  {emoji:'📚',label:'静かな図書館',sub:'知性・静寂',cat:'静寂',grad:'linear-gradient(135deg,#ada996,#dbdbdb)',h:150},
+  {emoji:'☕',label:'活気あるカフェ',sub:'温かさ・つながり',cat:'活気',grad:'linear-gradient(135deg,#c0392b,#8e44ad)',h:170},
+  {emoji:'🌾',label:'広い草原',sub:'開放感・自由',cat:'自然',grad:'linear-gradient(135deg,#56ab2f,#a8e063)',h:190},
+  {emoji:'🏢',label:'モダンなオフィス',sub:'洗練・効率',cat:'秩序',grad:'linear-gradient(135deg,#bdc3c7,#2c3e50)',h:145},
+  {emoji:'🏮',label:'古い路地裏',sub:'ノスタルジー・味わい',cat:'文化',grad:'linear-gradient(135deg,#eb5757,#000000)',h:175},
+  {emoji:'🌅',label:'海辺の夕暮れ',sub:'ロマンティック・内省',cat:'自然',grad:'linear-gradient(135deg,#ee9ca7,#ffdde1)',h:185},
+  {emoji:'🎵',label:'ライブハウス',sub:'情熱・高揚',cat:'活気',grad:'linear-gradient(135deg,#8E2DE2,#4A00E0)',h:155},
+  {emoji:'🌸',label:'桜並木の道',sub:'儚さ・美意識',cat:'自然',grad:'linear-gradient(135deg,#fbc2eb,#a6c1ee)',h:195},
+  {emoji:'🔬',label:'理科の実験室',sub:'探究・発見',cat:'知性',grad:'linear-gradient(135deg,#00b09b,#96c93d)',h:140},
+  {emoji:'🎨',label:'アートギャラリー',sub:'創造性・表現',cat:'文化',grad:'linear-gradient(135deg,#a18cd1,#fbc2eb)',h:170},
+  {emoji:'⛺',label:'キャンプ場の焚火',sub:'冒険・温もり',cat:'自然',grad:'linear-gradient(135deg,#f12711,#f5af19)',h:160},
+  {emoji:'🏛️',label:'美術館のロビー',sub:'洗練・感性',cat:'文化',grad:'linear-gradient(135deg,#e6dada,#274046)',h:180},
+  {emoji:'🌌',label:'満天の星空',sub:'壮大・夢',cat:'自然',grad:'linear-gradient(135deg,#0f2027,#203a43,#2c5364)',h:200},
+  {emoji:'🎮',label:'ゲーミングルーム',sub:'集中・テクノロジー',cat:'都会',grad:'linear-gradient(135deg,#000428,#004e92)',h:150},
+  {emoji:'🍳',label:'おしゃれなキッチン',sub:'創作・温かさ',cat:'秩序',grad:'linear-gradient(135deg,#f093fb,#f5576c)',h:165},
+  {emoji:'🧘',label:'瞑想スペース',sub:'平穏・内面',cat:'静寂',grad:'linear-gradient(135deg,#a1c4fd,#c2e9fb)',h:155},
+  {emoji:'🏖️',label:'南国のビーチ',sub:'解放・リラックス',cat:'自然',grad:'linear-gradient(135deg,#43e97b,#38f9d7)',h:180},
+  {emoji:'🎭',label:'劇場の舞台裏',sub:'表現・ドラマ',cat:'文化',grad:'linear-gradient(135deg,#fc5c7d,#6a82fb)',h:165},
+  {emoji:'🖥️',label:'クリエイターの部屋',sub:'創造・こだわり',cat:'秩序',grad:'linear-gradient(135deg,#667eea,#764ba2)',h:145},
+  {emoji:'🌿',label:'ボタニカルガーデン',sub:'癒し・生命力',cat:'自然',grad:'linear-gradient(135deg,#11998e,#38ef7d)',h:190},
+];
+
+const selected = new Set();
+const masonry = document.getElementById('masonry');
+const bottomBar = document.getElementById('bottomBar');
+const countNum = document.getElementById('countNum');
+const btnResult = document.getElementById('btnResult');
+
+function renderCards(){
+  masonry.innerHTML = '';
+  cards.forEach((c,i) => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div class="card-inner" style="background:${c.grad};height:${c.h}px">
+        <div class="card-emoji">${c.emoji}</div>
+        <div class="card-label">${c.label}</div>
+        <div class="card-sub">${c.sub}</div>
+      </div>
+      <div class="check-overlay">
+        <div class="check-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+      </div>`;
+    div.addEventListener('click', (e) => toggleCard(i, div, e));
+    masonry.appendChild(div);
+  });
+}
+
+function toggleCard(idx, el, e){
+  // ripple
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const rect = el.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+  el.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+
+  if(selected.has(idx)){
+    selected.delete(idx);
+    el.classList.remove('selected');
+  } else {
+    selected.add(idx);
+    el.classList.add('selected');
+    // haptic-like visual pop
+    el.style.transform = 'scale(1.05)';
+    setTimeout(() => el.style.transform = '', 150);
+  }
+  updateBar();
+}
+
+function updateBar(){
+  const n = selected.size;
+  countNum.textContent = n;
+  if(n > 0){
+    bottomBar.classList.remove('hidden');
+  } else {
+    bottomBar.classList.add('hidden');
+  }
+  if(n >= 5){
+    btnResult.classList.add('active');
+  } else {
+    btnResult.classList.remove('active');
+  }
+}
+
+function analyzeSelection(){
+  const cats = {};
+  selected.forEach(idx => {
+    const c = cards[idx].cat;
+    cats[c] = (cats[c]||0) + 1;
+  });
+  return cats;
+}
+
+function showResults(){
+  if(selected.size < 5) return;
+  const cats = analyzeSelection();
+  const total = selected.size;
+  const sorted = Object.entries(cats).sort((a,b) => b[1] - a[1]);
+
+  // Generate keywords based on top categories
+  const keywordMap = {
+    '自然': ['開放感と自由','自然との調和'],
+    '都会': ['刺激と変化','都市的感性'],
+    '秩序': ['計画性と秩序','美意識と洗練'],
+    '活気': ['社交性と活力','多様性への関心'],
+    '静寂': ['内省と集中','知的好奇心'],
+    '文化': ['感性と表現力','伝統への敬意'],
+    '知性': ['探究心と論理性','分析的思考']
+  };
+
+  const keywords = [];
+  sorted.slice(0,3).forEach(([cat]) => {
+    const kws = keywordMap[cat] || ['好奇心'];
+    keywords.push(kws[Math.floor(Math.random()*kws.length)]);
+  });
+
+  const insightMap = {
+    '自然': '自然の風景を多く選んでいます → 開放感と心の余白を大切にするタイプです',
+    '都会': '都会的なシーンに惹かれています → 刺激や変化を求める行動的なタイプです',
+    '秩序': '整理された空間を多く選んでいます → 計画性と秩序を重視する傾向があります',
+    '活気': '活気あるシーンを好んでいます → 人とのつながりやエネルギーを大切にします',
+    '静寂': '静かな空間に惹かれています → 深く考えることを好む内省的なタイプです',
+    '文化': '文化的なシーンを多く選んでいます → 感性豊かで表現力を持つタイプです',
+    '知性': '知的な空間を好んでいます → 探究心旺盛で学ぶことが好きなタイプです'
+  };
+
+  const barColors = ['linear-gradient(90deg,#7F77DD,#B074D0)','linear-gradient(90deg,#667eea,#764ba2)','linear-gradient(90deg,#a18cd1,#fbc2eb)','linear-gradient(90deg,#c9d6ff,#e2e2e2)','linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#43e97b,#38f9d7)','linear-gradient(90deg,#fc5c7d,#6a82fb)'];
+  const catEmoji = {自然:'🌿',都会:'🌃',秩序:'🗂️',活気:'🎪',静寂:'📚',文化:'🎭',知性:'🔬'};
+
+  let html = '';
+
+  // Mood visual
+  html += `<div class="result-card"><h3>🎯 あなたのムードプロフィール</h3>`;
+  html += `<div class="mood-visual">`;
+  sorted.slice(0,4).forEach(([cat],i) => {
+    const colors = ['#7F77DD','#B074D0','#667eea','#a18cd1','#43e97b','#fc5c7d'];
+    html += `<div class="mood-dot" style="background:${colors[i%colors.length]};animation-delay:${i*0.1}s">${catEmoji[cat]||'✨'}</div>`;
+  });
+  html += `</div>`;
+  html += `<div class="keyword-list">`;
+  keywords.forEach((k,i) => {
+    html += `<div class="keyword-tag" style="animation-delay:${i*0.12}s">${k}</div>`;
+  });
+  html += `</div></div>`;
+
+  // Bar chart
+  html += `<div class="result-card"><h3>📊 カテゴリ傾向</h3><div class="bar-chart">`;
+  sorted.forEach(([cat, count], i) => {
+    const pct = Math.round(count / total * 100);
+    html += `<div class="bar-row"><div class="bar-label">${catEmoji[cat]||''} ${cat}</div><div class="bar-track"><div class="bar-fill" style="width:0%;background:${barColors[i%barColors.length]}" data-width="${pct}%">${pct}%</div></div></div>`;
+  });
+  html += `</div></div>`;
+
+  // Insight
+  const topCat = sorted[0][0];
+  const insight = insightMap[topCat] || '独自の感性を持っています';
+  const secondInsight = sorted.length > 1 ? insightMap[sorted[1][0]] : '';
+  html += `<div class="result-card"><h3>💡 あなたへのインサイト</h3>`;
+  html += `<div class="insight-box"><p>${insight}</p></div>`;
+  if(secondInsight){
+    html += `<div class="insight-box" style="margin-top:8px"><p>${secondInsight}</p></div>`;
+  }
+  html += `<div class="insight-box" style="margin-top:8px"><p>選んだ${total}枚の画像から、あなたは<span class="insight-arrow">「${keywords[0]}」</span>を軸に、${keywords[1] ? '「' + keywords[1] + '」' : '独自の視点'}も持ち合わせる多面的な感性の持ち主です。</p></div>`;
+  html += `</div>`;
+
+  document.getElementById('resultsContent').innerHTML = html;
+
+  const overlay = document.getElementById('resultsOverlay');
+  overlay.classList.add('show');
+  overlay.scrollTop = 0;
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.width;
+    });
+  }, 300);
+}
+
+function hideResults(){
+  document.getElementById('resultsOverlay').classList.remove('show');
+}
+
+renderCards();
+</script>
+</body>
+</html>

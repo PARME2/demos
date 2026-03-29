@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI社員対話</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --primary:#1D9E75;--primary-light:#3DBF94;--primary-dark:#167A5B;
+    --bg:#E1F5EE;--bg-card:#fff;--text:#1A3A2F;--text-light:#5A7D6E;
+    --accent:#A8E6CF;--warm:#F5D76E;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN',sans-serif;
+    background:var(--bg);color:var(--text);max-width:375px;margin:0 auto;
+    min-height:100vh;overflow-x:hidden;
+  }
+
+  /* ===== Selection Screen ===== */
+  .screen{display:none}
+  .screen.active{display:block}
+
+  .sel-header{
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    padding:48px 20px 24px;color:#fff;border-radius:0 0 28px 28px;
+    position:relative;overflow:hidden;
+  }
+  .sel-header::after{
+    content:'';position:absolute;bottom:-20px;right:-20px;width:100px;height:100px;
+    background:rgba(255,255,255,0.08);border-radius:50%;
+  }
+  .sel-header h1{font-size:20px;font-weight:700;margin-bottom:4px}
+  .sel-header p{font-size:12px;opacity:0.85;line-height:1.5}
+
+  .sel-subtitle{
+    padding:20px 20px 12px;font-size:13px;font-weight:600;color:var(--text-light);
+  }
+
+  .employee-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 24px;
+  }
+  .emp-card{
+    background:var(--bg-card);border-radius:18px;padding:18px 14px;
+    text-align:center;cursor:pointer;transition:all 0.3s;
+    box-shadow:0 2px 12px rgba(29,158,117,0.08);position:relative;overflow:hidden;
+  }
+  .emp-card:active{transform:scale(0.97)}
+  .emp-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:50px;
+    background:linear-gradient(135deg,rgba(29,158,117,0.06),rgba(168,230,207,0.15));
+  }
+  .emp-avatar{
+    width:56px;height:56px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),rgba(29,158,117,0.15));
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;margin:0 auto 10px;position:relative;z-index:1;
+    border:3px solid var(--bg-card);box-shadow:0 2px 8px rgba(29,158,117,0.15);
+  }
+  .emp-name{font-size:14px;font-weight:700;margin-bottom:2px}
+  .emp-age{font-size:11px;color:var(--text-light)}
+  .emp-company{
+    font-size:10px;color:var(--primary);font-weight:600;
+    margin-top:4px;background:rgba(29,158,117,0.06);
+    padding:3px 8px;border-radius:8px;display:inline-block;
+  }
+  .emp-job{font-size:11px;color:var(--text-light);margin-top:4px}
+
+  /* ===== Chat Screen ===== */
+  .chat-header{
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    padding:44px 16px 16px;color:#fff;display:flex;align-items:center;gap:12px;
+    border-radius:0 0 24px 24px;position:sticky;top:0;z-index:10;
+  }
+  .back-btn{
+    background:rgba(255,255,255,0.2);border:none;color:#fff;
+    width:32px;height:32px;border-radius:50%;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+  }
+  .chat-avatar{
+    width:44px;height:44px;border-radius:50%;
+    background:rgba(255,255,255,0.2);display:flex;align-items:center;
+    justify-content:center;font-size:24px;
+    border:2px solid rgba(255,255,255,0.3);
+  }
+  .chat-info h2{font-size:15px;font-weight:600}
+  .chat-info p{font-size:11px;opacity:0.8}
+  .bookmark-btn{
+    margin-left:auto;background:none;border:none;font-size:22px;cursor:pointer;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+  }
+
+  /* Chat area */
+  .chat-area{
+    padding:16px;min-height:calc(100vh - 240px);
+    display:flex;flex-direction:column;gap:12px;padding-bottom:180px;
+  }
+  .chat-intro{
+    background:var(--bg-card);border-radius:18px;padding:16px;
+    box-shadow:0 2px 10px rgba(29,158,117,0.08);text-align:center;
+    margin-bottom:4px;
+  }
+  .chat-intro-emoji{font-size:36px;margin-bottom:8px}
+  .chat-intro-text{font-size:13px;line-height:1.7;color:var(--text)}
+
+  .msg{max-width:85%;animation:msgIn 0.4s ease}
+  @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .msg.ai{align-self:flex-start}
+  .msg.user{align-self:flex-end}
+  .msg-bubble{
+    padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.7;
+  }
+  .msg.ai .msg-bubble{
+    background:var(--bg-card);color:var(--text);
+    border-bottom-left-radius:4px;
+    box-shadow:0 1px 6px rgba(29,158,117,0.08);
+  }
+  .msg.user .msg-bubble{
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    color:#fff;border-bottom-right-radius:4px;
+  }
+  .msg-meta{
+    font-size:10px;color:var(--text-light);margin-top:4px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .msg.user .msg-meta{justify-content:flex-end}
+  .play-btn{
+    display:inline-flex;align-items:center;gap:4px;
+    background:rgba(29,158,117,0.08);border:none;padding:4px 10px;
+    border-radius:12px;font-size:11px;color:var(--primary);cursor:pointer;
+    margin-top:6px;
+  }
+  .play-btn:active{background:rgba(29,158,117,0.15)}
+
+  /* Typing indicator */
+  .typing{display:flex;gap:4px;padding:8px 16px}
+  .typing-dot{
+    width:8px;height:8px;border-radius:50%;background:var(--primary-light);
+    animation:typeBounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2){animation-delay:0.2s}
+  .typing-dot:nth-child(3){animation-delay:0.4s}
+  @keyframes typeBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+
+  /* Suggestions */
+  .suggestions{
+    position:fixed;bottom:100px;left:50%;transform:translateX(-50%);
+    width:375px;max-width:100%;padding:0 16px;
+    display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .suggestions::-webkit-scrollbar{display:none}
+  .sug-chip{
+    flex-shrink:0;padding:8px 14px;background:var(--bg-card);
+    border:1.5px solid rgba(29,158,117,0.2);border-radius:20px;
+    font-size:12px;color:var(--primary);cursor:pointer;white-space:nowrap;
+    transition:all 0.2s;font-weight:500;
+  }
+  .sug-chip:active{background:rgba(29,158,117,0.1);transform:scale(0.97)}
+
+  /* Record bar */
+  .record-bar{
+    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+    width:375px;max-width:100%;background:var(--bg-card);
+    padding:12px 20px 28px;border-radius:24px 24px 0 0;
+    box-shadow:0 -4px 20px rgba(29,158,117,0.1);
+    display:flex;align-items:center;justify-content:center;gap:16px;
+  }
+  .rec-btn{
+    width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--primary),var(--primary-light));
+    color:#fff;font-size:24px;position:relative;
+    box-shadow:0 4px 16px rgba(29,158,117,0.3);
+    display:flex;align-items:center;justify-content:center;transition:all 0.3s;
+  }
+  .rec-btn:active{transform:scale(0.95)}
+  .rec-btn.recording{
+    background:linear-gradient(135deg,#E85D75,#F08A9E);
+    box-shadow:0 4px 16px rgba(232,93,117,0.3);
+  }
+  .rec-pulse{
+    position:absolute;width:100%;height:100%;border-radius:50%;
+    border:2px solid var(--primary);opacity:0;
+  }
+  .rec-btn.recording .rec-pulse{
+    animation:pulse-out 1.5s ease-out infinite;
+    border-color:#E85D75;
+  }
+  .rec-btn.recording .rec-pulse:nth-child(2){animation-delay:0.5s}
+  @keyframes pulse-out{0%{transform:scale(1);opacity:0.5}100%{transform:scale(2);opacity:0}}
+  .rec-btn.recording .mic-i{display:none}
+  .rec-btn.recording .stop-i{display:block}
+  .stop-i{display:none;width:18px;height:18px;background:#fff;border-radius:3px}
+  .rec-wave{
+    display:flex;align-items:center;gap:2px;height:32px;opacity:0;transition:opacity 0.3s;
+  }
+  .rec-wave.active{opacity:1}
+  .rw-bar{
+    width:3px;background:var(--primary);border-radius:2px;height:6px;
+  }
+  .rec-wave.active .rw-bar{animation:wave 0.5s ease-in-out infinite alternate}
+  .rw-bar:nth-child(odd){animation-delay:0.1s}
+  .rw-bar:nth-child(3n){animation-delay:0.2s}
+  .rw-bar:nth-child(4n){animation-delay:0.05s}
+  @keyframes wave{0%{height:6px}100%{height:28px}}
+  .rec-wave.recording-active .rw-bar{background:#E85D75}
+  .rec-timer{
+    font-size:13px;color:var(--text-light);font-variant-numeric:tabular-nums;
+    min-width:40px;opacity:0;transition:opacity 0.3s;
+  }
+  .rec-timer.visible{opacity:1}
+
+  /* Company link */
+  .company-link{
+    display:block;margin:0 16px 16px;padding:14px;
+    background:var(--bg-card);border-radius:14px;text-align:center;
+    text-decoration:none;color:var(--primary);font-size:13px;font-weight:600;
+    box-shadow:0 2px 10px rgba(29,158,117,0.08);
+    border:1.5px solid rgba(29,158,117,0.15);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Selection Screen ===== -->
+<div class="screen active" id="selectionScreen">
+  <div class="sel-header">
+    <h1>AI社員と話そう 🏢</h1>
+    <p>地元で働く先輩たちに、仕事のこと<br>なんでも聞いてみよう！</p>
+  </div>
+  <div class="sel-subtitle">話してみたい先輩を選んでね 👋</div>
+  <div class="employee-grid" id="empGrid"></div>
+</div>
+
+<!-- ===== Chat Screen ===== -->
+<div class="screen" id="chatScreen">
+  <div class="chat-header">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="chat-avatar" id="chatAvatar"></div>
+    <div class="chat-info">
+      <h2 id="chatName"></h2>
+      <p id="chatRole"></p>
+    </div>
+    <button class="bookmark-btn" id="bookmarkBtn" onclick="toggleBookmark()">☆</button>
+  </div>
+
+  <div class="chat-area" id="chatArea"></div>
+
+  <div class="suggestions" id="suggestions"></div>
+
+  <div class="record-bar">
+    <div class="rec-wave" id="recWave">
+      <div class="rw-bar"></div><div class="rw-bar"></div><div class="rw-bar"></div>
+      <div class="rw-bar"></div><div class="rw-bar"></div><div class="rw-bar"></div>
+      <div class="rw-bar"></div><div class="rw-bar"></div><div class="rw-bar"></div>
+      <div class="rw-bar"></div><div class="rw-bar"></div><div class="rw-bar"></div>
+    </div>
+    <button class="rec-btn" id="recBtn" onclick="toggleRec()">
+      <span class="rec-pulse"></span>
+      <span class="rec-pulse"></span>
+      <span class="mic-i">🎙️</span>
+      <div class="stop-i"></div>
+    </button>
+    <div class="rec-timer" id="recTimer">00:00</div>
+  </div>
+</div>
+
+<script>
+const employees = [
+  { id:0, name:"田中さん", age:24, emoji:"🧑‍🌾", company:'農業法人「みどりファーム」', job:"農場スタッフ",
+    intro:"「毎朝5時起きだけど、野菜が育つの見ると元気出る！」",
+    greeting:"こんにちは！田中です。農業やってます。なんでも聞いてね！",
+    responses:{
+      "どんな仕事してるの？":"野菜の栽培が主な仕事だよ！トマトとか、きゅうりとか。朝早いのは大変だけど、自分が育てた野菜を「おいしい」って言ってもらえると最高にうれしい。最近はSNSで農園の様子も発信してて、それも楽しいんだ。",
+      "学生時代何してた？":"正直、農業なんて全然興味なかった（笑）。部活でサッカーやってて、大学では経営学勉強してた。でもインターンで農家さんに行ったら、めっちゃ面白くて。人生何があるかわかんないよね。",
+      "大変なことは？":"天候に左右されるのは辛いかな。台風の後とか心が折れそうになる。あと体力的にもキツい日はある。でもチームのみんなで支え合えるから乗り越えられてる。",
+      "やりがいは？":"やっぱり「食」を通じて人を幸せにできること。マルシェで直接お客さんと話すと、やってよかったなって思う。あと、自然の中で働くのは気持ちいいよ！"
+    }
+  },
+  { id:1, name:"佐藤さん", age:28, emoji:"👩‍💻", company:'IT企業「テックラボ」', job:"Webエンジニア",
+    intro:"「プログラミングは魔法みたいで、毎日ワクワクする」",
+    greeting:"やっほー！佐藤です。プログラマーやってるよ。気軽に聞いてね！",
+    responses:{
+      "どんな仕事してるの？":"Webサイトやアプリを作ってるよ！企画から、デザイン、プログラミングまで関わることもある。最近はAI使ったサービスも開発してて、技術の進化が早くてついていくの大変だけど楽しい！",
+      "学生時代何してた？":"高校時代はゲーム大好きで、「ゲーム作りたい！」ってプログラミング始めた。独学だったけど、ネットで情報いっぱいあるから何とかなったよ。文化祭でゲーム出展したのがいい思い出。",
+      "大変なことは？":"バグが見つからない時は本当につらい（笑）。何時間も画面とにらめっこ。あとリモートワークだと孤独感じることもある。でも解決した瞬間の達成感は半端ないよ！",
+      "やりがいは？":"自分が作ったものを誰かが使ってくれてること。アプリのレビューで「便利です！」って書いてもらえると泣きそうになる。あと、常に新しいこと学べるのも好き。"
+    }
+  },
+  { id:2, name:"山田さん", age:32, emoji:"🧑‍🍳", company:'地元レストラン「まるやま」', job:"シェフ",
+    intro:"「地元の食材で、みんなが笑顔になる料理を作りたい」",
+    greeting:"どうも、山田です！料理人やってます。なんでも答えるよ！",
+    responses:{
+      "どんな仕事してるの？":"地元の食材を使ったレストランでシェフやってる。メニュー開発から仕込み、調理まで全部。農家さんから直接仕入れるから、食材の良さを最大限に引き出す料理を心がけてるよ。",
+      "学生時代何してた？":"家で料理するのが好きだったんだよね。家族に食べさせるのが楽しくて。高校卒業してすぐ専門学校に行って、東京の有名レストランで修業した。地元に戻ってきて3年目！",
+      "大変なことは？":"体力勝負なところかな。立ちっぱなしで長時間。あと味のブレを出さないように毎日真剣勝負。繁忙期はプライベートの時間ほぼないし。でもお客さんの「おいしい」の一言で全部チャラ！",
+      "やりがいは？":"地元の食材の魅力を発信できること。「この野菜どこの？」って聞かれて農家さんを紹介できると嬉しい。食を通じて地域を盛り上げたいんだよね。"
+    }
+  },
+  { id:3, name:"鈴木さん", age:26, emoji:"🏗", company:'建設会社「大地建設」', job:"現場監督",
+    intro:"「みんなが安心して暮らせる街を作ってる実感がある」",
+    greeting:"鈴木です！建設の仕事してます。聞きたいこと何でもどうぞ！",
+    responses:{
+      "どんな仕事してるの？":"建物の工事現場で監督してるよ。スケジュール管理、安全確認、職人さんとの打ち合わせとか。新しい建物がどんどんできていく過程を間近で見られるのは感動するよ！",
+      "学生時代何してた？":"野球部でガッツリ体育会系だった。大学で建築学んで、現場のダイナミックさに惹かれて今の会社に。体力には自信あるつもりだったけど、最初は筋肉痛がヤバかった（笑）。",
+      "大変なことは？":"天候で工事が遅れると大変。あと安全管理は絶対に妥協できないから、プレッシャーはある。でもみんなで一つのものを作り上げるチームワークは最高。",
+      "やりがいは？":"完成した建物を見た時の達成感は言葉にできない。あと何年も残るものを作ってるって、すごいことだと思う。街を歩いて「あれ、自分が関わった」って思える。"
+    }
+  },
+  { id:4, name:"高橋さん", age:30, emoji:"👩‍⚕️", company:"市立病院", job:"看護師",
+    intro:"「患者さんの「ありがとう」が私の原動力」",
+    greeting:"高橋です。看護師してます！何でも聞いてくださいね。",
+    responses:{
+      "どんな仕事してるの？":"病院で看護師をしてるよ。患者さんのケア、お薬の管理、ドクターのサポートとか。毎日いろんな人と関わるから、コミュニケーション力が大事。夜勤もあるけど、人の役に立てる仕事だと思ってる。",
+      "学生時代何してた？":"おばあちゃんが入院した時に看護師さんが優しくしてくれて、「こういう人になりたい」って思ったの。看護学校は勉強も実習もハードだったけど、同期と支え合って乗り越えた。",
+      "大変なことは？":"命に関わる仕事だから、判断を間違えられないプレッシャー。夜勤明けの疲労も正直キツい。でも先輩や同僚がいてくれるから、一人じゃないって思える。",
+      "やりがいは？":"退院する患者さんの笑顔かな。「あなたのおかげで頑張れた」って言われた時は涙が出そうになった。人生の大切な場面に寄り添える仕事ってなかなかないと思う。"
+    }
+  },
+  { id:5, name:"中村さん", age:27, emoji:"🎨", company:'デザイン事務所「クリエイト」', job:"グラフィックデザイナー",
+    intro:"「デザインで地元をもっとカッコよくしたい」",
+    greeting:"中村です！デザイナーやってます。気軽にどうぞ！",
+    responses:{
+      "どんな仕事してるの？":"ポスター、パッケージ、Webサイトとか、いろんなもののデザインをしてる。地元企業のロゴとか、お祭りのチラシとかも。目に見えるかたちで「いいね！」って言ってもらえるのが嬉しい。",
+      "学生時代何してた？":"美術部でずっと絵を描いてた。でも最初は進路で悩んだよ。「絵で食べていけるの？」って。でもデザインって絵だけじゃなくて、問題解決なんだって知って、これだ！って思った。",
+      "大変なことは？":"クライアントのイメージを形にするのが難しい時がある。何度もやり直しになったり。あと締め切り前は徹夜もある。でも「完璧！」って言ってもらえた瞬間、全部報われる。",
+      "やりがいは？":"自分のデザインが街中に貼り出された時は感動した！あと地元の良さを若い人にも伝えられるデザインができた時は嬉しい。デザインの力で地域を元気にしたいって本気で思ってる。"
+    }
+  }
+];
+
+let currentEmp = null;
+let isRec = false;
+let recInterval = null;
+let recSec = 0;
+let bookmarked = {};
+let convStep = 0;
+const questionKeys = ["どんな仕事してるの？","学生時代何してた？","大変なことは？","やりがいは？"];
+const followUps = [
+  ["もっと詳しく聞きたい！","学生時代は何してた？","大変なことある？"],
+  ["すごい！やりがいは？","大変なことも聞きたい","他に何してた？"],
+  ["それでもやりがいは？","学生時代はどうだった？","仕事の内容を教えて"],
+  ["ありがとう！他の話も聞きたい","最初の質問に戻る",""]
+];
+
+function buildSelection(){
+  const grid = document.getElementById('empGrid');
+  grid.innerHTML = '';
+  employees.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'emp-card';
+    card.onclick = () => selectEmployee(e.id);
+    card.innerHTML = `
+      <div class="emp-avatar">${e.emoji}</div>
+      <div class="emp-name">${e.name}</div>
+      <div class="emp-age">${e.age}歳</div>
+      <div class="emp-company">${e.company}</div>
+      <div class="emp-job">${e.job}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+buildSelection();
+
+function selectEmployee(id){
+  currentEmp = employees[id];
+  convStep = 0;
+  document.getElementById('selectionScreen').classList.remove('active');
+  document.getElementById('chatScreen').classList.add('active');
+  document.getElementById('chatAvatar').textContent = currentEmp.emoji;
+  document.getElementById('chatName').textContent = currentEmp.name;
+  document.getElementById('chatRole').textContent = `${currentEmp.company} / ${currentEmp.job}`;
+  document.getElementById('bookmarkBtn').textContent = bookmarked[id] ? '★' : '☆';
+
+  const area = document.getElementById('chatArea');
+  area.innerHTML = '';
+
+  // Intro card
+  const intro = document.createElement('div');
+  intro.className = 'chat-intro';
+  intro.innerHTML = `<div class="chat-intro-emoji">${currentEmp.emoji}</div><div class="chat-intro-text">${currentEmp.intro}</div>`;
+  area.appendChild(intro);
+
+  // Greeting
+  setTimeout(()=>{
+    addAIMessage(currentEmp.greeting);
+    showSuggestions(questionKeys);
+  }, 600);
+}
+
+function goBack(){
+  document.getElementById('chatScreen').classList.remove('active');
+  document.getElementById('selectionScreen').classList.add('active');
+  currentEmp = null;
+}
+
+function toggleBookmark(){
+  if(!currentEmp) return;
+  bookmarked[currentEmp.id] = !bookmarked[currentEmp.id];
+  document.getElementById('bookmarkBtn').textContent = bookmarked[currentEmp.id] ? '★' : '☆';
+}
+
+function addAIMessage(text){
+  const area = document.getElementById('chatArea');
+  // Show typing first
+  const typing = document.createElement('div');
+  typing.className = 'msg ai';
+  typing.innerHTML = `<div class="msg-bubble"><div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  area.appendChild(typing);
+  area.scrollTop = area.scrollHeight;
+
+  setTimeout(()=>{
+    typing.remove();
+    const msg = document.createElement('div');
+    msg.className = 'msg ai';
+    msg.innerHTML = `<div class="msg-bubble">${text}</div>
+      <div class="msg-meta"><button class="play-btn" onclick="this.textContent='🔊 再生中...'">▶ 音声を聞く</button></div>`;
+    area.appendChild(msg);
+    area.scrollTop = area.scrollHeight;
+  }, 1200);
+}
+
+function addUserMessage(text){
+  const area = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = 'msg user';
+  msg.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-meta">🎙️ 音声入力</div>`;
+  area.appendChild(msg);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showSuggestions(items){
+  const sug = document.getElementById('suggestions');
+  sug.innerHTML = '';
+  items.forEach(t => {
+    if(!t) return;
+    const chip = document.createElement('div');
+    chip.className = 'sug-chip';
+    chip.textContent = t;
+    chip.onclick = () => handleQuestion(t);
+    sug.appendChild(chip);
+  });
+}
+
+function handleQuestion(q){
+  addUserMessage(q);
+  document.getElementById('suggestions').innerHTML = '';
+
+  setTimeout(()=>{
+    const response = currentEmp.responses[q];
+    if(response){
+      addAIMessage(response);
+      convStep = (convStep + 1) % 4;
+      setTimeout(()=>{
+        const nextSugs = questionKeys.filter(k => k !== q);
+        showSuggestions(nextSugs);
+      }, 1400);
+    } else {
+      addAIMessage("いい質問だね！うーん、そうだなぁ... もう少し具体的に聞いてくれると答えやすいかも！");
+      setTimeout(()=> showSuggestions(questionKeys), 1400);
+    }
+  }, 300);
+}
+
+function toggleRec(){
+  if(!isRec) startRec(); else stopRec();
+}
+function startRec(){
+  isRec = true; recSec = 0;
+  const btn = document.getElementById('recBtn');
+  btn.classList.add('recording');
+  const wave = document.getElementById('recWave');
+  wave.classList.add('active','recording-active');
+  const timer = document.getElementById('recTimer');
+  timer.classList.add('visible');
+  recInterval = setInterval(()=>{
+    recSec++;
+    timer.textContent = `${String(Math.floor(recSec/60)).padStart(2,'0')}:${String(recSec%60).padStart(2,'0')}`;
+  },1000);
+}
+function stopRec(){
+  isRec = false;
+  clearInterval(recInterval);
+  document.getElementById('recBtn').classList.remove('recording');
+  const wave = document.getElementById('recWave');
+  wave.classList.remove('active','recording-active');
+  document.getElementById('recTimer').classList.remove('visible');
+
+  // Mock: pick a random question
+  const q = questionKeys[Math.floor(Math.random()*questionKeys.length)];
+  handleQuestion(q);
+}
+</script>
+</body>
+</html>

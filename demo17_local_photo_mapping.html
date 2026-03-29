@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>地元フォトマッピング</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--primary:#D85A30;--primary-light:#E8764E;--bg:#FAECE7;--card-radius:18px;--text:#3A2218;--text-light:#8A6A5A;--tag-love:#E8457A;--tag-curious:#3B82F6;--tag-surprise:#F59E0B;--tag-action:#10B981}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:200px}
+.header{position:sticky;top:0;z-index:100;background:rgba(250,236,231,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);padding:16px 20px 12px;border-bottom:1px solid rgba(216,90,48,.1)}
+.header-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,#D85A30,#B8421E);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{font-size:13px;color:var(--text-light);line-height:1.4}
+
+.stats-bar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.stat-pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:4px}
+.stat-pill.total{background:rgba(216,90,48,.1);color:var(--primary)}
+.stat-pill.top-tag{background:rgba(216,90,48,.06);color:var(--text-light)}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px 14px 20px}
+@media(min-width:420px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+.lcard{border-radius:var(--card-radius);overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .2s;-webkit-user-select:none;user-select:none}
+.lcard-visual{height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.lcard-emoji{font-size:36px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.1));margin-bottom:6px}
+.lcard-name{font-size:11px;color:rgba(255,255,255,.95);font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.25);text-align:center;padding:0 6px;line-height:1.3}
+.lcard-tags{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border-top:1px solid rgba(0,0,0,.05)}
+.tag-btn{padding:9px 0;font-size:10px;font-weight:700;border:none;background:transparent;cursor:pointer;transition:background .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:3px;position:relative;overflow:hidden}
+.tag-btn:active{transform:scale(.95)}
+.tag-btn:nth-child(2){border-left:1px solid rgba(0,0,0,.05)}
+.tag-btn:nth-child(3){border-top:1px solid rgba(0,0,0,.05)}
+.tag-btn:nth-child(4){border-left:1px solid rgba(0,0,0,.05);border-top:1px solid rgba(0,0,0,.05)}
+.tag-btn.love{color:var(--tag-love)}
+.tag-btn.curious{color:var(--tag-curious)}
+.tag-btn.surprise{color:var(--tag-surprise)}
+.tag-btn.action{color:var(--tag-action)}
+.tag-btn.active.love{background:rgba(232,69,122,.1)}
+.tag-btn.active.curious{background:rgba(59,130,246,.1)}
+.tag-btn.active.surprise{background:rgba(245,158,11,.1)}
+.tag-btn.active.action{background:rgba(16,185,129,.1)}
+
+.tag-badge{position:absolute;top:2px;right:4px;width:6px;height:6px;border-radius:50%;opacity:0;transition:opacity .2s}
+.tag-btn.active .tag-badge{opacity:1}
+.tag-btn.love .tag-badge{background:var(--tag-love)}
+.tag-btn.curious .tag-badge{background:var(--tag-curious)}
+.tag-btn.surprise .tag-badge{background:var(--tag-surprise)}
+.tag-btn.action .tag-badge{background:var(--tag-action)}
+
+/* Active card glow */
+.lcard.has-tag{box-shadow:0 2px 12px rgba(216,90,48,.12)}
+
+/* Mini Map */
+.minimap-container{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid rgba(216,90,48,.1);padding:10px 16px 14px;transition:transform .3s}
+.minimap-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.minimap-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
+.minimap-toggle{font-size:11px;color:var(--primary);font-weight:700;border:none;background:none;cursor:pointer;padding:4px 8px}
+.minimap-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(3,1fr);gap:3px;height:72px;background:rgba(216,90,48,.04);border-radius:12px;padding:6px;position:relative}
+.map-cell{border-radius:4px;background:rgba(216,90,48,.06);position:relative;display:flex;align-items:center;justify-content:center;transition:background .3s}
+.map-dot{width:10px;height:10px;border-radius:50%;opacity:0;transform:scale(0);transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.map-dot.visible{opacity:1;transform:scale(1)}
+.map-cell.active{background:rgba(216,90,48,.12)}
+
+.btn-result-float{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#D85A30,#B8421E);color:#fff;border:none;padding:12px 28px;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;box-shadow:0 4px 20px rgba(216,90,48,.3)}
+.btn-result-float.active{opacity:1;pointer-events:auto;animation:pulse-o 2s infinite}
+.btn-result-float:active{transform:translateX(-50%) scale(.95)}
+@keyframes pulse-o{0%,100%{box-shadow:0 4px 16px rgba(216,90,48,.3)}50%{box-shadow:0 4px 28px rgba(216,90,48,.5)}}
+
+/* Results */
+.results-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;background:var(--bg);overflow-y:auto;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);padding:0 0 40px}
+.results-overlay.show{transform:translateY(0)}
+.results-header{padding:60px 24px 20px;text-align:center}
+.results-header h2{font-size:22px;font-weight:800;background:linear-gradient(135deg,#D85A30,#B8421E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.results-header p{font-size:13px;color:var(--text-light)}
+.result-card{background:#fff;margin:12px 16px;border-radius:20px;padding:24px 20px;box-shadow:0 2px 12px rgba(216,90,48,.06)}
+.result-card h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+.result-map{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(3,1fr);gap:4px;height:120px;background:rgba(216,90,48,.04);border-radius:16px;padding:8px;margin-bottom:14px}
+.rmap-cell{border-radius:6px;background:rgba(216,90,48,.06);display:flex;align-items:center;justify-content:center;font-size:12px;position:relative}
+.rmap-dot{width:16px;height:16px;border-radius:50%;opacity:0;transform:scale(0)}
+.rmap-dot.visible{opacity:1;transform:scale(1);transition:all .4s cubic-bezier(.34,1.56,.64,1)}
+.rmap-cell.active{background:rgba(216,90,48,.1)}
+
+.legend-row{display:flex;gap:10px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--text-light)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+
+.tag-summary{display:flex;flex-direction:column;gap:10px}
+.tag-summary-row{display:flex;align-items:center;gap:10px}
+.tag-summary-label{font-size:12px;font-weight:700;width:90px;text-align:right;flex-shrink:0}
+.tag-summary-bar-track{flex:1;height:26px;border-radius:13px;background:rgba(0,0,0,.04);overflow:hidden}
+.tag-summary-bar{height:100%;border-radius:13px;display:flex;align-items:center;padding:0 10px;font-size:11px;font-weight:700;color:#fff;transition:width .8s cubic-bezier(.16,1,.3,1);min-width:30px;justify-content:flex-end}
+
+.class-grid{display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(3,1fr);gap:4px;height:120px;background:rgba(216,90,48,.04);border-radius:16px;padding:8px;margin-bottom:10px}
+.class-cell{border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;position:relative}
+
+.insight-box{background:linear-gradient(135deg,rgba(216,90,48,.06),rgba(184,66,30,.04));border:1px solid rgba(216,90,48,.12);border-radius:16px;padding:16px;margin-top:12px}
+.insight-box p{font-size:13px;line-height:1.7;color:var(--text)}
+
+.spot-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.spot-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;font-size:12px;font-weight:600}
+.spot-item .stag{font-size:14px}
+
+.btn-back{display:block;margin:24px auto 0;background:linear-gradient(135deg,#D85A30,#B8421E);color:#fff;border:none;padding:14px 40px;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer}
+.btn-back:active{transform:scale(.96)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <span style="font-size:28px">📍</span>
+    <h1>地元フォトマッピング</h1>
+  </div>
+  <p>地元のスポットにタグをつけてね。あなただけの地元マップができるよ！</p>
+  <div class="stats-bar">
+    <div class="stat-pill total">🏷️ タグ付き: <span id="taggedCount">0</span>ヶ所</div>
+    <div class="stat-pill top-tag" id="topTagPill">よく使うタグ: --</div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<button class="btn-result-float" id="btnResult" onclick="showResults()">結果を見る 🗺️</button>
+
+<div class="minimap-container" id="minimapContainer">
+  <div class="minimap-header">
+    <div class="minimap-title">🗺️ あなたの地元マップ</div>
+    <button class="minimap-toggle" id="minimapToggle" onclick="toggleMinimap()">▼</button>
+  </div>
+  <div class="minimap-grid" id="minimapGrid"></div>
+</div>
+
+<div class="results-overlay" id="resultsOverlay">
+  <div class="results-header">
+    <p>あなたの</p>
+    <h2>地元マップ</h2>
+  </div>
+  <div id="resultsContent"></div>
+  <button class="btn-back" onclick="hideResults()">もう一度タグ付け 🔄</button>
+</div>
+
+<script>
+const spots = [
+  {emoji:'🏪',name:'駅前商店街',grad:'linear-gradient(135deg,#f7971e,#ffd200)',mapPos:7},
+  {emoji:'⛰️',name:'山の展望台',grad:'linear-gradient(135deg,#56ab2f,#a8e063)',mapPos:0},
+  {emoji:'🏚️',name:'廃校跡地',grad:'linear-gradient(135deg,#bdc3c7,#2c3e50)',mapPos:4},
+  {emoji:'⛩️',name:'地元の神社',grad:'linear-gradient(135deg,#c0392b,#e74c3c)',mapPos:2},
+  {emoji:'☕',name:'新しいカフェ',grad:'linear-gradient(135deg,#a18cd1,#fbc2eb)',mapPos:8},
+  {emoji:'🐟',name:'漁港の朝市',grad:'linear-gradient(135deg,#2193b0,#6dd5ed)',mapPos:11},
+  {emoji:'♨️',name:'温泉街',grad:'linear-gradient(135deg,#f093fb,#f5576c)',mapPos:3},
+  {emoji:'🎨',name:'田んぼアート',grad:'linear-gradient(135deg,#11998e,#38ef7d)',mapPos:6},
+  {emoji:'🏭',name:'地元の工場',grad:'linear-gradient(135deg,#667eea,#764ba2)',mapPos:10},
+  {emoji:'🎬',name:'古い映画館',grad:'linear-gradient(135deg,#0f0c29,#302b63)',mapPos:13},
+  {emoji:'🌊',name:'川沿いの散歩道',grad:'linear-gradient(135deg,#43e97b,#38f9d7)',mapPos:15},
+  {emoji:'📚',name:'地域の図書館',grad:'linear-gradient(135deg,#ada996,#f2f2f2)',mapPos:9},
+  {emoji:'🚪',name:'シャッター通り',grad:'linear-gradient(135deg,#636363,#a2a2a2)',mapPos:14},
+  {emoji:'🏫',name:'地元の高校',grad:'linear-gradient(135deg,#667eea,#764ba2)',mapPos:1},
+  {emoji:'🏖️',name:'海水浴場',grad:'linear-gradient(135deg,#ee9ca7,#ffdde1)',mapPos:17},
+  {emoji:'🎪',name:'お祭り広場',grad:'linear-gradient(135deg,#f12711,#f5af19)',mapPos:12},
+  {emoji:'🛣️',name:'新しい道の駅',grad:'linear-gradient(135deg,#fc5c7d,#6a82fb)',mapPos:5},
+  {emoji:'🍜',name:'昔ながらの定食屋',grad:'linear-gradient(135deg,#c0392b,#8e44ad)',mapPos:16},
+];
+
+const tagTypes = [
+  {key:'love',emoji:'💕',label:'好き',color:'#E8457A'},
+  {key:'curious',emoji:'🔍',label:'気になる',color:'#3B82F6'},
+  {key:'surprise',emoji:'😲',label:'知らなかった',color:'#F59E0B'},
+  {key:'action',emoji:'💪',label:'なんとかしたい',color:'#10B981'},
+];
+
+// State: spotIndex -> tag key
+const tagState = {};
+let minimapOpen = true;
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  spots.forEach((s,i) => {
+    const div = document.createElement('div');
+    div.className = 'lcard';
+    div.id = `lcard-${i}`;
+    div.innerHTML = `
+      <div class="lcard-visual" style="background:${s.grad}">
+        <div class="lcard-emoji">${s.emoji}</div>
+        <div class="lcard-name">${s.name}</div>
+      </div>
+      <div class="lcard-tags">
+        ${tagTypes.map(t => `
+          <button class="tag-btn ${t.key}" data-spot="${i}" data-tag="${t.key}">
+            ${t.emoji} ${t.label}
+            <div class="tag-badge"></div>
+          </button>
+        `).join('')}
+      </div>`;
+    grid.appendChild(div);
+  });
+
+  grid.addEventListener('click', e => {
+    const btn = e.target.closest('.tag-btn');
+    if(!btn) return;
+    const spotIdx = parseInt(btn.dataset.spot);
+    const tagKey = btn.dataset.tag;
+    handleTag(spotIdx, tagKey);
+  });
+
+  renderMinimap();
+}
+
+function handleTag(spotIdx, tagKey){
+  const card = document.getElementById(`lcard-${spotIdx}`);
+  const prevTag = tagState[spotIdx];
+
+  // Remove previous
+  if(prevTag){
+    const prevBtn = card.querySelector(`.tag-btn.${prevTag}`);
+    if(prevBtn) prevBtn.classList.remove('active');
+  }
+
+  if(prevTag === tagKey){
+    // Deselect
+    delete tagState[spotIdx];
+    card.classList.remove('has-tag');
+  } else {
+    tagState[spotIdx] = tagKey;
+    const newBtn = card.querySelector(`.tag-btn.${tagKey}`);
+    if(newBtn){
+      newBtn.classList.add('active');
+      // Pop animation
+      newBtn.style.transform = 'scale(1.1)';
+      setTimeout(() => newBtn.style.transform = '', 150);
+    }
+    card.classList.add('has-tag');
+  }
+
+  updateStats();
+  updateMinimap();
+  updateResultButton();
+}
+
+function updateStats(){
+  const tagged = Object.keys(tagState).length;
+  document.getElementById('taggedCount').textContent = tagged;
+
+  // Most used tag
+  const counts = {};
+  tagTypes.forEach(t => counts[t.key] = 0);
+  Object.values(tagState).forEach(t => counts[t]++);
+  let maxKey = null, maxVal = 0;
+  for(let k in counts){
+    if(counts[k] > maxVal){maxVal = counts[k]; maxKey = k;}
+  }
+  const pill = document.getElementById('topTagPill');
+  if(maxKey && maxVal > 0){
+    const tt = tagTypes.find(t => t.key === maxKey);
+    pill.textContent = `よく使うタグ: ${tt.emoji} ${tt.label} (${maxVal})`;
+  } else {
+    pill.textContent = 'よく使うタグ: --';
+  }
+}
+
+function renderMinimap(){
+  const grid = document.getElementById('minimapGrid');
+  grid.innerHTML = '';
+  for(let i = 0; i < 18; i++){
+    const cell = document.createElement('div');
+    cell.className = 'map-cell';
+    cell.id = `mapcell-${i}`;
+    cell.innerHTML = `<div class="map-dot" id="mapdot-${i}"></div>`;
+    grid.appendChild(cell);
+  }
+}
+
+function updateMinimap(){
+  // Reset all
+  for(let i = 0; i < 18; i++){
+    const cell = document.getElementById(`mapcell-${i}`);
+    const dot = document.getElementById(`mapdot-${i}`);
+    cell.classList.remove('active');
+    dot.classList.remove('visible');
+    dot.style.background = '';
+  }
+
+  Object.entries(tagState).forEach(([spotIdx, tagKey]) => {
+    const spot = spots[parseInt(spotIdx)];
+    const tt = tagTypes.find(t => t.key === tagKey);
+    const cell = document.getElementById(`mapcell-${spot.mapPos}`);
+    const dot = document.getElementById(`mapdot-${spot.mapPos}`);
+    if(cell && dot){
+      cell.classList.add('active');
+      dot.classList.add('visible');
+      dot.style.background = tt.color;
+    }
+  });
+}
+
+function updateResultButton(){
+  const btn = document.getElementById('btnResult');
+  const tagged = Object.keys(tagState).length;
+  if(tagged >= 5) btn.classList.add('active');
+  else btn.classList.remove('active');
+}
+
+function toggleMinimap(){
+  minimapOpen = !minimapOpen;
+  const grid = document.getElementById('minimapGrid');
+  const toggle = document.getElementById('minimapToggle');
+  if(minimapOpen){
+    grid.style.display = 'grid';
+    toggle.textContent = '▼';
+  } else {
+    grid.style.display = 'none';
+    toggle.textContent = '▲';
+  }
+}
+
+function showResults(){
+  const tagged = Object.keys(tagState).length;
+  if(tagged < 5) return;
+
+  // Count per tag
+  const counts = {};
+  tagTypes.forEach(t => counts[t.key] = 0);
+  Object.values(tagState).forEach(t => counts[t]++);
+
+  const total = tagged;
+
+  let html = '';
+
+  // Your map
+  html += `<div class="result-card"><h3>🗺️ あなたの地元マップ</h3>`;
+  html += `<div class="result-map">`;
+  for(let i = 0; i < 18; i++){
+    let dotHtml = '';
+    const spotEntry = Object.entries(tagState).find(([idx]) => spots[parseInt(idx)].mapPos === i);
+    if(spotEntry){
+      const tt = tagTypes.find(t => t.key === spotEntry[1]);
+      dotHtml = `<div class="rmap-dot visible" style="background:${tt.color};animation-delay:${i*0.05}s"></div>`;
+    }
+    html += `<div class="rmap-cell ${spotEntry?'active':''}">${dotHtml}</div>`;
+  }
+  html += `</div>`;
+  html += `<div class="legend-row">`;
+  tagTypes.forEach(t => {
+    html += `<div class="legend-item"><div class="legend-dot" style="background:${t.color}"></div>${t.emoji} ${t.label}</div>`;
+  });
+  html += `</div></div>`;
+
+  // Tag breakdown
+  html += `<div class="result-card"><h3>📊 タグの内訳</h3><div class="tag-summary">`;
+  tagTypes.forEach(t => {
+    const pct = total > 0 ? Math.round(counts[t.key] / total * 100) : 0;
+    html += `<div class="tag-summary-row">
+      <div class="tag-summary-label">${t.emoji} ${t.label}</div>
+      <div class="tag-summary-bar-track"><div class="tag-summary-bar" style="width:0%;background:${t.color}" data-width="${pct}%">${counts[t.key]}ヶ所</div></div>
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // Tagged spots list
+  html += `<div class="result-card"><h3>📍 タグ付けしたスポット</h3><div class="spot-list">`;
+  Object.entries(tagState).forEach(([idx, tagKey]) => {
+    const s = spots[parseInt(idx)];
+    const tt = tagTypes.find(t => t.key === tagKey);
+    html += `<div class="spot-item" style="background:${tt.color}10;border-left:3px solid ${tt.color}">
+      <span class="stag">${tt.emoji}</span> ${s.emoji} ${s.name}
+    </div>`;
+  });
+  html += `</div></div>`;
+
+  // Class aggregate (mock)
+  html += `<div class="result-card"><h3>👥 クラス全体の結果</h3><p style="font-size:12px;color:var(--text-light);margin-bottom:10px">クラスメート28人の集計結果（モックデータ）</p>`;
+  html += `<div class="class-grid">`;
+  const classColors = ['#E8457A','#3B82F6','#F59E0B','#10B981','#E8457A','#3B82F6',
+    '#10B981','#F59E0B','#E8457A','#3B82F6','#F59E0B','#10B981',
+    '#E8457A','#3B82F6','#10B981','#F59E0B','#E8457A','#3B82F6'];
+  const classIntensity = [0.8,0.5,0.3,0.9,0.6,0.4, 0.7,0.85,0.55,0.45,0.65,0.75, 0.9,0.35,0.5,0.6,0.8,0.7];
+  for(let i = 0; i < 18; i++){
+    html += `<div class="class-cell" style="background:${classColors[i]};opacity:${classIntensity[i]}">${spots[i].emoji}</div>`;
+  }
+  html += `</div>`;
+  html += `<div class="legend-row">`;
+  html += `<div class="legend-item"><div class="legend-dot" style="background:#E8457A"></div>好きが多い</div>`;
+  html += `<div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>気になるが多い</div>`;
+  html += `<div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>知らないが多い</div>`;
+  html += `<div class="legend-item"><div class="legend-dot" style="background:#10B981"></div>改善希望が多い</div>`;
+  html += `</div></div>`;
+
+  // Insights
+  let insightText = '';
+  if(counts.surprise >= 3){
+    insightText = `知らなかった場所が${counts.surprise}ヶ所 → まだまだ地元に発見がありそう！散歩してみると新しい出会いがあるかも。`;
+  } else if(counts.love >= 3){
+    insightText = `好きな場所が${counts.love}ヶ所 → 地元への愛着が強いタイプ。地域の良さを伝えるリーダーになれるかも！`;
+  } else if(counts.action >= 3){
+    insightText = `なんとかしたい場所が${counts.action}ヶ所 → 地域課題への関心が高い！まちづくりプロジェクトに向いているかも。`;
+  } else if(counts.curious >= 3){
+    insightText = `気になる場所が${counts.curious}ヶ所 → 探究心旺盛！地元を深掘りする記者やリサーチャーの素質あり。`;
+  } else {
+    insightText = `バランスよくタグをつけています → 地元を多角的に見られる視野の広さが強みです！`;
+  }
+
+  html += `<div class="result-card"><h3>💡 インサイト</h3>`;
+  html += `<div class="insight-box"><p>${insightText}</p></div>`;
+
+  // Cross-class insight
+  const mostLoved = '駅前商店街';
+  const mostUnknown = '田んぼアート';
+  html += `<div class="insight-box" style="margin-top:8px"><p>👥 クラス全体では「${mostLoved}」が一番人気、「${mostUnknown}」は知らない人が最多でした。あなたの視点はクラスに新しい気づきを与えるかも！</p></div>`;
+  html += `</div>`;
+
+  document.getElementById('resultsContent').innerHTML = html;
+  const overlay = document.getElementById('resultsOverlay');
+  overlay.classList.add('show');
+  overlay.scrollTop = 0;
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.tag-summary-bar').forEach(bar => {
+      bar.style.width = bar.dataset.width;
+    });
+    document.querySelectorAll('.rmap-dot.visible').forEach((dot,i) => {
+      dot.style.transitionDelay = (i * 0.08) + 's';
+    });
+  }, 300);
+}
+
+function hideResults(){
+  document.getElementById('resultsOverlay').classList.remove('show');
+}
+
+render();
+</script>
+</body>
+</html>

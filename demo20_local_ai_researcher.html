@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=375, maximum-scale=1, user-scalable=no">
+<title>地元AIリサーチャー</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--primary:#D85A30;--primary-light:#E8764E;--primary-dark:#B84A25;--bg:#FAECE7;--bg-card:#FFF5F1;--white:#FFFFFF;--text:#2E1F18;--text-light:#6B4F44;--text-muted:#A8897E;--bubble-ai:#FFFFFF;--bubble-user:#D85A30;--shadow:0 2px 12px rgba(216,90,48,0.1);--shadow-lg:0 8px 32px rgba(216,90,48,0.15)}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:375px;margin:0 auto;background:var(--bg);position:relative}
+
+/* Header */
+.header{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-light) 100%);padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:10;box-shadow:0 2px 16px rgba(216,90,48,0.25)}
+.header-avatar{width:40px;height:40px;background:rgba(255,255,255,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.header-info{flex:1}
+.header-name{color:#fff;font-size:16px;font-weight:700;letter-spacing:0.3px}
+.header-status{color:rgba(255,255,255,0.8);font-size:11px;display:flex;align-items:center;gap:4px}
+.header-status::before{content:'';width:6px;height:6px;background:#FFD080;border-radius:50%;display:inline-block}
+.header-btn{width:36px;height:36px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
+.header-btn:active{background:rgba(255,255,255,0.3)}
+
+/* Chat Area */
+.chat-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:4px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.chat-area::-webkit-scrollbar{display:none}
+
+.date-divider{text-align:center;margin:8px 0 12px;position:relative}
+.date-divider span{background:var(--bg);color:var(--text-muted);font-size:11px;padding:0 12px;position:relative;z-index:1}
+.date-divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(216,90,48,0.15)}
+
+/* Messages */
+.msg-row{display:flex;gap:8px;align-items:flex-end;max-width:90%;margin-bottom:4px}
+.msg-row.ai{align-self:flex-start}
+.msg-row.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-bottom:2px}
+.msg-row.user .msg-avatar{display:none}
+.msg-content{display:flex;flex-direction:column;gap:2px}
+.msg-bubble{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.65;word-break:break-word;animation:bubbleIn 0.3s cubic-bezier(0.175,0.885,0.32,1.1)}
+@keyframes bubbleIn{from{opacity:0;transform:scale(0.8) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.msg-row.ai .msg-bubble{background:var(--bubble-ai);color:var(--text);border-bottom-left-radius:6px;box-shadow:var(--shadow)}
+.msg-row.user .msg-bubble{background:var(--bubble-user);color:#fff;border-bottom-right-radius:6px;box-shadow:0 2px 12px rgba(216,90,48,0.25)}
+.msg-time{font-size:10px;color:var(--text-muted);padding:0 4px;margin-top:1px}
+.msg-row.user .msg-time{text-align:right}
+
+/* Typing */
+.typing-indicator{display:flex;gap:4px;padding:12px 16px;align-items:center}
+.typing-indicator .dot{width:7px;height:7px;background:var(--text-muted);border-radius:50%;animation:typingDot 1.4s ease-in-out infinite}
+.typing-indicator .dot:nth-child(2){animation-delay:0.2s}
+.typing-indicator .dot:nth-child(3){animation-delay:0.4s}
+@keyframes typingDot{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* Quick Replies */
+.quick-replies-wrap{padding:6px 16px 4px;overflow-x:auto;white-space:nowrap;display:flex;gap:8px;scrollbar-width:none}
+.quick-replies-wrap::-webkit-scrollbar{display:none}
+.chip{display:inline-block;background:var(--white);border:1.5px solid var(--primary);color:var(--primary);padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;flex-shrink:0;user-select:none}
+.chip:active{background:var(--primary);color:#fff;transform:scale(0.95)}
+
+/* Input Bar */
+.input-bar{padding:8px 12px 12px;background:var(--white);border-top:1px solid rgba(216,90,48,0.1);display:flex;align-items:flex-end;gap:8px}
+.input-bar textarea{flex:1;border:1.5px solid rgba(216,90,48,0.2);border-radius:22px;padding:10px 16px;font-size:14px;font-family:inherit;resize:none;outline:none;max-height:100px;min-height:40px;line-height:1.5;transition:border-color 0.2s;background:var(--bg-card)}
+.input-bar textarea:focus{border-color:var(--primary)}
+.input-bar textarea::placeholder{color:var(--text-muted)}
+.send-btn{width:40px;height:40px;background:var(--primary);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;box-shadow:0 2px 8px rgba(216,90,48,0.3)}
+.send-btn:active{transform:scale(0.9)}
+.send-btn:disabled{background:var(--text-muted);box-shadow:none}
+
+/* Data Cards */
+.data-card{background:var(--white);border:1.5px solid rgba(216,90,48,0.12);border-radius:16px;padding:14px;margin:6px 0;animation:cardIn 0.5s ease;max-width:300px;box-shadow:var(--shadow);overflow:hidden}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.data-card-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.data-card-icon{font-size:18px}
+.data-card-title{font-size:13px;font-weight:700;color:var(--text)}
+.data-card-subtitle{font-size:11px;color:var(--text-muted)}
+
+/* Line Chart (CSS) */
+.line-chart{position:relative;height:100px;margin:8px 0;padding:0 4px}
+.line-chart svg{width:100%;height:100%}
+.chart-line{fill:none;stroke:var(--primary);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.chart-area{fill:url(#areaGrad);opacity:0.3}
+.chart-dot{fill:var(--primary);stroke:var(--white);stroke-width:2}
+.chart-labels{display:flex;justify-content:space-between;margin-top:4px}
+.chart-label{font-size:9px;color:var(--text-muted)}
+
+/* Bar Chart */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px;margin:8px 0;padding:0 4px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%}
+.bar{width:100%;border-radius:5px 5px 2px 2px;transition:height 0.8s cubic-bezier(0.175,0.885,0.32,1.275);background:var(--primary);position:relative;min-height:4px;margin-top:auto}
+.bar-value{font-size:9px;color:var(--text-light);font-weight:600;text-align:center}
+.bar-label{font-size:9px;color:var(--text-muted);white-space:nowrap}
+
+/* Pie Chart */
+.pie-chart-wrap{display:flex;align-items:center;gap:14px;margin:8px 0}
+.pie-chart{width:80px;height:80px;flex-shrink:0}
+.pie-legend{display:flex;flex-direction:column;gap:4px}
+.pie-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-light)}
+.pie-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Stat Row */
+.stat-row{display:flex;gap:8px;margin:6px 0}
+.stat-item{flex:1;background:var(--bg-card);border-radius:10px;padding:10px;text-align:center}
+.stat-value{font-size:18px;font-weight:800;color:var(--primary)}
+.stat-label{font-size:10px;color:var(--text-muted);margin-top:2px}
+.stat-change{font-size:10px;font-weight:600;margin-top:2px}
+.stat-change.up{color:#1D9E75}
+.stat-change.down{color:#D85A30}
+
+/* Place Card */
+.place-card{background:var(--bg-card);border-radius:12px;padding:12px;margin:4px 0;display:flex;gap:10px;align-items:flex-start;animation:cardIn 0.4s ease}
+.place-icon{width:40px;height:40px;background:var(--white);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:var(--shadow)}
+.place-info{flex:1}
+.place-name{font-size:13px;font-weight:700;color:var(--text)}
+.place-arrow{font-size:12px;color:var(--primary);margin:0 4px}
+.place-desc{font-size:12px;color:var(--text-light);line-height:1.5;margin-top:2px}
+.place-btn{display:inline-block;font-size:11px;color:var(--primary);font-weight:600;margin-top:4px;cursor:pointer;padding:2px 0;border:none;background:none;font-family:inherit}
+.place-btn:active{opacity:0.6}
+
+/* Summary Card */
+.summary-card{background:linear-gradient(135deg,var(--bg-card),var(--bg));border:1.5px solid rgba(216,90,48,0.15);border-radius:16px;padding:16px;margin:10px 0;animation:cardIn 0.5s ease}
+.summary-card-title{font-size:14px;font-weight:700;color:var(--primary-dark);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.summary-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;color:var(--text);line-height:1.6}
+.summary-bullet{color:var(--primary);font-weight:700;flex-shrink:0}
+
+/* Deep Dive Button */
+.deep-btn{display:inline-flex;align-items:center;gap:4px;background:var(--bg-card);border:1.5px solid var(--primary);color:var(--primary);font-size:11px;font-weight:600;padding:6px 12px;border-radius:12px;margin-top:6px;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.deep-btn:active{background:var(--primary);color:#fff}
+
+.safe-notice{text-align:center;padding:8px 24px;margin-bottom:8px}
+.safe-notice p{font-size:11px;color:var(--text-muted);line-height:1.5;background:rgba(216,90,48,0.06);padding:8px 12px;border-radius:12px;display:inline-block}
+
+::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-avatar">🔎</div>
+    <div class="header-info">
+      <div class="header-name">リサーチャー</div>
+      <div class="header-status">データ分析中...</div>
+    </div>
+    <button class="header-btn" onclick="showSummary()">📋</button>
+  </div>
+
+  <div class="chat-area" id="chatArea">
+    <div class="safe-notice">
+      <p>📊 地元のデータを分かりやすくお届けします</p>
+    </div>
+    <div class="date-divider"><span>今日</span></div>
+  </div>
+
+  <div class="quick-replies-wrap" id="quickReplies"></div>
+
+  <div class="input-bar">
+    <textarea id="userInput" rows="1" placeholder="地元のこと聞いてみよう..." oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 20V14L11 12L3 10V4L22 12L3 20Z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const chatArea = document.getElementById('chatArea');
+const quickRepliesEl = document.getElementById('quickReplies');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+let currentPath = null;
+let pathStep = 0;
+let discoveries = [];
+
+const initialChips = ['人口は増えてる？減ってる？', '廃校になった学校どうなった？', 'うちの市の農業ってどんな種類？', 'この地域で働いてる人って何人？'];
+
+// Conversation data
+const conversations = {
+  '人口は増えてる？減ってる？': {
+    steps: [
+      {
+        type: 'messages',
+        ai: ['調べてみたよ 📊'],
+        then: 'next'
+      },
+      {
+        type: 'dataCard',
+        card: 'populationChart',
+        then: 'next'
+      },
+      {
+        type: 'messages',
+        ai: ['10年で約15%減少。特に20-30代の転出が多いんだ 😢'],
+        then: 'next'
+      },
+      {
+        type: 'messages',
+        ai: ['でも面白いデータもあって、最近3年はUターン移住者が増えてるよ！ 📈'],
+        then: 'next'
+      },
+      {
+        type: 'dataCard',
+        card: 'uturnChart',
+        then: 'next'
+      },
+      {
+        type: 'chips',
+        chips: ['なんで若者が出ていくの？', 'Uターンの人ってどんな仕事？', '他のデータも見たい']
+      }
+    ],
+    replies: {
+      'なんで若者が出ていくの？': [
+        { type: 'messages', ai: ['いくつか理由があるよ 🤔'] },
+        { type: 'dataCard', card: 'reasonPie' },
+        { type: 'messages', ai: ['一番多いのは「進学」で45%。大学が近くにないからね。', 'でも「仕事がない」は意外と25%だけ。リモートワークが増えて、地元でも働ける環境が少しずつ整ってきてるんだ 💻'] },
+        { type: 'chips', chips: ['リモートワークの実態は？', '他のデータも見たい'] }
+      ],
+      'Uターンの人ってどんな仕事？': [
+        { type: 'messages', ai: ['Uターン者の仕事、調べてきたよ！ 🔍'] },
+        { type: 'dataCard', card: 'uturnJobBar' },
+        { type: 'messages', ai: ['面白いのは、IT・リモートワーク系が30%もいること！', '都会のスキルを活かしながら地元で暮らす、っていう新しいスタイルが増えてるんだ 🌟'] },
+        { type: 'chips', chips: ['具体的にどんな人がいるの？', '他のデータも見たい'] }
+      ],
+      '他のデータも見たい': [
+        { type: 'messages', ai: ['もちろん！他にどんなことが気になる？ 😊'] },
+        { type: 'chips', chips: initialChips.filter(c => c !== '人口は増えてる？減ってる？') }
+      ]
+    },
+    discovery: 'この地域の人口は10年で15%減少。ただしUターン移住者は最近3年で増加傾向。'
+  },
+
+  '廃校になった学校どうなった？': {
+    steps: [
+      {
+        type: 'messages',
+        ai: ['この地域には廃校が3校あるよ 🏫', 'それぞれどうなったか見てみよう！'],
+        then: 'next'
+      },
+      {
+        type: 'placeCard',
+        cards: [
+          { icon: '💻', name: '旧山田小学校', arrow: '→', desc: 'コワーキングスペース「YAMADA BASE」に！地元のフリーランス15人が利用中', key: 'yamada' },
+          { icon: '🍽️', name: '旧港中学校', arrow: '→', desc: '地元食材のレストラン＆宿泊施設「港テラス」。年間来客5,000人', key: 'minato' },
+          { icon: '❓', name: '旧東高校', arrow: '→', desc: 'まだ活用方法を検討中。地域住民からアイデアを募集中！', key: 'higashi' }
+        ],
+        then: 'next'
+      },
+      {
+        type: 'messages',
+        ai: ['廃校をうまく活用してるところ、増えてきてるよね！'],
+        then: 'next'
+      },
+      {
+        type: 'chips',
+        chips: ['コワーキング詳しく', '活用のアイデアある？', '他の空き家は？']
+      }
+    ],
+    replies: {
+      'コワーキング詳しく': [
+        { type: 'messages', ai: ['YAMADA BASE、すごいよ！ 💻'] },
+        { type: 'dataCard', card: 'coworkStats' },
+        { type: 'messages', ai: ['元教室が会議室に、体育館がイベントスペースになってるんだ。', '月額5,000円で使えるから、東京のコワーキングの半額以下！', '高校生の放課後学習スペースとしても開放してるよ 📚'] },
+        { type: 'chips', chips: ['行ってみたい！', '他のデータも見たい'] }
+      ],
+      '活用のアイデアある？': [
+        { type: 'messages', ai: ['旧東高校の活用アイデア、全国の事例を調べてみたよ！ 🔍'] },
+        { type: 'messages', ai: ['全国で成功してる例を紹介するね：\n\n🎨 アートスタジオ＆ギャラリー\n🏕️ グランピング施設\n🧪 地域の実験ラボ\n🎓 フリースクール\n🍺 クラフトビール醸造所'] },
+        { type: 'messages', ai: ['ちなみに、旧東高校は地域住民からアイデアを募集中！\n高校生の意見も聞きたいって市役所の人が言ってたよ 🏛️'] },
+        { type: 'chips', chips: ['アイデア出したい！', '他のデータも見たい'] }
+      ],
+      '他の空き家は？': [
+        { type: 'messages', ai: ['空き家データも調べてきたよ！ 🏚️'] },
+        { type: 'dataCard', card: 'akiyaStats' },
+        { type: 'messages', ai: ['この地域には約350件の空き家があるんだ。', 'でも最近は「空き家バンク」で移住者向けに格安で貸し出す取り組みが始まってる。', '去年だけで23件が新しい住人を見つけたよ！ 🏠'] },
+        { type: 'chips', chips: ['空き家バンクって？', '他のデータも見たい'] }
+      ]
+    },
+    discovery: '地域の廃校3校のうち2校が再活用済み。コワーキングスペースや飲食施設として地域の新拠点に。'
+  },
+
+  'うちの市の農業ってどんな種類？': {
+    steps: [
+      {
+        type: 'messages',
+        ai: ['農業データ、調べてきたよ！ 🌾'],
+        then: 'next'
+      },
+      {
+        type: 'dataCard',
+        card: 'farmPie'
+      },
+      {
+        type: 'messages',
+        ai: ['お米が一番多くて全体の40%。でも最近は果物栽培が伸びてるよ！ 🍎', '特にブドウの評判がすごくて、ワイナリーもできたんだ 🍷'],
+        then: 'next'
+      },
+      {
+        type: 'dataCard',
+        card: 'farmStats'
+      },
+      {
+        type: 'chips',
+        chips: ['ワイナリーについて', '若い農家はいるの？', '他のデータも見たい']
+      }
+    ],
+    replies: {
+      'ワイナリーについて': [
+        { type: 'messages', ai: ['「里山ワイナリー」は3年前にできたばかり！ 🍷', '元IT企業のエンジニアがUターンして始めたんだ。\n地元産のブドウ100%で作るワインが首都圏のレストランでも人気。', '見学ツアーもやってるよ！（※未成年は試飲NGだけどね 笑）'] },
+        { type: 'chips', chips: ['見学してみたい', '他のデータも見たい'] }
+      ],
+      '若い農家はいるの？': [
+        { type: 'messages', ai: ['いるよ！最近増えてきてる 🧑‍🌾'] },
+        { type: 'dataCard', card: 'youngFarmerBar' },
+        { type: 'messages', ai: ['5年前は20-30代の農家が8人だったのが、今は22人！\n約3倍に増えてるんだ。', 'SNSで発信してる人も多くて、「農業＝カッコいい」ってイメージが変わってきてるよ 🌟'] },
+        { type: 'chips', chips: ['どんな人がいるの？', '他のデータも見たい'] }
+      ],
+      '他のデータも見たい': [
+        { type: 'messages', ai: ['もちろん！何が気になる？ 😊'] },
+        { type: 'chips', chips: initialChips.filter(c => c !== 'うちの市の農業ってどんな種類？') }
+      ]
+    },
+    discovery: '地域の農業は米が40%で最大。果物栽培が急成長中で、若い農家が5年で3倍に増加。'
+  },
+
+  'この地域で働いてる人って何人？': {
+    steps: [
+      {
+        type: 'messages',
+        ai: ['就業データ、集めてきたよ！ 📊'],
+        then: 'next'
+      },
+      {
+        type: 'dataCard',
+        card: 'workforceStats'
+      },
+      {
+        type: 'messages',
+        ai: ['この地域で働いてる人は約12,000人。', '意外と製造業が一番多くて、次がサービス業だよ。'],
+        then: 'next'
+      },
+      {
+        type: 'dataCard',
+        card: 'industryBar'
+      },
+      {
+        type: 'messages',
+        ai: ['面白いのは、「情報通信」が5年前の2倍になってること！リモートワーカーが増えた影響だね 💻'],
+        then: 'next'
+      },
+      {
+        type: 'chips',
+        chips: ['平均年収はどのくらい？', 'どんな仕事が人気？', '他のデータも見たい']
+      }
+    ],
+    replies: {
+      '平均年収はどのくらい？': [
+        { type: 'messages', ai: ['ぶっちゃけるね 💰'] },
+        { type: 'dataCard', card: 'salaryStats' },
+        { type: 'messages', ai: ['全国平均より少し低いけど、生活費も安いから実質的にはそんなに変わらないよ。', '家賃は東京の1/3以下！自然も豊かだし、QOL（生活の質）は高いって言う人が多い 🌿'] },
+        { type: 'chips', chips: ['生活費の比較見たい', '他のデータも見たい'] }
+      ],
+      'どんな仕事が人気？': [
+        { type: 'messages', ai: ['高校生に人気の仕事ランキング、この地域版！ 🏆'] },
+        { type: 'messages', ai: ['🥇 公務員（安定志向）\n🥈 医療・福祉（需要大）\n🥉 IT・Web（リモート可）\n4位 飲食・観光（地域活性）\n5位 農業（新規参入増）'] },
+        { type: 'messages', ai: ['でも実は「地元で起業」っていう選択肢を選ぶ若者も増えてるよ！この5年で新規創業が40件 🚀'] },
+        { type: 'chips', chips: ['起業について知りたい', '他のデータも見たい'] }
+      ],
+      '他のデータも見たい': [
+        { type: 'messages', ai: ['何でも聞いて！ 😊'] },
+        { type: 'chips', chips: initialChips.filter(c => c !== 'この地域で働いてる人って何人？') }
+      ]
+    },
+    discovery: '地域の就業者数は約12,000人。情報通信業が5年で2倍に。リモートワークの普及が影響。'
+  }
+};
+
+// Data card renderers
+const dataCards = {
+  populationChart: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">📉</span><div><div class="data-card-title">人口推移（過去10年）</div><div class="data-card-subtitle">2016年〜2026年</div></div></div>
+      <div class="line-chart">
+        <svg viewBox="0 0 260 90" preserveAspectRatio="none">
+          <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D85A30" stop-opacity="0.3"/><stop offset="100%" stop-color="#D85A30" stop-opacity="0.02"/></linearGradient></defs>
+          <path class="chart-area" d="M10,15 L55,25 L100,32 L145,42 L190,50 L235,58 L250,62 L250,85 L10,85 Z"/>
+          <path class="chart-line" d="M10,15 L55,25 L100,32 L145,42 L190,50 L235,58 L250,62"/>
+          <circle class="chart-dot" cx="10" cy="15" r="3"/><circle class="chart-dot" cx="55" cy="25" r="3"/><circle class="chart-dot" cx="100" cy="32" r="3"/><circle class="chart-dot" cx="145" cy="42" r="3"/><circle class="chart-dot" cx="190" cy="50" r="3"/><circle class="chart-dot" cx="235" cy="58" r="3"/><circle class="chart-dot" cx="250" cy="62" r="3"/>
+        </svg>
+      </div>
+      <div class="chart-labels"><span class="chart-label">2016</span><span class="chart-label">2018</span><span class="chart-label">2020</span><span class="chart-label">2022</span><span class="chart-label">2024</span><span class="chart-label">2026</span></div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">28,500</div><div class="stat-label">2016年</div></div>
+        <div class="stat-item"><div class="stat-value">24,200</div><div class="stat-label">2026年</div><div class="stat-change down">▼ 15.1%</div></div>
+      </div>
+      <button class="deep-btn" onclick="deepDive('population')">🔍 もっと深く知る</button>
+    </div>`,
+  uturnChart: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">📈</span><div><div class="data-card-title">Uターン移住者数（直近5年）</div></div></div>
+      <div class="bar-chart" id="uturnBars"></div>
+      <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:4px">※ 市への転入届ベース</div>
+    </div>`,
+  reasonPie: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">🔍</span><div><div class="data-card-title">若者（20-30代）転出理由</div></div></div>
+      <div class="pie-chart-wrap">
+        <svg class="pie-chart" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#D85A30" stroke-width="4" stroke-dasharray="45 55" stroke-dashoffset="25"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E8764E" stroke-width="4" stroke-dasharray="25 75" stroke-dashoffset="80"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#F5A68A" stroke-width="4" stroke-dasharray="20 80" stroke-dashoffset="55"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#FFD4C2" stroke-width="4" stroke-dasharray="10 90" stroke-dashoffset="35"/>
+        </svg>
+        <div class="pie-legend">
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#D85A30"></div>進学 45%</div>
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#E8764E"></div>就職 25%</div>
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#F5A68A"></div>生活環境 20%</div>
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#FFD4C2"></div>その他 10%</div>
+        </div>
+      </div>
+    </div>`,
+  uturnJobBar: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">💼</span><div><div class="data-card-title">Uターン者の仕事内訳</div></div></div>
+      <div class="bar-chart" id="uturnJobBars"></div>
+    </div>`,
+  coworkStats: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">💻</span><div><div class="data-card-title">YAMADA BASE 実績</div></div></div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">15</div><div class="stat-label">利用者数</div></div>
+        <div class="stat-item"><div class="stat-value">¥5,000</div><div class="stat-label">月額料金</div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">月12回</div><div class="stat-label">イベント開催</div></div>
+        <div class="stat-item"><div class="stat-value">2023年</div><div class="stat-label">開設年</div></div>
+      </div>
+    </div>`,
+  akiyaStats: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">🏚️</span><div><div class="data-card-title">空き家データ</div></div></div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">350</div><div class="stat-label">空き家件数</div></div>
+        <div class="stat-item"><div class="stat-value">23</div><div class="stat-label">昨年の成約</div><div class="stat-change up">▲ 前年比+8</div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">12.8%</div><div class="stat-label">空き家率</div></div>
+        <div class="stat-item"><div class="stat-value">50</div><div class="stat-label">バンク登録</div></div>
+      </div>
+    </div>`,
+  farmPie: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">🌾</span><div><div class="data-card-title">農業 作物別シェア</div></div></div>
+      <div class="pie-chart-wrap">
+        <svg class="pie-chart" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#D85A30" stroke-width="4" stroke-dasharray="40 60" stroke-dashoffset="25"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1D9E75" stroke-width="4" stroke-dasharray="25 75" stroke-dashoffset="85"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#7F77DD" stroke-width="4" stroke-dasharray="20 80" stroke-dashoffset="60"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="#F5A68A" stroke-width="4" stroke-dasharray="15 85" stroke-dashoffset="40"/>
+        </svg>
+        <div class="pie-legend">
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#D85A30"></div>米 40%</div>
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#1D9E75"></div>野菜 25%</div>
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#7F77DD"></div>果物 20%</div>
+          <div class="pie-legend-item"><div class="pie-legend-dot" style="background:#F5A68A"></div>畜産他 15%</div>
+        </div>
+      </div>
+    </div>`,
+  farmStats: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">📊</span><div><div class="data-card-title">農業基本データ</div></div></div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">180</div><div class="stat-label">農家数</div></div>
+        <div class="stat-item"><div class="stat-value">22</div><div class="stat-label">20-30代</div><div class="stat-change up">▲ 5年で3倍</div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">850ha</div><div class="stat-label">耕作面積</div></div>
+        <div class="stat-item"><div class="stat-value">18億</div><div class="stat-label">産出額</div></div>
+      </div>
+    </div>`,
+  youngFarmerBar: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">🧑‍🌾</span><div><div class="data-card-title">20-30代農家数の推移</div></div></div>
+      <div class="bar-chart" id="youngFarmerBars"></div>
+    </div>`,
+  workforceStats: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">👥</span><div><div class="data-card-title">就業者データ</div></div></div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">12,000</div><div class="stat-label">就業者数</div></div>
+        <div class="stat-item"><div class="stat-value">58.2%</div><div class="stat-label">就業率</div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">3.2%</div><div class="stat-label">失業率</div><div class="stat-change up">▲ 改善傾向</div></div>
+        <div class="stat-item"><div class="stat-value">48.5歳</div><div class="stat-label">平均年齢</div></div>
+      </div>
+    </div>`,
+  industryBar: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">🏭</span><div><div class="data-card-title">業種別就業者数</div></div></div>
+      <div class="bar-chart" id="industryBars"></div>
+    </div>`,
+  salaryStats: () => `
+    <div class="data-card">
+      <div class="data-card-header"><span class="data-card-icon">💰</span><div><div class="data-card-title">年収比較</div></div></div>
+      <div class="stat-row">
+        <div class="stat-item"><div class="stat-value">380万</div><div class="stat-label">この地域</div></div>
+        <div class="stat-item"><div class="stat-value">443万</div><div class="stat-label">全国平均</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-light);text-align:center;padding:8px;background:var(--bg-card);border-radius:8px;margin-top:6px;line-height:1.6">
+        💡 ただし家賃は全国平均の<strong style="color:var(--primary)">約1/3</strong>！<br>実質的な可処分所得はほぼ同等
+      </div>
+    </div>`
+};
+
+// Animated bar data
+const barData = {
+  uturnBars: { labels: ['2022', '2023', '2024', '2025', '2026'], values: [12, 18, 25, 35, 42], suffix: '人' },
+  uturnJobBars: { labels: ['IT', '農業', '飲食', '福祉', '他'], values: [30, 25, 20, 15, 10], suffix: '%', colors: ['#D85A30','#E8764E','#F5A68A','#FFD4C2','#FFF0E8'] },
+  youngFarmerBars: { labels: ['2022', '2023', '2024', '2025', '2026'], values: [8, 11, 14, 18, 22], suffix: '人' },
+  industryBars: { labels: ['製造', 'サービス', '農林', '建設', '情報', '医療'], values: [3200, 2800, 1500, 1200, 800, 1000], suffix: '人', max: 3500 }
+};
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    addTypingThenMessages([
+      '地元のこと、なんでも調べるよ！ 🔎',
+      '気になることを聞いてみて 📊'
+    ], () => {
+      showChips(initialChips);
+    });
+  }, 600);
+});
+
+userInput.addEventListener('input', () => { sendBtn.disabled = userInput.value.trim() === ''; });
+userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (userInput.value.trim()) sendMessage(); } });
+
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; }
+
+function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  addUserBubble(text);
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  sendBtn.disabled = true;
+  hideChips();
+  processInput(text);
+}
+
+function addUserBubble(text) {
+  const r = document.createElement('div');
+  r.className = 'msg-row user';
+  r.innerHTML = `<div class="msg-content"><div class="msg-bubble">${esc(text)}</div><div class="msg-time">${timeNow()}</div></div>`;
+  chatArea.appendChild(r);
+  scrollBottom();
+}
+
+function addAIBubble(text) {
+  const r = document.createElement('div');
+  r.className = 'msg-row ai';
+  r.innerHTML = `<div class="msg-avatar">🔎</div><div class="msg-content"><div class="msg-bubble">${text}</div><div class="msg-time">${timeNow()}</div></div>`;
+  chatArea.appendChild(r);
+  scrollBottom();
+}
+
+function addTypingIndicator() {
+  const r = document.createElement('div');
+  r.className = 'msg-row ai'; r.id = 'typingRow';
+  r.innerHTML = `<div class="msg-avatar">🔎</div><div class="msg-content"><div class="msg-bubble"><div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+  chatArea.appendChild(r);
+  scrollBottom();
+}
+
+function removeTypingIndicator() { const e = document.getElementById('typingRow'); if (e) e.remove(); }
+
+function addTypingThenMessages(messages, callback) {
+  let i = 0;
+  function next() {
+    if (i >= messages.length) { if (callback) callback(); return; }
+    addTypingIndicator();
+    const delay = 700 + Math.random() * 1000 + messages[i].length * 20;
+    setTimeout(() => {
+      removeTypingIndicator();
+      addAIBubble(messages[i]);
+      i++;
+      setTimeout(next, 250);
+    }, delay);
+  }
+  next();
+}
+
+function addDataCard(cardKey) {
+  const renderer = dataCards[cardKey];
+  if (!renderer) return;
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = renderer();
+  const card = wrapper.firstElementChild;
+  chatArea.appendChild(card);
+  scrollBottom();
+
+  // Animate bars if applicable
+  setTimeout(() => {
+    const bd = barData[cardKey.replace('Chart', 'Bars')];
+    Object.keys(barData).forEach(barId => {
+      const container = document.getElementById(barId);
+      if (container) {
+        const d = barData[barId];
+        const maxVal = d.max || Math.max(...d.values);
+        container.innerHTML = d.values.map((v, idx) => {
+          const pct = (v / maxVal) * 100;
+          const color = d.colors ? d.colors[idx] : 'var(--primary)';
+          return `<div class="bar-wrap"><div class="bar-value">${v}${d.suffix}</div><div class="bar" style="height:0%;background:${color}" data-h="${pct}"></div><div class="bar-label">${d.labels[idx]}</div></div>`;
+        }).join('');
+        setTimeout(() => {
+          container.querySelectorAll('.bar').forEach(bar => {
+            bar.style.height = bar.dataset.h + '%';
+          });
+        }, 100);
+      }
+    });
+  }, 100);
+}
+
+function addPlaceCards(cards) {
+  cards.forEach((c, i) => {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'place-card';
+      el.innerHTML = `
+        <div class="place-icon">${c.icon}</div>
+        <div class="place-info">
+          <div class="place-name">${c.name} <span class="place-arrow">${c.arrow}</span> ${c.desc.split('。')[0]}</div>
+          <div class="place-desc">${c.desc.includes('。') ? c.desc.split('。').slice(1).join('。') : ''}</div>
+          <button class="place-btn" onclick="deepDive('${c.key}')">🔍 もっと深く知る</button>
+        </div>
+      `;
+      chatArea.appendChild(el);
+      scrollBottom();
+    }, i * 400);
+  });
+}
+
+function showChips(chips) {
+  quickRepliesEl.innerHTML = '';
+  chips.forEach(text => {
+    const c = document.createElement('div');
+    c.className = 'chip';
+    c.textContent = text;
+    c.onclick = () => chipClicked(text);
+    quickRepliesEl.appendChild(c);
+  });
+  quickRepliesEl.style.display = chips.length ? 'flex' : 'none';
+}
+
+function hideChips() { quickRepliesEl.innerHTML = ''; quickRepliesEl.style.display = 'none'; }
+
+function chipClicked(text) {
+  addUserBubble(text);
+  hideChips();
+  processInput(text);
+}
+
+function processInput(text) {
+  // Start new conversation
+  if (conversations[text] && !currentPath) {
+    currentPath = text;
+    pathStep = 0;
+    runSteps(conversations[text].steps, () => {
+      if (conversations[text].discovery && !discoveries.includes(conversations[text].discovery)) {
+        discoveries.push(conversations[text].discovery);
+      }
+    });
+    return;
+  }
+
+  // Check if this is a reply within current path
+  if (currentPath && conversations[currentPath]) {
+    const conv = conversations[currentPath];
+    const replies = conv.replies || {};
+    if (replies[text]) {
+      runSteps(replies[text], () => {});
+      return;
+    }
+  }
+
+  // Fallback
+  const fallbacks = [
+    ['面白い質問だね！ 📊', 'そのデータはまだ持ってないけど、こっちのデータなら詳しく調べられるよ！'],
+    ['なるほど、気になるよね！', 'もう少し具体的に聞いてくれると、データを見つけやすいよ 🔍'],
+    ['いい視点だね！ 🌟', 'まずはこのあたりのデータから見てみない？']
+  ];
+  const f = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  addTypingThenMessages(f, () => { showChips(initialChips); });
+}
+
+function runSteps(steps, onComplete) {
+  let i = 0;
+  function next() {
+    if (i >= steps.length) { if (onComplete) onComplete(); return; }
+    const step = steps[i];
+    switch (step.type) {
+      case 'messages':
+        addTypingThenMessages(step.ai, () => { i++; setTimeout(next, 200); });
+        break;
+      case 'dataCard':
+        setTimeout(() => {
+          addDataCard(step.card);
+          i++;
+          setTimeout(next, 600);
+        }, 300);
+        break;
+      case 'placeCard':
+        addPlaceCards(step.cards);
+        setTimeout(() => { i++; setTimeout(next, 200); }, step.cards.length * 450 + 200);
+        break;
+      case 'chips':
+        showChips(step.chips);
+        i++;
+        if (onComplete) onComplete();
+        break;
+      default:
+        i++;
+        next();
+    }
+  }
+  next();
+}
+
+function deepDive(topic) {
+  hideChips();
+  const responses = {
+    population: ['人口データの詳細版だよ！', '年齢別に見ると、0-14歳が12%、15-64歳が55%、65歳以上が33%。\n高齢化率は全国平均(29%)より高いんだ。', 'ただ、子育て支援を充実させた結果、出生率が少し上がってきてるよ 👶'],
+    yamada: ['YAMADA BASEは元山田小学校をリノベーションした施設！ 🏫', '1階が自由席のコワーキング、2階が会議室、体育館がイベントスペース。\nWi-Fi完備で月5,000円！', '高校生は放課後無料で使えるよ 📚'],
+    minato: ['港テラスは地元の人気スポット！ 🍽️', '元中学校の校舎をまるごとリノベ。\n1階がレストラン、2階が宿泊施設（全6室）。\n地元食材100%のメニューが自慢！', 'インスタ映えスポットとしても有名で、県外からのお客さんが7割！'],
+    higashi: ['旧東高校はまだ検討中 🤔', '市役所が住民ワークショップを開催中。\n「若者の居場所」「起業支援拠点」「芸術村」などの案が出てるよ。', '高校生の意見も大歓迎だって！市のHPから意見を送れるよ 📝']
+  };
+  const msgs = responses[topic] || ['そのデータはもう少し調べてみるね！🔍'];
+  addTypingThenMessages(msgs, () => { showChips(initialChips); });
+}
+
+function showSummary() {
+  if (discoveries.length === 0) {
+    addTypingThenMessages(['まだデータを調べていないよ 📊', 'まずは気になることを聞いてみて！'], () => { showChips(initialChips); });
+    return;
+  }
+  const card = document.createElement('div');
+  card.className = 'summary-card';
+  card.innerHTML = `
+    <div class="summary-card-title">📋 今日の発見まとめ</div>
+    ${discoveries.map(d => `<div class="summary-item"><span class="summary-bullet">●</span>${d}</div>`).join('')}
+  `;
+  chatArea.appendChild(card);
+  scrollBottom();
+}
+
+function scrollBottom() { requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; }); }
+function timeNow() { const n = new Date(); return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0'); }
+function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+</script>
+</body>
+</html>
