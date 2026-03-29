@@ -137,7 +137,7 @@ def call_agent_streaming(agent_id, prompt):
     log(f"  → {AGENTS[agent_id]['label']} 呼び出し開始")
     try:
         proc = subprocess.Popen(
-            ["claude", "-p", "--allowedTools", "Read,Write,Edit,Bash,Glob,Grep,WebFetch,WebSearch"],
+            ["claude", "-p", "--dangerously-skip-permissions"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -179,28 +179,14 @@ def call_agent_streaming(agent_id, prompt):
 
 
 def extract_html(text):
-    """エンジニアの応答からHTMLコードを抽出（複数パターン対応）"""
-    # パターン1: ---HTML_START--- ... ---HTML_END---
+    """エンジニアの応答からHTMLコードを抽出"""
     match = re.search(r'---HTML_START---(.*?)---HTML_END---', text, re.DOTALL)
     if match:
         return match.group(1).strip()
-
-    # パターン2: ```html ... ``` (<!DOCTYPE含む)
-    match = re.search(r'```html?\s*(<!DOCTYPE.*?</html>)\s*```', text, re.DOTALL | re.IGNORECASE)
+    # フォールバック: ```html ... ``` を探す
+    match = re.search(r'```html\s*(<!DOCTYPE.*?)</\s*html>\s*```', text, re.DOTALL | re.IGNORECASE)
     if match:
-        return match.group(1).strip()
-
-    # パターン3: ``` ... ``` (<!DOCTYPE含む、言語指定なし)
-    match = re.search(r'```\s*(<!DOCTYPE.*?</html>)\s*```', text, re.DOTALL | re.IGNORECASE)
-    if match:
-        return match.group(1).strip()
-
-    # パターン4: <!DOCTYPE ... </html> がそのまま含まれている
-    match = re.search(r'(<!DOCTYPE\s+html>.*?</html>)', text, re.DOTALL | re.IGNORECASE)
-    if match:
-        return match.group(1).strip()
-
-    log(f"  ✗ HTML抽出失敗: テキスト長={len(text)}, DOCTYPE含む={('<!DOCTYPE' in text.upper())}, </html>含む={('</html>' in text.lower())}")
+        return match.group(1).strip() + "\n</html>"
     return None
 
 
@@ -264,20 +250,28 @@ def run_meeting(topic):
         log(f"エラーで会議終了。ログ保存済み: {SESSION_DIR}")
 
 
+_log_file = None
+_log_lines = []
+
 def log(msg):
-    """タイムスタンプ付きでコンソールにログ出力"""
+    """タイムスタンプ付きでコンソール＋ファイル＋メモリにログ出力"""
+    global _log_file
     ts = time.strftime("%H:%M:%S")
-    print(f"  [{ts}] {msg}", flush=True)
+    line = f"[{ts}] {msg}"
+    print(f"  {line}", flush=True)
+    _log_lines.append(line)
+    if len(_log_lines) > 500:
+        _log_lines.pop(0)
+    if _log_file:
+        try:
+            _log_file.write(line + "\n")
+            _log_file.flush()
+        except:
+            pass
 
 
 def _run_meeting_inner(topic):
     log(f"会議開始: {topic[:50]}...")
-
-    def autosave():
-        try:
-            save_session_log()
-        except Exception as e:
-            log(f"  ✗ 自動保存失敗: {e}")
 
     # ========== Phase 0: ヒアリング ==========
     log("Phase 0: ヒアリング開始")
@@ -307,8 +301,6 @@ PMとして、このお題でUI設計を始める前に、情報が不足して�
             topic = f"{topic}\n\n【補足情報】\n{user_response}"
 
     time.sleep(1)
-
-    autosave()
 
     # ========== Phase 1: アイデア出し ==========
     log("Phase 1: アイデア出し開始")
@@ -363,8 +355,6 @@ PM補佐として、PMが方針を決める前に情報補足してください�
 
     time.sleep(1)
 
-    autosave()
-
     # ========== Phase 2: PM方針決定 ==========
     log("Phase 2: PM方針決定")
     meeting_status["phase"] = "direction"
@@ -400,8 +390,6 @@ PM補佐として軌道チェックしてください：
 
     time.sleep(1)
 
-    autosave()
-
     # ========== Phase 3: エンジニアがビルド ==========
     log("Phase 3: エンジニアがビルド")
     meeting_status["phase"] = "building"
@@ -429,8 +417,6 @@ PM補佐として軌道チェックしてください：
         add_message("04_pm", "HTMLの抽出に失敗しました。エンジニア、再度出力してください。", "facilitator")
 
     time.sleep(1)
-
-    autosave()
 
     # ========== Phase 4: レビュー→改善サイクル（PMが完了判断するまで） ==========
     log("Phase 4: レビュー→改善サイクル開始")
@@ -505,8 +491,6 @@ B) 完成 → 「【完了】これ以上の改善は不要です。」と明記
         else:
             log(f"  PM: 改善継続")
 
-        autosave()
-
         time.sleep(1)
 
         # エンジニアが改善
@@ -571,7 +555,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <title>Agent Meeting + Live Build</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0F0F1A;color:#E2E8F0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0F0F1A;color:#E2E8F0;display:flex;flex-direction:column}
 
 .header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:14px 20px;border-bottom:1px solid #2D3748;display:flex;align-items:center;gap:14px;flex-shrink:0}
 .header h1{font-size:17px;font-weight:700;background:linear-gradient(135deg,#4ECDC4,#A78BFA);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -586,10 +571,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* Main layout: timeline left, preview right */
-.main{display:flex;flex:1;overflow:hidden}
+.main{display:flex;flex:1;overflow:hidden;min-height:0}
 
-.timeline-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid #2D3748;min-width:0}
-.timeline-container{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth}
+.timeline-panel{flex:1;display:flex;flex-direction:column;border-right:1px solid #2D3748;min-width:0;min-height:0;overflow:hidden}
+.timeline-container{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth;min-height:0}
 .timeline{max-width:700px;display:flex;flex-direction:column;gap:16px;padding-bottom:80px}
 
 .preview-panel{width:480px;display:flex;flex-direction:column;flex-shrink:0;background:#1A1A2E}
@@ -599,6 +584,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 .preview-frame-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;background:#111;overflow:hidden}
 .preview-frame{width:430px;height:100%;border:none;border-radius:12px;background:#fff}
 .preview-empty{color:#64748B;font-size:13px;text-align:center}
+
+/* Console */
+.console-toggle{padding:8px 16px;border-top:1px solid #2D3748;font-size:11px;color:#64748B;cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:6px;user-select:none}
+.console-toggle:hover{color:#94A3B8}
+.console-panel{height:180px;overflow-y:auto;background:#0a0a12;padding:8px 12px;font-family:'SF Mono',Menlo,monospace;font-size:11px;line-height:1.6;color:#94A3B8;flex-shrink:0;display:none}
+.console-panel.open{display:block}
+.console-panel::-webkit-scrollbar{width:4px}
+.console-panel::-webkit-scrollbar-thumb{background:#4A5568;border-radius:2px}
+.log-error{color:#FCA5A5}
+.log-ok{color:#86EFAC}
 
 /* Messages */
 .msg{display:flex;gap:10px;animation:fadeIn .3s ease}
@@ -686,7 +681,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
 </div>
 
 <!-- Meeting Screen (hidden initially) -->
-<div id="meetingScreen" style="display:none;height:100vh;flex-direction:column">
+<div id="meetingScreen" style="display:none;height:100vh;flex-direction:column;overflow:hidden">
   <div class="header">
     <h1>Agent Meeting + Live Build</h1>
     <span class="ver-badge" id="verBadge">v0</span>
@@ -711,6 +706,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;bac
       <div class="preview-frame-wrap" id="previewWrap">
         <div class="preview-empty">エンジニアがモックを<br>ビルドすると表示されます</div>
       </div>
+      <div class="console-toggle" onclick="toggleConsole()"><span id="consoleArrow">▶</span> Console</div>
+      <div class="console-panel" id="consolePanel"></div>
     </div>
   </div>
   <div class="footer">
@@ -747,9 +744,10 @@ async function loadSessions(){
   const resp=await fetch('/api/sessions');
   const sessions=await resp.json();
   const area=document.getElementById('sessionsArea');
-  if(!sessions.length){area.innerHTML='';return;}
+  const valid=sessions.filter(s=>s.messages>0);
+  if(!valid.length){area.innerHTML='';return;}
   let h='<div class="sessions-title">過去のセッション</div>';
-  sessions.forEach(s=>{
+  valid.forEach(s=>{
     const phaseText=s.phase==='done'?'完了':s.phase||'不明';
     h+=`<div class="session-item" onclick="resumeSession('${s.id}')">
       <div class="session-meta">
@@ -853,13 +851,9 @@ const CODE_BADGE='<div style="padding:8px 12px;background:#34D39915;border:1px s
 function md(t){
   // エンジニアのHTMLコードを除去してからエスケープ
   t=t.replace(/---HTML_START---[\s\S]*?---HTML_END---/g,CODE_PLACEHOLDER);
-  t=t.replace(/```html?\s*<!DOCTYPE[\s\S]*?```/gi,CODE_PLACEHOLDER);
-  t=t.replace(/```\s*<!DOCTYPE[\s\S]*?```/gi,CODE_PLACEHOLDER);
-  t=t.replace(/<!DOCTYPE\s+html>[\s\S]*?<\/html>/gi,CODE_PLACEHOLDER);
+  t=t.replace(/```html\s*<!DOCTYPE[\s\S]*?```/gi,CODE_PLACEHOLDER);
   // ストリーミング中に途中まで出ているHTMLコードも非表示
   t=t.replace(/---HTML_START---[\s\S]*/g,CODE_PLACEHOLDER);
-  t=t.replace(/```html?\s*<!DOCTYPE[\s\S]*/gi,CODE_PLACEHOLDER);
-  t=t.replace(/<!DOCTYPE\s+html>[\s\S]*$/gi,CODE_PLACEHOLDER);
   return t
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>')
@@ -966,6 +960,32 @@ async function poll(){
   const speakerInfo=speaker&&AGENTS[speaker]?`${AGENTS[speaker].icon} ${AGENTS[speaker].label} 応答中...`:'';
   document.getElementById('elapsed').textContent=`Elapsed: ${Math.floor(el/60)}:${String(el%60).padStart(2,'0')}${speakerInfo?' | '+speakerInfo:''}`;
 }
+// Console
+let consoleOpen=false;
+function toggleConsole(){
+  consoleOpen=!consoleOpen;
+  document.getElementById('consolePanel').classList.toggle('open',consoleOpen);
+  document.getElementById('consoleArrow').textContent=consoleOpen?'▼':'▶';
+}
+let prevLogCount=0;
+async function pollLogs(){
+  if(!consoleOpen)return;
+  try{
+    const r=await fetch('/api/logs');
+    const lines=await r.json();
+    if(lines.length!==prevLogCount){
+      prevLogCount=lines.length;
+      const cp=document.getElementById('consolePanel');
+      cp.innerHTML=lines.map(l=>{
+        const cls=l.includes('✗')||l.includes('エラー')||l.includes('Error')?'log-error':l.includes('完了')||l.includes('OK')?'log-ok':'';
+        return `<div class="${cls}">${l.replace(/</g,'&lt;')}</div>`;
+      }).join('');
+      cp.scrollTop=cp.scrollHeight;
+    }
+  }catch(e){}
+}
+setInterval(pollLogs,1500);
+
 // poll is started by switchToMeeting()
 </script>
 </body>
@@ -989,6 +1009,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             with meeting_lock:
                 data = {"messages": list(meeting_log), "status": dict(meeting_status)}
             self.wfile.write(json.dumps(data).encode("utf-8"))
+        elif self.path == "/api/logs":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            self.wfile.write(json.dumps(_log_lines).encode("utf-8"))
         elif self.path.startswith("/mockup/v"):
             version = self.path.split("/v")[-1]
             path = MOCK_DIR / f"mockup_v{version}.html"
@@ -1104,17 +1130,27 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             new_topic = data.get("topic", "").strip()
 
             old_session = SESSIONS_DIR / session_id
-            log_file = old_session / "meeting_log.json"
 
-            if not log_file.exists():
+            if not old_session.exists():
                 self.send_response(404)
                 self.end_headers()
                 return
 
-            # 前回のログを読み込み
-            old_data = json.loads(log_file.read_text(encoding="utf-8"))
-            old_messages = old_data.get("messages", [])
-            old_mockup_ver = old_data.get("status", {}).get("mockup_version", 0)
+            # 前回のログを読み込み（なければ空）
+            log_file = old_session / "meeting_log.json"
+            old_messages = []
+            old_mockup_ver = 0
+            if log_file.exists():
+                old_data = json.loads(log_file.read_text(encoding="utf-8"))
+                old_messages = old_data.get("messages", [])
+                old_mockup_ver = old_data.get("status", {}).get("mockup_version", 0)
+
+            # ログがなくてもモックアップがあればバージョンを検出
+            old_mockup_dir = old_session / "mockups"
+            if old_mockup_ver == 0 and old_mockup_dir.exists():
+                versions = [int(f.stem.split("_v")[-1]) for f in old_mockup_dir.glob("mockup_v*.html")]
+                if versions:
+                    old_mockup_ver = max(versions)
 
             # 新セッション作成
             create_session()
@@ -1199,10 +1235,11 @@ def save_session_log():
 
 
 def main():
+    global _log_file
     session_dir = create_session()
 
     # サーバーログもセッションフォルダに
-    server_log = open(session_dir / "server.log", "w", encoding="utf-8")
+    _log_file = open(session_dir / "server.log", "w", encoding="utf-8")
 
     # CLIから直接お題を渡された場合は即開始
     topic = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else None
