@@ -1,0 +1,2911 @@
+--- PM (message) ---
+参考情報を確認しました。イベントの全体像は把握できました。
+
+---
+
+**情報整理（現状把握）**
+
+- **イベント**: ワークワクワク河内長野（河内長野市主催、企業26社、バスツアー18本＋会場ブース、2日間開催）
+- **ターゲット**: 小中学生とその親
+- **作りたいもの**: 体験を振り返り→抽象化→ネクストアクション提示するツール
+
+**判断：3点、情報が不足しています。**
+
+---
+
+以下について教えてください：
+
+1. **利用タイミングについて** — このツールは「各ツアー/ブース体験の直後にその場で入力」する想定か、「1日の終わりにまとめて振り返る」想定か、それとも両方か
+2. **技術制約について** — 参加者のデバイス環境（スマホブラウザ想定？QRコード読み取りで開く？）と、ネット環境（会場Wi-Fiあり？バスツアー先は電波が弱い可能性は？）
+3. **ブース/ツアー情報のデータについて** — 各ブース・ツアーの内容（企業名・業種・体験内容）を事前にデータとして提供いただけるか、それともアプリ側で汎用的に対応する必要があるか
+
+
+--- PM (facilitator) ---
+回答をお願いします。（下の入力欄から送信してください）
+
+--- あなた (user) ---
+1. 利用タイミングもあなた達で模索してください 2. スマホブラウザ想定でネット環境は常に整っていると考えて良いです 3. 事前にデータがある前提で良いです
+
+--- PM (facilitator) ---
+会議を始めます。
+
+**お題：自治体向けにイベントに使えるアプリを作りたいです。下記の体験を実現するアプリを考えてください
+
+複数のバスツアー・職業体験を経て何を感じたかを抽象化し、ネクストアクションの示唆をだすツール。参加者は小中学生とその親が多いです。
+
+- 今日明日でどのブースをどの観点で回るといいか
+- 明日以降日常生活でどんなことを意識して、どんな素養を育むといいか
+
+参考情報
+イベントの概要と過去の開催レポートを参照ください
+
+https://workwaku2-kawachinagano.com/report/
+
+https://workwaku2-kawachinagano.com/about/
+
+【補足情報】
+1. 利用タイミングもあなた達で模索してください 2. スマホブラウザ想定でネット環境は常に整っていると考えて良いです 3. 事前にデータがある前提で良いです**
+
+まず各自、専門領域からUI案を出してください。
+**アプリ名・コア体験・画面構成・第一印象の仕掛け**の4点に絞って簡潔に。
+
+--- ビジュアル&タイパ (message) ---
+---
+
+## 提案：ビジュアル＆タイパ設計者の視点から
+
+### アプリ名
+**「ワクワクマップ」**
+→ 「ワークワクワク」との韻＋地図＝冒険感。小学生でも読める平仮名混じり。堅い言葉ゼロ。
+
+### コア体験
+**「ブースを回るたびにスタンプが"自分の性格マップ"に変わる」**
+各ブース体験後に3秒スワイプ（「楽しかった／もっと知りたい／むずかしかった」の3択×2問）で入力完了。回答が即座にレーダーチャート風の"じぶんマップ"に反映され、入力コスト6秒に対し「自分の興味の偏り」という発見が即リターンされる。1ブースだけでも結果が出る途中離脱OK設計。
+
+### 画面構成（4画面のみ）
+1. **ホーム**：今日のブース一覧がカード形式で並ぶ。"じぶんマップ"の現在地がヘッダーに常時表示され、回るほど育つ可視化
+2. **体験記録**：ブース訪問後のスワイプ入力画面（ストーリーズ風UI、2問で完了）
+3. **おすすめ**：マップの偏りから「次に行くと新しい発見があるブース」をAIが1つ提案＋理由を1行で表示
+4. **ふりかえり**：イベント後に"じぶんマップ"完成版＋「明日からやってみよう」アクション3つをカード表示。親子でスクショしてシェアできるSNS映え設計
+
+### 第一印象の仕掛け
+QRコードを読んだ瞬間、**名前入力だけ**で「まだ何も記録されていない真っ白なレーダーチャート」が表示される。「これを今日の体験で塗りつぶそう！」の一文だけ。説明テキストゼロ、白い地図を埋めたくなるゲーム的衝動で3秒以内に「触りたい」を作る。
+
+
+--- モバイル体験 (message) ---
+## 提案：モバイル体験アーキテクト視点
+
+---
+
+### アプリ名
+**「ワクワクログ」**
+「ワークワクワク」との語呂連動で覚えやすく、「体験を記録（ログ）する」行為そのものをアプリ名に。親子で「ログつけよう」が合言葉になる設計。
+
+---
+
+### コア体験
+**各ブース体験直後に「楽しさ」「むずかしさ」「またやりたい度」の3軸スタンプを押すだけ。**
+全ブース回った後、蓄積データからAIが「きみの"好き"の傾向」を抽象化し、明日の推奨ブース＋日常での意識ポイントをカード1枚で提示。操作は片手スワイプとタップのみ、1回15秒で完了。
+
+---
+
+### 画面構成（3画面完結）
+1. **ホーム（マップ＋今日のブース一覧）**：カード型リストで現在地からの距離順表示。タップで詳細＋「体験済みスタンプ」ボタンを親指ゾーン下部に固定配置。
+2. **ログ画面（スタンプ入力）**：3軸それぞれを絵文字スライダー（😐→😆）で直感入力。小学生でも文字入力不要。LocalStorageで即時保存、途中離脱しても消えない。
+3. **ふりかえりカード**：全体験のログから生成された「きみタイプ診断」＋「明日おすすめブース2つ」＋「家に帰ったらやってみよう（日常アクション）」を1枚のスワイプカードで表示。
+
+---
+
+### 第一印象の仕掛け
+**QRスキャン→名前入力→即「きみの1つ目のワクワク、見つけにいこう！」の1画面が3秒で出る。**
+説明・チュートリアルゼロ。最初のブースを体験した直後に通知的バナーで「どうだった？スタンプ押そう」と誘導。"使い方を学ぶ"ステップを排除し、体験→記録の反射ループを初動で刷り込む。
+
+---
+
+**モバイルUX上の設計判断ポイント：**
+- 全CTAを画面下部40%（親指ゾーン）に集約、スクロール深度は各画面1.5画面分以内
+- 断続利用前提でLocalStorage常時保存、「前回どこまで回ったか」をホームのカード色変化で即認識可能
+- 絵文字スライダーによりテキスト入力ゼロ→混雑した会場で片手・立ったままでも15秒で完了
+
+
+--- オンボーディング (message) ---
+---
+
+## 提案：「ワクメモ」
+
+### アプリ名
+**ワクメモ** — 「ワクワク」×「メモ」。体験を記録し、自分の"好き"の傾向を発見するツール。親子で一緒に使える短い名前で、イベント名「ワークワクワク」との連想も自然。
+
+### コア体験
+ブース体験直後に**「楽しかった／すごかった／もっと知りたい」の3択タップ＋ひとこと感想（任意）**を繰り返すだけ。全ブース回った後、蓄積データから「きみのワクワクタイプ」（例：つくる系／まもる系／届ける系）を自動診断し、**明日以降の日常で試せる小さなアクション**（例：「家の道具を分解して観察してみよう」）を3つ提示する。
+
+### 画面構成（4画面のみ）
+1. **スタート画面** — QRスキャンで即起動。登録不要、名前入力もなし。今日のブース一覧がカード表示される
+2. **記録画面** — ブースカードをタップ → 3択感情ボタン＋ひとこと入力（15秒で完了）
+3. **診断結果画面** — 全体験の感情傾向を可視化し「ワクワクタイプ」と「おすすめネクストアクション3つ」を表示
+4. **おすすめルート画面**（2日目朝に表示）— 1日目の記録から「まだ行ってない×相性が良さそうなブース」を優先順に提示
+
+### 第一印象の仕掛け
+会場入口のQRを読んだ瞬間、**自分の端末にブース一覧マップが表示され「最初のブースをタップしてね」だけ伝える**。説明ゼロ・登録ゼロ・1タップで体験記録が始まる設計。チュートリアルは置かず、最初の1回の記録操作自体がチュートリアルになる（＝操作しながら覚える）。
+
+---
+
+### 低摩擦オンボーディング観点の補足
+
+| 観点 | 設計判断 |
+|---|---|
+| **初回体験** | QRスキャン→即ブース一覧。0ステップ登録、価値体験まで1タップ |
+| **離脱リスク** | 最大の離脱点は「感想を文字で書く」→ 3択タップを主軸にし、テキストは任意に |
+| **価値プレビュー** | スタート画面に「体験を記録すると、きみのワクワクタイプがわかる！」のビジュアルを1枚表示 |
+| **復帰設計** | 2日目朝はスタート画面が自動で「おすすめルート」に切り替わり、前日の続きから始まる |
+| **利用タイミング** | ①各ブース直後（記録）→ ②1日目終了後（中間診断＋2日目ルート）→ ③イベント終了時（最終診断＋日常アクション） |
+
+
+--- PM補佐 (message) ---
+---
+
+⚠️ **軌道チェック:**
+【ズレ】ターゲットは**小中学生とその親**です。「高校生」ではありません。3案とも大きな問題はないが、以下を補足します。
+
+---
+
+📊 **情報補足:**
+
+1. **参加実態**: 2024年実績で26社・バスツアー18本（2日間）。参加者から**「1日1ツアーしか回れないのが残念」**との声あり → つまりブース回遊数は想定より少ない。3案とも「たくさん回る前提」の設計だが、**記録が2〜3件でも価値が出る設計**が必須
+
+2. **体験内容の実態**: トラックづくり、美容師体験、フラワーアレンジメント、工場見学、指紋採取ワークショップなど**手を動かす系が中心**。抽象的な「職業理解」より「やってみた感触」が主体験。3択の軸設計（楽しい/難しい等）はこの実態に合っている
+
+3. **類似アプリの事例**: 職業体験×診断の組合せは**キッザニアの「ジョブスケジュールカード」**が近い。紙ベースだが「回った→スタンプ→記念に持ち帰る」の流れが子どもに刺さっている。**物理的な持ち帰り体験**（スクショ/シェア画像）は3案中「ワクワクマップ」と「ワクメモ」が対応しているが、「ワクワクログ」は明示なし
+
+4. **盲点**: 3案とも**親の関与設計が薄い**。小中学生はスマホを持っていないケースが多く、**親のスマホで操作する前提**なら親子でどう使い分けるかの設計が要る。また、バスツアー中は移動時間があり、**バス車内が振り返りの黄金タイミング**になり得る
+
+---
+
+✅ **3案の方向性自体はOK** — コア体験（低負荷入力→診断→ネクストアクション）は共通しており、差異はUI表層の問題。PMが判断すべきは**「記録2〜3件でも成立するか」「親のスマホ前提の設計」「バス車内の活用」**の3点です。
+
+
+--- エンジニア (message) ---
+## エンジニア視点の意見
+
+**実現可能性：3案とも単一HTMLモックで十分作れます。** レーダーチャート・絵文字スライダー・診断ロジックすべてCSS+JSで実装可能。API連携部分はダミーデータで再現し、本実装時に差し替える形で問題なし。
+
+**開発難易度：**
+- **ワクワクマップ**（レーダーチャート）：普通。Canvas or SVGで描画、リアルタイム更新もJS内で完結する
+- **ワクワクログ**（絵文字スライダー）：軽い。input range＋絵文字マッピングで素直に実装できる
+- **ワクメモ**（3択＋診断）：軽い。最もシンプルで、記録2〜3件でも診断が破綻しにくい構造
+
+**PM補佐の指摘を踏まえた技術的意見：**
+- **「記録2〜3件で成立するか」が最重要。** レーダーチャート（ワクワクマップ）は記録が少ないとスカスカで寂しい。3択タップの累積（ワクメモ方式）なら2件でもタイプ傾向は出せる。ここは設計上の差が大きい
+- **親のスマホ前提** → LocalStorageで状態保持すれば、親が途中でブラウザを閉じても復帰可能。ただし「兄弟で1台を使い回す」ケースを考えると、**起動時に「だれが使う？」の名前選択**を1ステップ入れるべき。軽い実装で対応できる
+- **バス車内の活用** → 技術的に面白い案として、**移動中に「さっきの体験どうだった？」のプッシュ的バナー表示**をタイマーで再現できる。実装は軽い（setTimeout＋モーダル）
+
+**結論：ワクメモベースが最も堅実。** 記録少数でも成立し、実装が軽く、親子利用の拡張もしやすい。ワクワクマップのレーダーチャートは「育てる楽しさ」があるので、ワクメモの診断結果画面にビジュアル要素として組み込むハイブリッドが最善と考えます。
+
+
+--- PM (message) ---
+## PM判断
+
+**整理：3案の共通点と最強要素**
+- 共通：低負荷入力（3択タップ）→ 診断 → ネクストアクション提示。方向は全員一致
+- 最強要素：ワクメモの「2〜3件でも成立する診断構造」＋ワクワクマップの「育つビジュアル」
+
+**決定：「ワクワクマップ」ベース、診断ロジックはワクメモ方式を採用。**
+理由：名前の冒険感が小中学生に最も刺さり、「白い地図を埋める」動機設計が記録2件でも機能する。
+
+---
+
+## エンジニアへの実装指示
+
+**アプリ名：ワクワクマップ**
+
+**画面構成（4画面）：**
+1. **スタート** — 名前入力のみ → 白いレーダーチャート（6角）＋「最初のワクワクを見つけよう！」
+2. **ブース一覧** — カード形式。体験済みは色変化。「だれが使う？」切替ボタン（兄弟対応）をヘッダーに
+3. **記録（各ブース後）** — 3択タップ×2問（「たのしかった／すごかった／もっと知りたい」＋「かんたん／ふつう／むずかしい」）。15秒完了。回答即時にレーダーチャート反映
+4. **ふりかえり** — 「きみのワクワクタイプ」診断＋おすすめブース2つ＋日常アクション3つ。スクショ映えするカードデザイン。2日目朝は自動で「今日のおすすめルート」表示
+
+**必須の体験要素：**
+- 記録2件でもタイプ診断が出る（空欄軸は「まだ冒険してない領域」として表示）
+- バス車内タイミングで「さっきの体験どうだった？」バナー表示（タイマー実装）
+- LocalStorage保存＋名前切替で兄弟共有対応
+- 親子でシェアできるスクショ用カード画面
+
+**作らないもの：** テキスト入力欄、アカウント登録、チュートリアル画面、SNS連携機能
+
+エンジニア、この仕様で単一HTMLモックを作ってください。ブースデータは河内長野の実績（26社）からダミー8社分で。
+
+
+--- PM補佐 (message) ---
+⚠️ **軌道チェック:**
+【ズレ】ターゲットは**小中学生とその親**です。「高校生」ではありません。PMの依頼文テンプレートに「高校生」と残っていますが、お題と齟齬があります。設計内容自体は小中学生向けとして適切です。
+
+✅ **方針チェックOK（1点除き）** — 4画面・3択タップ・2件でも成立する診断・兄弟切替・スクショカードの構成はゴールに合致しシンプルさも保てている。**バス車内タイマーバナーだけ要注意**：実際の運用ではブース体験終了タイミングをアプリが知る手段がないため、モックでは再現できても本番で機能しない可能性がある。ここは「記録画面を開いた後に未入力ブースがあればリマインド表示」に変えた方が実装と運用の整合性が取れます。
+
+
+--- PM (facilitator) ---
+エンジニア、上記の方針でモックを作ってください。
+
+--- エンジニア (message) ---
+【実装内容】ワクワクマップ — 体験記録→診断→ネクストアクション提示の4画面モック
+【画面数】4画面（スタート / ブース一覧 / 記録 / ふりかえり）
+【操作方法】名前入力→ブース選択→3択×2問で記録→2件以上記録したら「ふりかえり」で診断結果を確認
+
+---HTML_START---
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ワクワクマップ</title>
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-light: #FFF0E8;
+  --secondary: #4ECDC4;
+  --accent: #FFE66D;
+  --bg: #FAFAFA;
+  --text: #2D3436;
+  --text-light: #636E72;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background: #F0F0F0;
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg);
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.screen {
+  display: none;
+  min-height: 100dvh;
+  padding: 0 0 100px;
+}
+.screen.active { display: block; }
+
+/* ===== スタート画面 ===== */
+#startScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(160deg, #FFF0E8 0%, #E8FFF8 50%, #FFF8E0 100%);
+}
+#startScreen.active { display: flex; }
+
+.start-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.start-subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 32px;
+}
+.start-chart-container {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 24px;
+  opacity: 0.4;
+}
+.start-message {
+  font-size: 15px;
+  color: var(--text-light);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+.name-input-group {
+  width: 100%;
+  max-width: 280px;
+  margin-bottom: 16px;
+}
+.name-input-group input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid #DDD;
+  border-radius: 12px;
+  font-size: 18px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.name-input-group input:focus {
+  border-color: var(--primary);
+}
+.start-btn {
+  width: 100%;
+  max-width: 280px;
+  padding: 16px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.start-btn:active { transform: scale(0.97); }
+.start-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ===== ヘッダー ===== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF;
+  padding: 12px 16px 8px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.user-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-light);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.user-switcher svg { width: 14px; height: 14px; }
+
+.mini-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+.mini-chart { width: 48px; height: 48px; }
+.mini-chart-info {
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+.mini-chart-info strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ===== ブース一覧 ===== */
+.booth-list { padding: 16px; }
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+
+.booth-card {
+  background: #FFF;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.booth-card:active { transform: scale(0.98); }
+.booth-card.recorded {
+  border-left: 4px solid var(--secondary);
+}
+.booth-card.recorded::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: var(--secondary);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.booth-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.booth-info { flex: 1; }
+.booth-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.booth-company {
+  font-size: 12px;
+  color: var(--text-light);
+}
+.booth-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.booth-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #F0F0F0;
+  color: var(--text-light);
+}
+
+/* ===== リマインドバナー ===== */
+.remind-banner {
+  display: none;
+  margin: 0 16px 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #FFF8E0, #FFF0E8);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--text);
+  align-items: center;
+  gap: 8px;
+  animation: slideDown 0.3s ease;
+}
+.remind-banner.show { display: flex; }
+.remind-banner-icon { font-size: 20px; }
+.remind-banner-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 記録画面 ===== */
+#recordScreen {
+  background: linear-gradient(180deg, #FFF 0%, #F8F8F8 100%);
+}
+.record-header {
+  padding: 20px 16px 16px;
+  text-align: center;
+}
+.record-booth-name {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.record-company {
+  font-size: 13px;
+  color: var(--text-light);
+}
+.record-step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0;
+}
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #DDD;
+  transition: background 0.2s, transform 0.2s;
+}
+.step-dot.active {
+  background: var(--primary);
+  transform: scale(1.3);
+}
+.step-dot.done { background: var(--secondary); }
+
+.question-area {
+  padding: 0 24px;
+  text-align: center;
+}
+.question-text {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+.choice-btn {
+  padding: 18px 16px;
+  border: 2px solid #E8E8E8;
+  border-radius: 14px;
+  background: #FFF;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.choice-btn:active { transform: scale(0.97); }
+.choice-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.choice-emoji { font-size: 28px; }
+
+.record-chart-preview {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0 16px;
+}
+.record-chart-preview svg { width: 160px; height: 160px; }
+
+.record-done-msg {
+  text-align: center;
+  padding: 32px 24px;
+  animation: fadeUp 0.4s ease;
+}
+.record-done-msg h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.record-done-msg p {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== ふりかえり画面 ===== */
+#reviewScreen {
+  background: linear-gradient(180deg, #FFF0E8 0%, #E8FFF8 50%, #FFF8E0 100%);
+}
+.review-header {
+  text-align: center;
+  padding: 32px 24px 16px;
+}
+.review-header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.review-header p {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.review-chart-area {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+.review-chart-area svg { width: 260px; height: 260px; }
+
+.type-card {
+  margin: 0 16px 16px;
+  background: #FFF;
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  box-shadow: var(--card-shadow);
+  text-align: center;
+}
+.type-label {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+.type-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.type-desc {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.recommend-section {
+  padding: 0 16px 16px;
+}
+.recommend-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+.recommend-card {
+  background: #FFF;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.recommend-card .booth-icon { width: 40px; height: 40px; font-size: 20px; border-radius: 10px; }
+.recommend-card-info { flex: 1; }
+.recommend-card-name { font-size: 14px; font-weight: 700; }
+.recommend-card-reason { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+.action-section { padding: 0 16px 16px; }
+.action-card {
+  background: #FFF;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.action-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.action-text { font-size: 14px; line-height: 1.6; }
+
+.screenshot-hint {
+  text-align: center;
+  padding: 8px 16px 16px;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* ===== 下部ナビ ===== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: #FFF;
+  display: flex;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+  z-index: 100;
+}
+.nav-btn {
+  flex: 1;
+  padding: 10px 0 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-light);
+  transition: color 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.nav-btn.active { color: var(--primary); }
+.nav-btn svg { width: 24px; height: 24px; }
+.nav-label { font-size: 10px; font-weight: 600; }
+
+/* ===== ユーザー切替モーダル ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-end;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  width: 100%;
+  max-width: 430px;
+  background: #FFF;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 40px;
+  animation: sheetUp 0.3s ease;
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.user-list { list-style: none; }
+.user-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s;
+}
+.user-item:hover { background: #F8F8F8; }
+.user-item.current { background: var(--primary-light); font-weight: 700; }
+.user-item-name { font-size: 16px; }
+.user-item-count { font-size: 12px; color: var(--text-light); }
+
+.add-user-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.add-user-row input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #E8E8E8;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+}
+.add-user-row input:focus { border-color: var(--primary); }
+.add-user-btn {
+  padding: 12px 20px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin: 12px 16px 0;
+}
+.back-btn svg { width: 18px; height: 18px; }
+
+.review-btn-area {
+  padding: 16px;
+}
+.review-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.review-btn:active { transform: scale(0.97); }
+.review-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===== スタート画面 ===== -->
+  <div class="screen active" id="startScreen">
+    <div class="start-title">ワクワクマップ</div>
+    <div class="start-subtitle">ワークワクワク河内長野</div>
+    <div class="start-chart-container">
+      <svg id="startChart" viewBox="0 0 200 200"></svg>
+    </div>
+    <div class="start-message">これを今日の体験で<br>塗りつぶそう！</div>
+    <div class="name-input-group">
+      <input type="text" id="nameInput" placeholder="なまえを入れてね" maxlength="10">
+    </div>
+    <button class="start-btn" id="startBtn" disabled>はじめる</button>
+  </div>
+
+  <!-- ===== ブース一覧画面 ===== -->
+  <div class="screen" id="listScreen">
+    <div class="header">
+      <div class="header-top">
+        <div class="header-title">ワクワクマップ</div>
+        <button class="user-switcher" id="switchUserBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="currentUserLabel">—</span>
+        </button>
+      </div>
+      <div class="mini-chart-row">
+        <svg class="mini-chart" id="miniChart" viewBox="0 0 48 48"></svg>
+        <div class="mini-chart-info">
+          <strong id="recordCountLabel">0 / 8 体験済み</strong><br>
+          <span id="miniChartHint">ブースを体験して記録しよう</span>
+        </div>
+      </div>
+    </div>
+    <div class="remind-banner" id="remindBanner">
+      <span class="remind-banner-icon">💡</span>
+      <span>さっきの体験、どうだった？<br>記録するともっとマップが育つよ！</span>
+      <button class="remind-banner-close" id="remindClose">✕</button>
+    </div>
+    <div class="booth-list" id="boothList"></div>
+    <div class="review-btn-area">
+      <button class="review-btn" id="goReviewBtn" disabled>ふりかえりを見る 🔍</button>
+    </div>
+  </div>
+
+  <!-- ===== 記録画面 ===== -->
+  <div class="screen" id="recordScreen">
+    <button class="back-btn" id="recordBackBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <div class="record-header">
+      <div class="record-booth-name" id="recordBoothName"></div>
+      <div class="record-company" id="recordCompany"></div>
+    </div>
+    <div class="record-step-indicator" id="stepIndicator"></div>
+    <div class="question-area" id="questionArea"></div>
+    <div class="record-chart-preview" id="recordChartPreview">
+      <svg id="recordChart" viewBox="0 0 200 200"></svg>
+    </div>
+  </div>
+
+  <!-- ===== ふりかえり画面 ===== -->
+  <div class="screen" id="reviewScreen">
+    <button class="back-btn" id="reviewBackBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <div class="review-header">
+      <h1 id="reviewUserName"></h1>
+      <p>きみのワクワクマップ</p>
+    </div>
+    <div class="review-chart-area">
+      <svg id="reviewChart" viewBox="0 0 260 260"></svg>
+    </div>
+    <div class="type-card" id="typeCard">
+      <div class="type-label">きみのワクワクタイプ</div>
+      <div class="type-name" id="typeName"></div>
+      <div class="type-desc" id="typeDesc"></div>
+    </div>
+    <div class="recommend-section" id="recommendSection">
+      <div class="recommend-title">🗺️ まだ冒険してないおすすめブース</div>
+      <div id="recommendList"></div>
+    </div>
+    <div class="action-section">
+      <div class="recommend-title">🏠 明日からやってみよう</div>
+      <div id="actionList"></div>
+    </div>
+    <div class="screenshot-hint">📸 スクショして記念に残そう！</div>
+  </div>
+
+  <!-- ===== ユーザー切替モーダル ===== -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal-sheet">
+      <div class="modal-title">だれが使う？</div>
+      <ul class="user-list" id="userList"></ul>
+      <div class="add-user-row">
+        <input type="text" id="addUserInput" placeholder="なまえを追加" maxlength="10">
+        <button class="add-user-btn" id="addUserBtn">追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== ブースデータ（河内長野実績ベース ダミー8社） ===== */
+const AXES = ['つくる','まもる','とどける','そだてる','しらべる','つたえる'];
+const AXIS_COLORS = ['#FF6B35','#4ECDC4','#45B7D1','#96CEB4','#A78BFA','#F472B6'];
+
+const BOOTHS = [
+  { id:1, name:'トラックづくり体験', company:'河内長野運送(株)', icon:'🚚', color:'#FFE0CC', axes:[1,0,0.4,0,0.2,0], category:'ものづくり' },
+  { id:2, name:'美容師なりきり体験', company:'ヘアサロン Ciel', icon:'💇', color:'#FFE0F0', axes:[0.4,0,0,0,0,1], category:'サービス' },
+  { id:3, name:'お花アレンジメント', company:'花工房 はなみずき', icon:'💐', color:'#E8FFE0', axes:[0.8,0,0,0.8,0,0.3], category:'ものづくり' },
+  { id:4, name:'工場見学ツアー', company:'大阪精密工業(株)', icon:'🏭', color:'#E0ECFF', axes:[0.6,0,0,0,1,0], category:'見学' },
+  { id:5, name:'指紋採取ワークショップ', company:'河内長野警察署', icon:'🔍', color:'#F0E8FF', axes:[0,0.8,0,0,1,0], category:'体験' },
+  { id:6, name:'パンづくり体験', company:'ベーカリー穂の香', icon:'🍞', color:'#FFF5E0', axes:[1,0,0.3,0.4,0,0], category:'ものづくり' },
+  { id:7, name:'消防士おしごと体験', company:'河内長野消防署', icon:'🚒', color:'#FFE0E0', axes:[0,1,0,0.3,0.2,0.5], category:'体験' },
+  { id:8, name:'配送センター見学', company:'ヤマト運輸 河内長野', icon:'📦', color:'#E0F8FF', axes:[0,0,1,0,0.4,0.3], category:'見学' },
+];
+
+const QUESTIONS = [
+  { text:'この体験、どうだった？', choices:[
+    { emoji:'😆', label:'たのしかった！', value:'fun' },
+    { emoji:'🤩', label:'すごかった！', value:'wow' },
+    { emoji:'🤔', label:'もっと知りたい！', value:'curious' },
+  ]},
+  { text:'むずかしさは？', choices:[
+    { emoji:'😊', label:'かんたんだった', value:'easy' },
+    { emoji:'🙂', label:'ふつう', value:'normal' },
+    { emoji:'😤', label:'むずかしかった！', value:'hard' },
+  ]},
+];
+
+const TYPES = {
+  'つくる':  { name:'クリエイター', desc:'ものを作るのが好きなきみは、手を動かして形にする力がある！図工や料理でその才能をもっと伸ばそう。', actions:['おうちで簡単な工作に挑戦してみよう','料理のお手伝いで「つくる楽しさ」を体験しよう','身の回りのものがどう作られているか観察しよう'] },
+  'まもる':  { name:'ガーディアン', desc:'人を守りたい気持ちが強いきみは、正義感と優しさの持ち主！防災や安全について学んでみよう。', actions:['おうちの防災グッズをチェックしてみよう','困っている人がいたら声をかけてみよう','交通ルールを周りの人にも教えてあげよう'] },
+  'とどける':{ name:'デリバラー', desc:'届けることに興味があるきみは、人と人をつなぐ力がある！お手紙やプレゼントで誰かを喜ばせよう。', actions:['家族にお手紙を書いてみよう','お使いに挑戦してみよう','「届ける」仕事にはどんな種類があるか調べよう'] },
+  'そだてる':{ name:'グロウワー', desc:'育てることが好きなきみは、根気強さと愛情の持ち主！植物や生き物のお世話をしてみよう。', actions:['ベランダで小さな植物を育ててみよう','ペットや生き物を観察してみよう','弟や妹、年下の子に何か教えてあげよう'] },
+  'しらべる':{ name:'リサーチャー', desc:'調べることが好きなきみは、好奇心旺盛な探求者！図書館やネットでどんどん調べてみよう。', actions:['興味のあることを図書館で調べてみよう','身の回りの「なぜ？」を3つ書き出そう','実験や観察の記録をつけてみよう'] },
+  'つたえる':{ name:'コミュニケーター', desc:'伝えることが得意なきみは、みんなの気持ちがわかる人！話したり書いたりで表現力をみがこう。', actions:['今日の出来事を家族に話してみよう','絵日記や感想文を書いてみよう','友だちの話をじっくり聞いてみよう'] },
+};
+
+/* ===== 状態管理 ===== */
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('wakumap') || 'null'); } catch { return null; }
+}
+function saveState(state) {
+  localStorage.setItem('wakumap', JSON.stringify(state));
+}
+function initState(name) {
+  return { users: [{ name, records: {} }], currentUser: 0 };
+}
+function getCurrentUser(state) {
+  return state.users[state.currentUser];
+}
+
+let appState = loadState();
+
+/* ===== レーダーチャート描画 ===== */
+function drawRadar(svgEl, scores, size, opts = {}) {
+  const { showLabels = false, showValues = false, animate = false } = opts;
+  const cx = size / 2, cy = size / 2, r = size * 0.35;
+  const n = AXES.length;
+  let svg = '';
+
+  // 背景グリッド
+  for (let lv = 1; lv <= 3; lv++) {
+    const rr = r * lv / 3;
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      pts.push(`${cx + rr * Math.cos(angle)},${cy + rr * Math.sin(angle)}`);
+    }
+    svg += `<polygon points="${pts.join(' ')}" fill="none" stroke="#E0E0E0" stroke-width="${lv===3?1.5:0.7}"/>`;
+  }
+
+  // 軸線
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#E0E0E0" stroke-width="0.7"/>`;
+  }
+
+  // データ領域
+  const dataPts = [];
+  for (let i = 0; i < n; i++) {
+    const val = Math.min(scores[i] || 0, 1);
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const dr = r * (0.1 + 0.9 * val);
+    dataPts.push(`${cx + dr * Math.cos(angle)},${cy + dr * Math.sin(angle)}`);
+  }
+  const hasData = scores.some(s => s > 0);
+  if (hasData) {
+    svg += `<polygon points="${dataPts.join(' ')}" fill="rgba(255,107,53,0.15)" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"${animate ? ' style="animation:fadeUp 0.5s ease"' : ''}/>`;
+    // 頂点のドット
+    for (let i = 0; i < n; i++) {
+      if ((scores[i] || 0) > 0) {
+        svg += `<circle cx="${dataPts[i].split(',')[0]}" cy="${dataPts[i].split(',')[1]}" r="3.5" fill="var(--primary)"/>`;
+      }
+    }
+  }
+
+  // ラベル
+  if (showLabels) {
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const lr = r + size * 0.12;
+      const lx = cx + lr * Math.cos(angle);
+      const ly = cy + lr * Math.sin(angle);
+      const val = scores[i] || 0;
+      const color = val > 0 ? AXIS_COLORS[i] : '#AAA';
+      const fontSize = size > 100 ? 12 : 6;
+      svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="${fontSize}" font-weight="700">${AXES[i]}</text>`;
+      if (showValues && val === 0) {
+        const vly = ly + fontSize + 2;
+        svg += `<text x="${lx}" y="${vly}" text-anchor="middle" fill="#CCC" font-size="${fontSize * 0.7}">未冒険</text>`;
+      }
+    }
+  }
+
+  svgEl.innerHTML = svg;
+}
+
+/* ===== ユーザーのスコア計算 ===== */
+function calcScores(user) {
+  const scores = [0,0,0,0,0,0];
+  const records = user.records;
+  const count = Object.keys(records).length;
+  if (count === 0) return scores;
+
+  for (const boothId in records) {
+    const booth = BOOTHS.find(b => b.id === parseInt(boothId));
+    if (!booth) continue;
+    const rec = records[boothId];
+    // 感情によるウェイト
+    let weight = 1;
+    if (rec.q1 === 'fun') weight = 1.0;
+    else if (rec.q1 === 'wow') weight = 1.2;
+    else if (rec.q1 === 'curious') weight = 1.1;
+    // 難易度ボーナス
+    let diffBonus = 0;
+    if (rec.q2 === 'hard') diffBonus = 0.15;
+    else if (rec.q2 === 'normal') diffBonus = 0.05;
+
+    for (let i = 0; i < 6; i++) {
+      scores[i] += booth.axes[i] * weight + (booth.axes[i] > 0 ? diffBonus : 0);
+    }
+  }
+
+  // 正規化（最大1）
+  const max = Math.max(...scores, 0.001);
+  return scores.map(s => Math.min(s / max, 1));
+}
+
+/* ===== 画面遷移 ===== */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ===== スタート画面 ===== */
+const nameInput = document.getElementById('nameInput');
+const startBtn = document.getElementById('startBtn');
+
+drawRadar(document.getElementById('startChart'), [0,0,0,0,0,0], 200, { showLabels: true });
+
+nameInput.addEventListener('input', () => {
+  startBtn.disabled = nameInput.value.trim().length === 0;
+});
+
+startBtn.addEventListener('click', () => {
+  const name = nameInput.value.trim();
+  if (!name) return;
+  if (appState) {
+    // 既存ステートに追加
+    const existing = appState.users.findIndex(u => u.name === name);
+    if (existing >= 0) {
+      appState.currentUser = existing;
+    } else {
+      appState.users.push({ name, records: {} });
+      appState.currentUser = appState.users.length - 1;
+    }
+  } else {
+    appState = initState(name);
+  }
+  saveState(appState);
+  renderList();
+  showScreen('listScreen');
+});
+
+// 既存データがあれば自動でリストへ
+if (appState) {
+  renderList();
+  showScreen('listScreen');
+}
+
+/* ===== ブース一覧画面 ===== */
+function renderList() {
+  const user = getCurrentUser(appState);
+  document.getElementById('currentUserLabel').textContent = user.name;
+  const recordCount = Object.keys(user.records).length;
+  document.getElementById('recordCountLabel').textContent = `${recordCount} / ${BOOTHS.length} 体験済み`;
+
+  if (recordCount === 0) {
+    document.getElementById('miniChartHint').textContent = 'ブースを体験して記録しよう';
+  } else if (recordCount < 2) {
+    document.getElementById('miniChartHint').textContent = 'あと少しでタイプ診断ができるよ！';
+  } else {
+    document.getElementById('miniChartHint').textContent = 'ふりかえりで診断結果を見よう！';
+  }
+
+  const scores = calcScores(user);
+  drawRadar(document.getElementById('miniChart'), scores, 48);
+
+  const goReviewBtn = document.getElementById('goReviewBtn');
+  goReviewBtn.disabled = recordCount < 2;
+
+  // リマインドバナー表示: 記録ありかつ未記録ブースがある場合
+  const banner = document.getElementById('remindBanner');
+  if (recordCount > 0 && recordCount < BOOTHS.length) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+
+  const list = document.getElementById('boothList');
+  list.innerHTML = '<div class="section-label">今日のブース</div>';
+  BOOTHS.forEach(booth => {
+    const recorded = !!user.records[booth.id];
+    const card = document.createElement('div');
+    card.className = 'booth-card' + (recorded ? ' recorded' : '');
+    card.innerHTML = `
+      <div class="booth-icon" style="background:${booth.color}">${booth.icon}</div>
+      <div class="booth-info">
+        <div class="booth-name">${booth.name}</div>
+        <div class="booth-company">${booth.company}</div>
+        <div class="booth-tags"><span class="booth-tag">${booth.category}</span></div>
+      </div>
+    `;
+    card.addEventListener('click', () => startRecord(booth));
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('remindClose').addEventListener('click', () => {
+  document.getElementById('remindBanner').classList.remove('show');
+});
+
+document.getElementById('goReviewBtn').addEventListener('click', () => {
+  renderReview();
+  showScreen('reviewScreen');
+});
+
+/* ===== ユーザー切替 ===== */
+const userModal = document.getElementById('userModal');
+document.getElementById('switchUserBtn').addEventListener('click', () => {
+  renderUserList();
+  userModal.classList.add('show');
+});
+userModal.addEventListener('click', (e) => {
+  if (e.target === userModal) userModal.classList.remove('show');
+});
+
+function renderUserList() {
+  const ul = document.getElementById('userList');
+  ul.innerHTML = '';
+  appState.users.forEach((u, i) => {
+    const li = document.createElement('li');
+    li.className = 'user-item' + (i === appState.currentUser ? ' current' : '');
+    const cnt = Object.keys(u.records).length;
+    li.innerHTML = `<span class="user-item-name">${u.name}</span><span class="user-item-count">${cnt}件記録</span>`;
+    li.addEventListener('click', () => {
+      appState.currentUser = i;
+      saveState(appState);
+      renderList();
+      userModal.classList.remove('show');
+    });
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById('addUserBtn').addEventListener('click', () => {
+  const input = document.getElementById('addUserInput');
+  const name = input.value.trim();
+  if (!name) return;
+  const existing = appState.users.findIndex(u => u.name === name);
+  if (existing >= 0) {
+    appState.currentUser = existing;
+  } else {
+    appState.users.push({ name, records: {} });
+    appState.currentUser = appState.users.length - 1;
+  }
+  saveState(appState);
+  input.value = '';
+  renderList();
+  userModal.classList.remove('show');
+});
+
+/* ===== 記録画面 ===== */
+let currentBooth = null;
+let currentStep = 0;
+let recordAnswers = {};
+
+function startRecord(booth) {
+  currentBooth = booth;
+  currentStep = 0;
+  recordAnswers = {};
+  const user = getCurrentUser(appState);
+  // 既に記録済みなら前の回答を表示
+  if (user.records[booth.id]) {
+    recordAnswers = { ...user.records[booth.id] };
+  }
+
+  document.getElementById('recordBoothName').textContent = booth.name;
+  document.getElementById('recordCompany').textContent = booth.company;
+  renderStep();
+  showScreen('recordScreen');
+}
+
+function renderStep() {
+  // ステップインジケータ
+  const indicator = document.getElementById('stepIndicator');
+  indicator.innerHTML = '';
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i === currentStep ? ' active' : (i < currentStep ? ' done' : ''));
+    indicator.appendChild(dot);
+  }
+
+  const area = document.getElementById('questionArea');
+  const chartPreview = document.getElementById('recordChartPreview');
+
+  if (currentStep >= QUESTIONS.length) {
+    // 完了表示
+    area.innerHTML = '';
+    const doneDiv = document.createElement('div');
+    doneDiv.className = 'record-done-msg';
+    doneDiv.innerHTML = `<h2>きろくできた！ 🎉</h2><p>マップが少し育ったよ。<br>ほかのブースも体験してみよう！</p>`;
+    area.appendChild(doneDiv);
+
+    const user = getCurrentUser(appState);
+    const scores = calcScores(user);
+    chartPreview.style.display = 'flex';
+    drawRadar(document.getElementById('recordChart'), scores, 200, { showLabels: true, animate: true });
+
+    setTimeout(() => {
+      showScreen('listScreen');
+      renderList();
+    }, 2000);
+    return;
+  }
+
+  chartPreview.style.display = 'none';
+  const q = QUESTIONS[currentStep];
+  area.innerHTML = `<div class="question-text">${q.text}</div>`;
+  const choicesDiv = document.createElement('div');
+  choicesDiv.className = 'choices';
+  q.choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    const prevAnswer = recordAnswers[`q${currentStep + 1}`];
+    if (prevAnswer === c.value) btn.classList.add('selected');
+    btn.innerHTML = `<span class="choice-emoji">${c.emoji}</span>${c.label}`;
+    btn.addEventListener('click', () => {
+      recordAnswers[`q${currentStep + 1}`] = c.value;
+      // 保存
+      const user = getCurrentUser(appState);
+      user.records[currentBooth.id] = { ...recordAnswers };
+      saveState(appState);
+      // 次へ
+      currentStep++;
+      setTimeout(renderStep, 200);
+    });
+    choicesDiv.appendChild(btn);
+  });
+  area.appendChild(choicesDiv);
+}
+
+document.getElementById('recordBackBtn').addEventListener('click', () => {
+  if (currentStep > 0) {
+    currentStep--;
+    renderStep();
+  } else {
+    showScreen('listScreen');
+    renderList();
+  }
+});
+
+/* ===== ふりかえり画面 ===== */
+function renderReview() {
+  const user = getCurrentUser(appState);
+  const scores = calcScores(user);
+
+  document.getElementById('reviewUserName').textContent = `${user.name}のワクワクマップ`;
+  drawRadar(document.getElementById('reviewChart'), scores, 260, { showLabels: true, showValues: true, animate: true });
+
+  // タイプ判定
+  let maxIdx = 0;
+  for (let i = 1; i < scores.length; i++) {
+    if (scores[i] > scores[maxIdx]) maxIdx = i;
+  }
+  const axisName = AXES[maxIdx];
+  const type = TYPES[axisName];
+  document.getElementById('typeName').textContent = `${axisName}タイプ — ${type.name}`;
+  document.getElementById('typeDesc').textContent = type.desc;
+
+  // おすすめブース（未体験で相性良い上位2つ）
+  const unvisited = BOOTHS.filter(b => !user.records[b.id]);
+  const ranked = unvisited.map(b => {
+    let affinity = 0;
+    for (let i = 0; i < 6; i++) affinity += b.axes[i] * (1 - (scores[i] || 0));
+    return { booth: b, affinity };
+  }).sort((a, b) => b.affinity - a.affinity);
+
+  const recommendList = document.getElementById('recommendList');
+  const recommendSection = document.getElementById('recommendSection');
+  if (ranked.length === 0) {
+    recommendSection.style.display = 'none';
+  } else {
+    recommendSection.style.display = 'block';
+    recommendList.innerHTML = '';
+    ranked.slice(0, 2).forEach(r => {
+      // 未冒険軸のうち、このブースが強い軸を理由に
+      let reasonAxis = '';
+      let maxVal = 0;
+      for (let i = 0; i < 6; i++) {
+        if (r.booth.axes[i] > maxVal && scores[i] < 0.3) {
+          maxVal = r.booth.axes[i];
+          reasonAxis = AXES[i];
+        }
+      }
+      const reason = reasonAxis ? `「${reasonAxis}」の新しい発見があるかも！` : 'まだ体験していない分野だよ！';
+      const card = document.createElement('div');
+      card.className = 'recommend-card';
+      card.innerHTML = `
+        <div class="booth-icon" style="background:${r.booth.color}">${r.booth.icon}</div>
+        <div class="recommend-card-info">
+          <div class="recommend-card-name">${r.booth.name}</div>
+          <div class="recommend-card-reason">${reason}</div>
+        </div>
+      `;
+      recommendList.appendChild(card);
+    });
+  }
+
+  // 日常アクション
+  const actionList = document.getElementById('actionList');
+  actionList.innerHTML = '';
+  type.actions.forEach((action, i) => {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = `<div class="action-num">${i + 1}</div><div class="action-text">${action}</div>`;
+    actionList.appendChild(card);
+  });
+}
+
+document.getElementById('reviewBackBtn').addEventListener('click', () => {
+  showScreen('listScreen');
+  renderList();
+});
+</script>
+</body>
+</html>
+---HTML_END---
+
+**実装ポイント：**
+
+- **レーダーチャート**: SVGで6角形を描画。記録ごとにリアルタイムで反映される。未記録の軸は「未冒険」と表示
+- **診断ロジック**: 各ブースの軸ウェイト × 感情回答の乗数 × 難易度ボーナスで算出。2件でもタイプが出る設計
+- **兄弟対応**: ヘッダーの名前ボタンからユーザー切替・追加が可能。LocalStorageにユーザー別データを保持
+- **リマインドバナー**: 記録済みブースがあり未記録ブースが残っている場合にバナー表示（PM補佐の指摘どおりタイマーではなく状態ベース）
+- **おすすめブース**: 未体験かつ未冒険の軸が強いブースを親和度順にソートして上位2つを提示
+- **スクショ映え**: ふりかえり画面はグラデーション背景＋カードレイアウトで記念になるデザイン
+
+**開発観点の補足：**
+- 全操作が片手タップで完結、テキスト入力は初回の名前のみ
+- LocalStorageのみ使用のため、ブラウザを閉じても復帰可能
+- 本番実装時はブースデータをJSON APIから取得する形に差し替えれば拡張可能
+
+
+--- PM (facilitator) ---
+モックアップ v1 が完成しました。右のプレビューで確認してください。
+レビューをお願いします。
+
+--- ビジュアル&タイパ (message) ---
+## レビュー：ビジュアル＆タイパ設計者
+
+**良い点**
+1. **3秒判定○** — 白いレーダーチャート＋「塗りつぶそう！」の初期画面は説明ゼロで動機が伝わる。入力コスト（3択×2問＝15秒）に対しチャートが即育つリターンのバランスも良い
+2. **途中離脱OK設計** — 2件で診断が出る＋LocalStorage保存で、タイパの基本原則を押さえている
+
+**改善すべき点**
+1. **記録画面の3択ボタンが「テスト感」を出している** — 縦並びテキストボタンは学校のアンケートに見える。→ **横並びの大きな絵文字カード（絵文字を主役、テキストは下に小さく）に変更**。ストーリーズの投票スタンプのように「タップが楽しい」操作感にすべき。具体的には `.choices` を `flex-direction: row` にし、各ボタンを正方形カード化、絵文字を48px、ラベルを10pxにする
+2. **ふりかえり画面の情報量が多すぎる** — タイプ診断＋おすすめ2つ＋日常アクション3つ＋スクショヒントが1画面に詰まっていてスクロールが長い。→ **スワイプカード形式（1枚目：タイプ＋チャート、2枚目：おすすめブース、3枚目：日常アクション）に分割**。1枚目がそのままスクショ映えカードになり、親子で「何タイプだった？」の会話が生まれる
+
+この2点を直せば **完成でOK** です。
+
+
+--- モバイル体験 (message) ---
+## モバイル体験アーキテクト レビュー
+
+### 良い点
+1. **片手操作設計が的確** — 3択ボタンが縦並び・44px以上のタップターゲットで、親指ゾーン内に収まっている。記録が2問タップで15秒完了する設計は、会場の混雑・立ち歩き中の利用に耐える
+2. **断続利用のLocalStorage保存＋兄弟切替** — 親のスマホ1台で複数の子どもが使い回せる設計は、ターゲットの実態（小中学生＝自分のスマホなし）に正しく対応している
+
+### 改善すべき点
+
+**1. 「ふりかえりを見る」ボタンがスクロール最下部にあり、到達コストが高い**
+
+ブース8件分のカードを全てスクロールしないとCTAに辿り着けない。小中学生は「下にボタンがある」と気づかない可能性が高い。
+
+→ **改善案**: `ふりかえりを見る`ボタンをブース一覧画面のヘッダー内（ミニチャート横 or 直下）に移動するか、画面下部にfixed配置する。ブース一覧のスクロールとは独立してCTAに常時アクセスできる状態にする
+
+**2. 記録完了後の自動遷移（2秒後にリスト画面へ戻る）が断続利用と衝突する**
+
+`setTimeout(() => { showScreen('listScreen') }, 2000)` — 記録完了直後に子どもがスマホを親に返す・ポケットにしまうなど「一旦離脱」するケースで、2秒後の自動遷移が意図せず走る。また、完了画面のレーダーチャート更新を確認する時間が2秒では短い。
+
+→ **改善案**: 自動遷移を廃止し、「もどる」ボタンのタップで明示的に遷移させる。完了画面に「つぎのブースへ →」ボタンを配置して、ユーザーのペースで進められるようにする
+
+---
+
+この2点を修正すれば **完成でOK** です。修正しますか？
+
+
+--- オンボーディング (message) ---
+## レビュー：低摩擦オンボーディング設計者の視点
+
+### 良い点
+1. **初回体験の軽さが優秀** — QR→名前入力→即ブース一覧。登録ゼロ・チュートリアルゼロ・価値体験まで2タップ。3択×2問の15秒完結も、混雑した会場で片手操作する小中学生に最適
+2. **「白いチャートを埋めたくなる」動機設計が機能している** — ヘッダーのミニチャートが記録ごとに育つ可視化は、入力の即時リターンとして秀逸。離脱しても途中状態に価値がある
+
+### 改善すべき点
+1. **スタート画面の名前入力が「体験前の壁」になっている** — 「使ってから登録する」原則に反する。小中学生は名前入力で「なんか面倒」と感じる。**改善案：名前入力をスキップ可能にし、ブース一覧を先に見せる。名前は最初の記録時 or ふりかえり画面で聞く（＝価値を体験した後に聞く）。** 「まずブース一覧を見て"これ行きたい"と思わせる→記録時に"きみの名前は？"」の順序が正しい
+
+2. **「ふりかえりを見る」ボタンが無効化状態で理由が不明** — 2件未満だとグレーアウトされるが、「あと何件で解放されるか」が見えない。**改善案：ボタンを `ふりかえりを見る（あと○件で解放！）` に変え、プログレス感を出す。** 不確実性の除去はオンボーディング設計の基本
+
+### 判定
+**完成ではない。** 上記1点目（名前入力の後回し）は小中学生の初回離脱率に直結するため、v2で必ず対応すべき。2点目は軽微だが合わせて修正推奨。
+
+
+--- PM補佐 (message) ---
+⚠️ **軌道チェック:**
+【ズレ】ターゲットは**小中学生とその親**です。「高校生の第一印象＋継続利用」とPMの問いかけに再び「高校生」が混入しています。レビュー内容自体は小中学生向けとして妥当です。
+
+---
+
+📊 **情報補足:**
+- オンボーディング担当の「名前入力スキップ」提案は理にかなっている。未確認だが、キッザニアのジョブスケジュールカードも名前記入は体験開始後。小中学生の初動では「触れる→面白い→名乗る」の順が自然
+- ビジュアル担当の「記録ボタンを横並び絵文字カード化」は、**小学校低学年（7〜8歳）が縦スクロールより横並びの大きなタップターゲットを好む**傾向と一致する
+
+---
+
+✅ **改善サイクルの判断:**
+
+4名のレビューを整理すると**実質3点**に集約される：
+1. **記録UIを絵文字カード横並びに**（ビジュアル）→ 採用推奨
+2. **ふりかえりボタンをfixed下部 or ヘッダー直下に移動＋残り件数表示**（モバイル＋オンボーディング）→ 採用推奨
+3. **名前入力を後回しにする**（オンボーディング）→ 採用推奨。ただし兄弟切替との整合性をエンジニアに確認すべき（名前なしユーザーが2人同時に使い始めるケースの扱い）
+
+**ふりかえり画面のスワイプカード分割**（ビジュアル提案）と**記録完了後の自動遷移廃止**（モバイル提案）も妥当だが、優先度は上記3点より低い。
+
+**結論：v2で上記3点を修正し、完成判定して良い。** これ以上のサイクルは過剰改善のリスクがある。
+
+
+--- PM (message) ---
+## PM判断：A) v2を出す。修正は3点、これで完了とする。
+
+**エンジニアへの指示：**
+
+1. **記録画面の3択を横並び絵文字カードに変更** — `.choices`を`flex-direction: row`、絵文字48px主役、ラベル10px下部。タップが楽しい操作感にする
+2. **「ふりかえりを見る」ボタンをブース一覧の下部にfixed配置＋残り件数表示** — `ふりかえりを見る（あと○件！）`で解放条件を明示
+3. **名前入力を後回し** — スタート画面では名前なしでブース一覧へ直行。初回記録時に名前を聞く。兄弟切替は「名前未設定のユーザー」をデフォルト1人作り、名前入力時に上書きする形で整合させる
+
+**作らないもの：** ふりかえりのスワイプカード分割、記録完了の自動遷移廃止（現状で十分機能している）
+
+理由：この3点で初回離脱率の低減とCTA到達率の改善が得られ、大目的を満たす。これ以上は過剰改善。**v2を最終版とする。**
+
+
+--- エンジニア (message) ---
+【実装内容】ワクワクマップ v2 — 3点改善（横並び絵文字カード・fixedボタン・名前後回し）
+【画面数】4画面（スタート / ブース一覧 / 記録 / ふりかえり）
+【操作方法】スタート→即ブース一覧→ブース選択→初回記録時に名前入力→絵文字カードタップ×2問→2件以上で「ふりかえり」解放
+
+---HTML_START---
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ワクワクマップ</title>
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-light: #FFF0E8;
+  --secondary: #4ECDC4;
+  --accent: #FFE66D;
+  --bg: #FAFAFA;
+  --text: #2D3436;
+  --text-light: #636E72;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background: #F0F0F0;
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg);
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.screen {
+  display: none;
+  min-height: 100dvh;
+  padding: 0 0 100px;
+}
+.screen.active { display: block; }
+
+/* ===== スタート画面 ===== */
+#startScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(160deg, #FFF0E8 0%, #E8FFF8 50%, #FFF8E0 100%);
+}
+#startScreen.active { display: flex; }
+
+.start-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.start-subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 32px;
+}
+.start-chart-container {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 24px;
+  opacity: 0.4;
+}
+.start-message {
+  font-size: 15px;
+  color: var(--text-light);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+.start-btn {
+  width: 100%;
+  max-width: 280px;
+  padding: 16px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.start-btn:active { transform: scale(0.97); }
+
+/* ===== ヘッダー ===== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF;
+  padding: 12px 16px 8px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.user-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-light);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.user-switcher svg { width: 14px; height: 14px; }
+
+.mini-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+.mini-chart { width: 48px; height: 48px; }
+.mini-chart-info {
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+.mini-chart-info strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ===== ブース一覧 ===== */
+.booth-list { padding: 16px; }
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+
+.booth-card {
+  background: #FFF;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.booth-card:active { transform: scale(0.98); }
+.booth-card.recorded {
+  border-left: 4px solid var(--secondary);
+}
+.booth-card.recorded::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: var(--secondary);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.booth-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.booth-info { flex: 1; }
+.booth-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.booth-company {
+  font-size: 12px;
+  color: var(--text-light);
+}
+.booth-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.booth-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #F0F0F0;
+  color: var(--text-light);
+}
+
+/* ===== リマインドバナー ===== */
+.remind-banner {
+  display: none;
+  margin: 0 16px 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #FFF8E0, #FFF0E8);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--text);
+  align-items: center;
+  gap: 8px;
+  animation: slideDown 0.3s ease;
+}
+.remind-banner.show { display: flex; }
+.remind-banner-icon { font-size: 20px; }
+.remind-banner-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Fixed下部ふりかえりボタン ===== */
+.fixed-review-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: #FFF;
+  padding: 12px 16px;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+.review-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.review-btn:active { transform: scale(0.97); }
+.review-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ===== 記録画面 ===== */
+#recordScreen {
+  background: linear-gradient(180deg, #FFF 0%, #F8F8F8 100%);
+}
+.record-header {
+  padding: 20px 16px 16px;
+  text-align: center;
+}
+.record-booth-name {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.record-company {
+  font-size: 13px;
+  color: var(--text-light);
+}
+.record-step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0;
+}
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #DDD;
+  transition: background 0.2s, transform 0.2s;
+}
+.step-dot.active {
+  background: var(--primary);
+  transform: scale(1.3);
+}
+.step-dot.done { background: var(--secondary); }
+
+.question-area {
+  padding: 0 24px;
+  text-align: center;
+}
+.question-text {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* 横並び絵文字カード */
+.choices {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
+  max-width: 340px;
+  margin: 0 auto;
+}
+.choice-btn {
+  flex: 1;
+  padding: 16px 8px 12px;
+  border: 2px solid #E8E8E8;
+  border-radius: 16px;
+  background: #FFF;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.choice-btn:active { transform: scale(0.94); }
+.choice-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: scale(1.05);
+}
+.choice-emoji { font-size: 48px; line-height: 1; }
+.choice-label { font-size: 10px; font-weight: 600; color: var(--text-light); line-height: 1.3; }
+.choice-btn.selected .choice-label { color: var(--primary); }
+
+.record-chart-preview {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0 16px;
+}
+.record-chart-preview svg { width: 160px; height: 160px; }
+
+.record-done-msg {
+  text-align: center;
+  padding: 32px 24px;
+  animation: fadeUp 0.4s ease;
+}
+.record-done-msg h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.record-done-msg p {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+.record-done-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.record-next-btn {
+  padding: 14px 32px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.record-next-btn:active { transform: scale(0.97); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 名前入力モーダル（初回記録時） ===== */
+.name-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 300;
+  justify-content: center;
+  align-items: center;
+}
+.name-modal-overlay.show { display: flex; }
+.name-modal {
+  width: 90%;
+  max-width: 320px;
+  background: #FFF;
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  animation: fadeUp 0.3s ease;
+}
+.name-modal h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.name-modal p {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.name-modal input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid #DDD;
+  border-radius: 12px;
+  font-size: 18px;
+  text-align: center;
+  outline: none;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.name-modal input:focus { border-color: var(--primary); }
+.name-modal-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.name-modal-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ===== ふりかえり画面 ===== */
+#reviewScreen {
+  background: linear-gradient(180deg, #FFF0E8 0%, #E8FFF8 50%, #FFF8E0 100%);
+}
+.review-header {
+  text-align: center;
+  padding: 32px 24px 16px;
+}
+.review-header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.review-header p {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.review-chart-area {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+.review-chart-area svg { width: 260px; height: 260px; }
+
+.type-card {
+  margin: 0 16px 16px;
+  background: #FFF;
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  box-shadow: var(--card-shadow);
+  text-align: center;
+}
+.type-label {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+.type-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.type-desc {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.recommend-section {
+  padding: 0 16px 16px;
+}
+.recommend-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+.recommend-card {
+  background: #FFF;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.recommend-card .booth-icon { width: 40px; height: 40px; font-size: 20px; border-radius: 10px; }
+.recommend-card-info { flex: 1; }
+.recommend-card-name { font-size: 14px; font-weight: 700; }
+.recommend-card-reason { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+.action-section { padding: 0 16px 16px; }
+.action-card {
+  background: #FFF;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.action-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.action-text { font-size: 14px; line-height: 1.6; }
+
+.screenshot-hint {
+  text-align: center;
+  padding: 8px 16px 16px;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* ===== ユーザー切替モーダル ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-end;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  width: 100%;
+  max-width: 430px;
+  background: #FFF;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 40px;
+  animation: sheetUp 0.3s ease;
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.user-list { list-style: none; }
+.user-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s;
+}
+.user-item:hover { background: #F8F8F8; }
+.user-item.current { background: var(--primary-light); font-weight: 700; }
+.user-item-name { font-size: 16px; }
+.user-item-count { font-size: 12px; color: var(--text-light); }
+
+.add-user-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.add-user-row input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #E8E8E8;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+}
+.add-user-row input:focus { border-color: var(--primary); }
+.add-user-btn {
+  padding: 12px 20px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin: 12px 16px 0;
+}
+.back-btn svg { width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===== スタート画面 ===== -->
+  <div class="screen active" id="startScreen">
+    <div class="start-title">ワクワクマップ</div>
+    <div class="start-subtitle">ワークワクワク河内長野</div>
+    <div class="start-chart-container">
+      <svg id="startChart" viewBox="0 0 200 200"></svg>
+    </div>
+    <div class="start-message">これを今日の体験で<br>塗りつぶそう！</div>
+    <button class="start-btn" id="startBtn">ブースを見る</button>
+  </div>
+
+  <!-- ===== ブース一覧画面 ===== -->
+  <div class="screen" id="listScreen">
+    <div class="header">
+      <div class="header-top">
+        <div class="header-title">ワクワクマップ</div>
+        <button class="user-switcher" id="switchUserBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="currentUserLabel">—</span>
+        </button>
+      </div>
+      <div class="mini-chart-row">
+        <svg class="mini-chart" id="miniChart" viewBox="0 0 48 48"></svg>
+        <div class="mini-chart-info">
+          <strong id="recordCountLabel">0 / 8 体験済み</strong><br>
+          <span id="miniChartHint">ブースを体験して記録しよう</span>
+        </div>
+      </div>
+    </div>
+    <div class="remind-banner" id="remindBanner">
+      <span class="remind-banner-icon">💡</span>
+      <span>さっきの体験、どうだった？<br>記録するともっとマップが育つよ！</span>
+      <button class="remind-banner-close" id="remindClose">✕</button>
+    </div>
+    <div class="booth-list" id="boothList"></div>
+    <!-- fixed下部ふりかえりボタン -->
+    <div class="fixed-review-bar" id="fixedReviewBar">
+      <button class="review-btn" id="goReviewBtn" disabled>ふりかえりを見る（あと2件！）</button>
+    </div>
+  </div>
+
+  <!-- ===== 記録画面 ===== -->
+  <div class="screen" id="recordScreen">
+    <button class="back-btn" id="recordBackBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <div class="record-header">
+      <div class="record-booth-name" id="recordBoothName"></div>
+      <div class="record-company" id="recordCompany"></div>
+    </div>
+    <div class="record-step-indicator" id="stepIndicator"></div>
+    <div class="question-area" id="questionArea"></div>
+    <div class="record-chart-preview" id="recordChartPreview">
+      <svg id="recordChart" viewBox="0 0 200 200"></svg>
+    </div>
+  </div>
+
+  <!-- ===== ふりかえり画面 ===== -->
+  <div class="screen" id="reviewScreen">
+    <button class="back-btn" id="reviewBackBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <div class="review-header">
+      <h1 id="reviewUserName"></h1>
+      <p>きみのワクワクマップ</p>
+    </div>
+    <div class="review-chart-area">
+      <svg id="reviewChart" viewBox="0 0 260 260"></svg>
+    </div>
+    <div class="type-card" id="typeCard">
+      <div class="type-label">きみのワクワクタイプ</div>
+      <div class="type-name" id="typeName"></div>
+      <div class="type-desc" id="typeDesc"></div>
+    </div>
+    <div class="recommend-section" id="recommendSection">
+      <div class="recommend-title">🗺️ まだ冒険してないおすすめブース</div>
+      <div id="recommendList"></div>
+    </div>
+    <div class="action-section">
+      <div class="recommend-title">🏠 明日からやってみよう</div>
+      <div id="actionList"></div>
+    </div>
+    <div class="screenshot-hint">📸 スクショして記念に残そう！</div>
+  </div>
+
+  <!-- ===== 名前入力モーダル（初回記録時） ===== -->
+  <div class="name-modal-overlay" id="nameModal">
+    <div class="name-modal">
+      <h2>きみの名前は？</h2>
+      <p>記録するために名前を教えてね！<br>あとで変えられるよ</p>
+      <input type="text" id="nameModalInput" placeholder="なまえを入れてね" maxlength="10">
+      <button class="name-modal-btn" id="nameModalBtn" disabled>きろくをはじめる</button>
+    </div>
+  </div>
+
+  <!-- ===== ユーザー切替モーダル ===== -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal-sheet">
+      <div class="modal-title">だれが使う？</div>
+      <ul class="user-list" id="userList"></ul>
+      <div class="add-user-row">
+        <input type="text" id="addUserInput" placeholder="なまえを追加" maxlength="10">
+        <button class="add-user-btn" id="addUserBtn">追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== ブースデータ（河内長野実績ベース ダミー8社） ===== */
+const AXES = ['つくる','まもる','とどける','そだてる','しらべる','つたえる'];
+const AXIS_COLORS = ['#FF6B35','#4ECDC4','#45B7D1','#96CEB4','#A78BFA','#F472B6'];
+
+const BOOTHS = [
+  { id:1, name:'トラックづくり体験', company:'河内長野運送(株)', icon:'🚚', color:'#FFE0CC', axes:[1,0,0.4,0,0.2,0], category:'ものづくり' },
+  { id:2, name:'美容師なりきり体験', company:'ヘアサロン Ciel', icon:'💇', color:'#FFE0F0', axes:[0.4,0,0,0,0,1], category:'サービス' },
+  { id:3, name:'お花アレンジメント', company:'花工房 はなみずき', icon:'💐', color:'#E8FFE0', axes:[0.8,0,0,0.8,0,0.3], category:'ものづくり' },
+  { id:4, name:'工場見学ツアー', company:'大阪精密工業(株)', icon:'🏭', color:'#E0ECFF', axes:[0.6,0,0,0,1,0], category:'見学' },
+  { id:5, name:'指紋採取ワークショップ', company:'河内長野警察署', icon:'🔍', color:'#F0E8FF', axes:[0,0.8,0,0,1,0], category:'体験' },
+  { id:6, name:'パンづくり体験', company:'ベーカリー穂の香', icon:'🍞', color:'#FFF5E0', axes:[1,0,0.3,0.4,0,0], category:'ものづくり' },
+  { id:7, name:'消防士おしごと体験', company:'河内長野消防署', icon:'🚒', color:'#FFE0E0', axes:[0,1,0,0.3,0.2,0.5], category:'体験' },
+  { id:8, name:'配送センター見学', company:'ヤマト運輸 河内長野', icon:'📦', color:'#E0F8FF', axes:[0,0,1,0,0.4,0.3], category:'見学' },
+];
+
+const QUESTIONS = [
+  { text:'この体験、どうだった？', choices:[
+    { emoji:'😆', label:'たのしかった！', value:'fun' },
+    { emoji:'🤩', label:'すごかった！', value:'wow' },
+    { emoji:'🤔', label:'もっと知りたい！', value:'curious' },
+  ]},
+  { text:'むずかしさは？', choices:[
+    { emoji:'😊', label:'かんたん', value:'easy' },
+    { emoji:'🙂', label:'ふつう', value:'normal' },
+    { emoji:'😤', label:'むずかしい！', value:'hard' },
+  ]},
+];
+
+const TYPES = {
+  'つくる':  { name:'クリエイター', desc:'ものを作るのが好きなきみは、手を動かして形にする力がある！図工や料理でその才能をもっと伸ばそう。', actions:['おうちで簡単な工作に挑戦してみよう','料理のお手伝いで「つくる楽しさ」を体験しよう','身の回りのものがどう作られているか観察しよう'] },
+  'まもる':  { name:'ガーディアン', desc:'人を守りたい気持ちが強いきみは、正義感と優しさの持ち主！防災や安全について学んでみよう。', actions:['おうちの防災グッズをチェックしてみよう','困っている人がいたら声をかけてみよう','交通ルールを周りの人にも教えてあげよう'] },
+  'とどける':{ name:'デリバラー', desc:'届けることに興味があるきみは、人と人をつなぐ力がある！お手紙やプレゼントで誰かを喜ばせよう。', actions:['家族にお手紙を書いてみよう','お使いに挑戦してみよう','「届ける」仕事にはどんな種類があるか調べよう'] },
+  'そだてる':{ name:'グロウワー', desc:'育てることが好きなきみは、根気強さと愛情の持ち主！植物や生き物のお世話をしてみよう。', actions:['ベランダで小さな植物を育ててみよう','ペットや生き物を観察してみよう','弟や妹、年下の子に何か教えてあげよう'] },
+  'しらべる':{ name:'リサーチャー', desc:'調べることが好きなきみは、好奇心旺盛な探求者！図書館やネットでどんどん調べてみよう。', actions:['興味のあることを図書館で調べてみよう','身の回りの「なぜ？」を3つ書き出そう','実験や観察の記録をつけてみよう'] },
+  'つたえる':{ name:'コミュニケーター', desc:'伝えることが得意なきみは、みんなの気持ちがわかる人！話したり書いたりで表現力をみがこう。', actions:['今日の出来事を家族に話してみよう','絵日記や感想文を書いてみよう','友だちの話をじっくり聞いてみよう'] },
+};
+
+/* ===== 状態管理 ===== */
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('wakumap') || 'null'); } catch { return null; }
+}
+function saveState(state) {
+  localStorage.setItem('wakumap', JSON.stringify(state));
+}
+function initState() {
+  return { users: [{ name: '', records: {} }], currentUser: 0 };
+}
+function getCurrentUser(state) {
+  return state.users[state.currentUser];
+}
+
+let appState = loadState();
+
+/* ===== レーダーチャート描画 ===== */
+function drawRadar(svgEl, scores, size, opts = {}) {
+  const { showLabels = false, showValues = false, animate = false } = opts;
+  const cx = size / 2, cy = size / 2, r = size * 0.35;
+  const n = AXES.length;
+  let svg = '';
+
+  for (let lv = 1; lv <= 3; lv++) {
+    const rr = r * lv / 3;
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      pts.push(`${cx + rr * Math.cos(angle)},${cy + rr * Math.sin(angle)}`);
+    }
+    svg += `<polygon points="${pts.join(' ')}" fill="none" stroke="#E0E0E0" stroke-width="${lv===3?1.5:0.7}"/>`;
+  }
+
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#E0E0E0" stroke-width="0.7"/>`;
+  }
+
+  const dataPts = [];
+  for (let i = 0; i < n; i++) {
+    const val = Math.min(scores[i] || 0, 1);
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const dr = r * (0.1 + 0.9 * val);
+    dataPts.push(`${cx + dr * Math.cos(angle)},${cy + dr * Math.sin(angle)}`);
+  }
+  const hasData = scores.some(s => s > 0);
+  if (hasData) {
+    svg += `<polygon points="${dataPts.join(' ')}" fill="rgba(255,107,53,0.15)" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"${animate ? ' style="animation:fadeUp 0.5s ease"' : ''}/>`;
+    for (let i = 0; i < n; i++) {
+      if ((scores[i] || 0) > 0) {
+        svg += `<circle cx="${dataPts[i].split(',')[0]}" cy="${dataPts[i].split(',')[1]}" r="3.5" fill="var(--primary)"/>`;
+      }
+    }
+  }
+
+  if (showLabels) {
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const lr = r + size * 0.12;
+      const lx = cx + lr * Math.cos(angle);
+      const ly = cy + lr * Math.sin(angle);
+      const val = scores[i] || 0;
+      const color = val > 0 ? AXIS_COLORS[i] : '#AAA';
+      const fontSize = size > 100 ? 12 : 6;
+      svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="${fontSize}" font-weight="700">${AXES[i]}</text>`;
+      if (showValues && val === 0) {
+        const vly = ly + fontSize + 2;
+        svg += `<text x="${lx}" y="${vly}" text-anchor="middle" fill="#CCC" font-size="${fontSize * 0.7}">未冒険</text>`;
+      }
+    }
+  }
+
+  svgEl.innerHTML = svg;
+}
+
+/* ===== ユーザーのスコア計算 ===== */
+function calcScores(user) {
+  const scores = [0,0,0,0,0,0];
+  const records = user.records;
+  const count = Object.keys(records).length;
+  if (count === 0) return scores;
+
+  for (const boothId in records) {
+    const booth = BOOTHS.find(b => b.id === parseInt(boothId));
+    if (!booth) continue;
+    const rec = records[boothId];
+    let weight = 1;
+    if (rec.q1 === 'fun') weight = 1.0;
+    else if (rec.q1 === 'wow') weight = 1.2;
+    else if (rec.q1 === 'curious') weight = 1.1;
+    let diffBonus = 0;
+    if (rec.q2 === 'hard') diffBonus = 0.15;
+    else if (rec.q2 === 'normal') diffBonus = 0.05;
+
+    for (let i = 0; i < 6; i++) {
+      scores[i] += booth.axes[i] * weight + (booth.axes[i] > 0 ? diffBonus : 0);
+    }
+  }
+
+  const max = Math.max(...scores, 0.001);
+  return scores.map(s => Math.min(s / max, 1));
+}
+
+/* ===== 画面遷移 ===== */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // fixed review barはブース一覧のみ表示
+  document.getElementById('fixedReviewBar').style.display = (id === 'listScreen') ? 'block' : 'none';
+}
+
+/* ===== スタート画面 ===== */
+drawRadar(document.getElementById('startChart'), [0,0,0,0,0,0], 200, { showLabels: true });
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  if (!appState) {
+    appState = initState();
+    saveState(appState);
+  }
+  renderList();
+  showScreen('listScreen');
+});
+
+// 既存データがあれば自動でリストへ
+if (appState) {
+  renderList();
+  showScreen('listScreen');
+}
+
+/* ===== ブース一覧画面 ===== */
+function renderList() {
+  const user = getCurrentUser(appState);
+  const displayName = user.name || 'ゲスト';
+  document.getElementById('currentUserLabel').textContent = displayName;
+  const recordCount = Object.keys(user.records).length;
+  document.getElementById('recordCountLabel').textContent = `${recordCount} / ${BOOTHS.length} 体験済み`;
+
+  if (recordCount === 0) {
+    document.getElementById('miniChartHint').textContent = 'ブースを体験して記録しよう';
+  } else if (recordCount < 2) {
+    document.getElementById('miniChartHint').textContent = 'あと少しでタイプ診断ができるよ！';
+  } else {
+    document.getElementById('miniChartHint').textContent = 'ふりかえりで診断結果を見よう！';
+  }
+
+  const scores = calcScores(user);
+  drawRadar(document.getElementById('miniChart'), scores, 48);
+
+  // ふりかえりボタン更新
+  const goReviewBtn = document.getElementById('goReviewBtn');
+  const remaining = 2 - recordCount;
+  if (remaining > 0) {
+    goReviewBtn.disabled = true;
+    goReviewBtn.textContent = `ふりかえりを見る（あと${remaining}件！）`;
+  } else {
+    goReviewBtn.disabled = false;
+    goReviewBtn.textContent = 'ふりかえりを見る 🔍';
+  }
+
+  // リマインドバナー
+  const banner = document.getElementById('remindBanner');
+  if (recordCount > 0 && recordCount < BOOTHS.length) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+
+  const list = document.getElementById('boothList');
+  list.innerHTML = '<div class="section-label">今日のブース</div>';
+  BOOTHS.forEach(booth => {
+    const recorded = !!user.records[booth.id];
+    const card = document.createElement('div');
+    card.className = 'booth-card' + (recorded ? ' recorded' : '');
+    card.innerHTML = `
+      <div class="booth-icon" style="background:${booth.color}">${booth.icon}</div>
+      <div class="booth-info">
+        <div class="booth-name">${booth.name}</div>
+        <div class="booth-company">${booth.company}</div>
+        <div class="booth-tags"><span class="booth-tag">${booth.category}</span></div>
+      </div>
+    `;
+    card.addEventListener('click', () => onBoothTap(booth));
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('remindClose').addEventListener('click', () => {
+  document.getElementById('remindBanner').classList.remove('show');
+});
+
+document.getElementById('goReviewBtn').addEventListener('click', () => {
+  renderReview();
+  showScreen('reviewScreen');
+});
+
+/* ===== 名前入力モーダル（初回記録時） ===== */
+let pendingBooth = null;
+
+const nameModal = document.getElementById('nameModal');
+const nameModalInput = document.getElementById('nameModalInput');
+const nameModalBtn = document.getElementById('nameModalBtn');
+
+nameModalInput.addEventListener('input', () => {
+  nameModalBtn.disabled = nameModalInput.value.trim().length === 0;
+});
+
+nameModalBtn.addEventListener('click', () => {
+  const name = nameModalInput.value.trim();
+  if (!name) return;
+  const user = getCurrentUser(appState);
+  user.name = name;
+  saveState(appState);
+  nameModal.classList.remove('show');
+  renderList();
+  // 保留中のブース記録を開始
+  if (pendingBooth) {
+    startRecord(pendingBooth);
+    pendingBooth = null;
+  }
+});
+
+function onBoothTap(booth) {
+  const user = getCurrentUser(appState);
+  // 名前未設定かつ初回記録 → 名前を聞く
+  if (!user.name && Object.keys(user.records).length === 0) {
+    pendingBooth = booth;
+    nameModalInput.value = '';
+    nameModalBtn.disabled = true;
+    nameModal.classList.add('show');
+    setTimeout(() => nameModalInput.focus(), 100);
+    return;
+  }
+  startRecord(booth);
+}
+
+/* ===== ユーザー切替 ===== */
+const userModal = document.getElementById('userModal');
+document.getElementById('switchUserBtn').addEventListener('click', () => {
+  renderUserList();
+  userModal.classList.add('show');
+});
+userModal.addEventListener('click', (e) => {
+  if (e.target === userModal) userModal.classList.remove('show');
+});
+
+function renderUserList() {
+  const ul = document.getElementById('userList');
+  ul.innerHTML = '';
+  appState.users.forEach((u, i) => {
+    const li = document.createElement('li');
+    li.className = 'user-item' + (i === appState.currentUser ? ' current' : '');
+    const cnt = Object.keys(u.records).length;
+    const displayName = u.name || 'ゲスト';
+    li.innerHTML = `<span class="user-item-name">${displayName}</span><span class="user-item-count">${cnt}件記録</span>`;
+    li.addEventListener('click', () => {
+      appState.currentUser = i;
+      saveState(appState);
+      renderList();
+      userModal.classList.remove('show');
+    });
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById('addUserBtn').addEventListener('click', () => {
+  const input = document.getElementById('addUserInput');
+  const name = input.value.trim();
+  if (!name) return;
+  const existing = appState.users.findIndex(u => u.name === name);
+  if (existing >= 0) {
+    appState.currentUser = existing;
+  } else {
+    appState.users.push({ name, records: {} });
+    appState.currentUser = appState.users.length - 1;
+  }
+  saveState(appState);
+  input.value = '';
+  renderList();
+  userModal.classList.remove('show');
+});
+
+/* ===== 記録画面 ===== */
+let currentBooth = null;
+let currentStep = 0;
+let recordAnswers = {};
+
+function startRecord(booth) {
+  currentBooth = booth;
+  currentStep = 0;
+  recordAnswers = {};
+  const user = getCurrentUser(appState);
+  if (user.records[booth.id]) {
+    recordAnswers = { ...user.records[booth.id] };
+  }
+
+  document.getElementById('recordBoothName').textContent = booth.name;
+  document.getElementById('recordCompany').textContent = booth.company;
+  renderStep();
+  showScreen('recordScreen');
+}
+
+function renderStep() {
+  const indicator = document.getElementById('stepIndicator');
+  indicator.innerHTML = '';
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i === currentStep ? ' active' : (i < currentStep ? ' done' : ''));
+    indicator.appendChild(dot);
+  }
+
+  const area = document.getElementById('questionArea');
+  const chartPreview = document.getElementById('recordChartPreview');
+
+  if (currentStep >= QUESTIONS.length) {
+    // 完了表示
+    area.innerHTML = '';
+    const doneDiv = document.createElement('div');
+    doneDiv.className = 'record-done-msg';
+    doneDiv.innerHTML = `
+      <h2>きろくできた！ 🎉</h2>
+      <p>マップが少し育ったよ。<br>ほかのブースも体験してみよう！</p>
+      <div class="record-done-actions">
+        <button class="record-next-btn" id="recordNextBtn">つぎのブースへ →</button>
+      </div>
+    `;
+    area.appendChild(doneDiv);
+
+    document.getElementById('recordNextBtn').addEventListener('click', () => {
+      showScreen('listScreen');
+      renderList();
+    });
+
+    const user = getCurrentUser(appState);
+    const scores = calcScores(user);
+    chartPreview.style.display = 'flex';
+    drawRadar(document.getElementById('recordChart'), scores, 200, { showLabels: true, animate: true });
+    return;
+  }
+
+  chartPreview.style.display = 'none';
+  const q = QUESTIONS[currentStep];
+  area.innerHTML = `<div class="question-text">${q.text}</div>`;
+  const choicesDiv = document.createElement('div');
+  choicesDiv.className = 'choices';
+  q.choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    const prevAnswer = recordAnswers[`q${currentStep + 1}`];
+    if (prevAnswer === c.value) btn.classList.add('selected');
+    btn.innerHTML = `<span class="choice-emoji">${c.emoji}</span><span class="choice-label">${c.label}</span>`;
+    btn.addEventListener('click', () => {
+      recordAnswers[`q${currentStep + 1}`] = c.value;
+      const user = getCurrentUser(appState);
+      user.records[currentBooth.id] = { ...recordAnswers };
+      saveState(appState);
+      currentStep++;
+      setTimeout(renderStep, 200);
+    });
+    choicesDiv.appendChild(btn);
+  });
+  area.appendChild(choicesDiv);
+}
+
+document.getElementById('recordBackBtn').addEventListener('click', () => {
+  if (currentStep > 0) {
+    currentStep--;
+    renderStep();
+  } else {
+    showScreen('listScreen');
+    renderList();
+  }
+});
+
+/* ===== ふりかえり画面 ===== */
+function renderReview() {
+  const user = getCurrentUser(appState);
+  const scores = calcScores(user);
+  const displayName = user.name || 'ゲスト';
+
+  document.getElementById('reviewUserName').textContent = `${displayName}のワクワクマップ`;
+  drawRadar(document.getElementById('reviewChart'), scores, 260, { showLabels: true, showValues: true, animate: true });
+
+  let maxIdx = 0;
+  for (let i = 1; i < scores.length; i++) {
+    if (scores[i] > scores[maxIdx]) maxIdx = i;
+  }
+  const axisName = AXES[maxIdx];
+  const type = TYPES[axisName];
+  document.getElementById('typeName').textContent = `${axisName}タイプ — ${type.name}`;
+  document.getElementById('typeDesc').textContent = type.desc;
+
+  const unvisited = BOOTHS.filter(b => !user.records[b.id]);
+  const ranked = unvisited.map(b => {
+    let affinity = 0;
+    for (let i = 0; i < 6; i++) affinity += b.axes[i] * (1 - (scores[i] || 0));
+    return { booth: b, affinity };
+  }).sort((a, b) => b.affinity - a.affinity);
+
+  const recommendList = document.getElementById('recommendList');
+  const recommendSection = document.getElementById('recommendSection');
+  if (ranked.length === 0) {
+    recommendSection.style.display = 'none';
+  } else {
+    recommendSection.style.display = 'block';
+    recommendList.innerHTML = '';
+    ranked.slice(0, 2).forEach(r => {
+      let reasonAxis = '';
+      let maxVal = 0;
+      for (let i = 0; i < 6; i++) {
+        if (r.booth.axes[i] > maxVal && scores[i] < 0.3) {
+          maxVal = r.booth.axes[i];
+          reasonAxis = AXES[i];
+        }
+      }
+      const reason = reasonAxis ? `「${reasonAxis}」の新しい発見があるかも！` : 'まだ体験していない分野だよ！';
+      const card = document.createElement('div');
+      card.className = 'recommend-card';
+      card.innerHTML = `
+        <div class="booth-icon" style="background:${r.booth.color}">${r.booth.icon}</div>
+        <div class="recommend-card-info">
+          <div class="recommend-card-name">${r.booth.name}</div>
+          <div class="recommend-card-reason">${reason}</div>
+        </div>
+      `;
+      recommendList.appendChild(card);
+    });
+  }
+
+  const actionList = document.getElementById('actionList');
+  actionList.innerHTML = '';
+  type.actions.forEach((action, i) => {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = `<div class="action-num">${i + 1}</div><div class="action-text">${action}</div>`;
+    actionList.appendChild(card);
+  });
+}
+
+document.getElementById('reviewBackBtn').addEventListener('click', () => {
+  showScreen('listScreen');
+  renderList();
+});
+</script>
+</body>
+</html>
+---HTML_END---
+
+**v1からの変更点：**
+
+1. **記録画面の3択を横並び絵文字カードに変更**
+   - `.choices`を`flex-direction: row`に変更、各ボタンを縦型カード化
+   - 絵文字48px主役、ラベル10pxで下部に小さく配置
+   - 選択時に`scale(1.05)`で「押した感」を演出、ストーリーズの投票スタンプ風の操作感
+
+2. **「ふりかえりを見る」ボタンをfixed下部に配置＋残り件数表示**
+   - ブース一覧画面の下部にfixed配置し、スクロール位置に関係なく常時アクセス可能に
+   - 2件未満は`ふりかえりを見る（あと○件！）`で解放条件を明示
+   - 2件以上記録するとボタンがアクティブに変化
+
+3. **名前入力を後回し**
+   - スタート画面は「ブースを見る」ボタンのみ、名前入力なしで即ブース一覧へ
+   - 初回のブースタップ時にモーダルで名前を聞く（＝価値を感じた後に名前を聞く設計）
+   - 名前未設定ユーザーは「ゲスト」として表示、名前入力時に上書き
+   - 兄弟切替は従来どおりユーザー追加モーダルから対応可能（名前付きユーザーとして追加される）
+
+
+--- PM (facilitator) ---
+モックアップ v2 に更新されました。プレビューを確認してください。
+
+--- ビジュアル&タイパ (message) ---
+## レビュー：ビジュアル＆タイパ設計者
+
+**良い点**
+1. **横並び絵文字カードが正解** — 48px絵文字が主役で「タップが楽しい」操作感になった。選択時のscale(1.05)も小中学生の「押した！」感覚に合う
+2. **名前後回し→初回記録時モーダルの流れが自然** — 「ブースを見る→面白そう→タップ→名前聞かれる」の順序はタイパ的に正しい。先に価値を見せてから登録する原則どおり
+
+**改善すべき点**
+1. **スタート画面の白いレーダーチャートが`opacity: 0.4`で薄すぎて「何これ？」になる** — 小中学生は薄い図形を「壊れてる？」と認識する。→ `opacity: 0.6`に上げ、チャートの外枠だけ点線アニメーション（`stroke-dasharray`でぐるぐる回る）を入れて「これから埋まるもの」と直感で伝える。1行のCSS追加で済む
+2. **fixed下部ボタンの「あと○件！」が小さい子には意味不明** — 「あと2件！」の「件」が抽象的。→ `あと2つ体験しよう！` に変えるだけで伝わる。解放後のテキストも `みんなのワクワクタイプを見る 🔍` にして「自分ごと感」を出す
+
+**判定：上記2点は軽微な文言・数値調整のみ。完成でOK。**
+
+
+--- モバイル体験 (message) ---
+## モバイル体験アーキテクト レビュー：v2
+
+### 良い点
+1. **横並び絵文字カードが正解** — 48px絵文字×3枚横並びは、片手親指でどれも届く配置。`scale(1.05)`のフィードバックも「押した実感」があり、小学生が会場で立ったまま操作する状況に耐える
+2. **fixed下部ボタン＋残り件数表示が的確** — スクロール位置に依存せずCTAに常時到達可能。「あと○件！」のプログレス表示で不確実性を排除している
+
+### 改善すべき点
+1. **記録完了後の自動遷移がまだ残っている** — v2で「つぎのブースへ →」ボタンが追加されたのは良いが、`setTimeout`による2秒後の自動遷移コードは削除されていない。実際には`setTimeout`は削除済みのようだが、**完了画面でチャートが育つアニメーションをじっくり見たい子どもにとって、ボタン以外の遷移手段がないことを確認すべき**。→ 確認したところ自動遷移は廃止されており問題なし
+
+2. **fixed下部ボタンがブース一覧最下部のカードと重なる** — `padding-bottom: 100px`はあるが、fixedバーの高さ（約72px）に対してブース8件目のカードが隠れる可能性がある。→ 実害は軽微だが、`padding-bottom`を`120px`に増やすと安全
+
+### 判定
+**完成でOK。** 3点の改善（横並び絵文字カード・fixedボタン・名前後回し）がすべて正しく反映されている。片手操作・断続利用・情報チャンクの3観点で問題なし。padding-bottomの微調整は本番実装時で十分。
+
+
+--- オンボーディング (message) ---
+## レビュー：低摩擦オンボーディング設計者の視点
+
+### 良い点
+1. **名前入力の後回しが正しく実装されている** — スタート→即ブース一覧→初回記録時にモーダルで名前を聞く流れは「使ってから登録する」原則に完全に合致。「ゲスト」表示も自然
+2. **fixedボタン＋残り件数表示が離脱防止に効く** — 「あと○件！」でプログレス感が明示され、不確実性が除去されている。スクロール位置に依存しないCTA配置も正しい
+
+### 改善すべき点
+1. **スタート画面がまだ1ステップ余分** — 「ブースを見る」ボタンを押す画面が挟まるが、QRスキャンで開いた時点で即ブース一覧を表示すべき。スタート画面は「ワクワクマップとは何か」を伝える役割があるが、白いレーダーチャート＋「塗りつぶそう！」のメッセージだけでは小中学生に伝わりにくい。**改善案：スタート画面を廃止し、ブース一覧画面のヘッダー直下に「体験を記録すると、きみのワクワクタイプがわかる！」のワンライナーを初回のみ表示する。** これで起動→即ブース一覧の0ステップ到達が実現する
+
+### 判定
+**完成でOK。** 上記1点目は「さらに良くする」レベルの改善であり、v2の3点修正で初回離脱率・CTA到達率の改善は十分達成されている。過剰改善のリスクを考慮し、これ以上のサイクルは不要。
+
+
+--- PM補佐 (message) ---
+✅ **方針チェックOK — v2で完成判定して良い。**
+
+- ターゲットは**小中学生とその親**です（「高校生」ではありません。レビュー依頼文のテンプレートに残っている「高校生」は誤りです）
+- 3点の改善（横並び絵文字カード・fixedボタン・名前後回し）はすべてゴール（低負荷入力→診断→ネクストアクション）に合致し、小中学生の実態に即している
+- **見落とし1点だけ指摘**：「記録2〜3件でも成立するか」の検証が未実施。現在の診断ロジックは2件でタイプが出るが、**2件とも同じ軸が強いブース（例：トラック＋パン＝両方「つくる」系）を選んだ場合、レーダーチャートが1軸に偏り「冒険感」が出ない**。これは本番データ投入時の調整事項であり、モックの完成判定には影響しない
+- **これ以上の改善サイクルは不要。** ビジュアル担当の文言微調整（「あと2つ体験しよう！」等）はエンジニアが最終調整で吸収できるレベル
+
+
+--- PM (message) ---
+## PM判断：B) 完成
+
+**【完了】これ以上の改善は不要です。**
+
+v2で3点の改善（横並び絵文字カード・fixedボタン・名前後回し）が正しく反映され、4名全員が「完成でOK」と判定。大目的（小中学生が見た瞬間やりたいと思い、継続的に使いたくなるUI）を満たしています。
+
+ビジュアル担当の文言調整（「あと2つ体験しよう！」等）とpadding-bottomの微調整は、本番実装時にエンジニアが吸収してください。
+
+---
+
+HTMLファイルとして保存しますか？
+
+
+--- PM (message) ---
+ファイル書き込みの許可をお願いします。許可いただければ保存します。
+
+その間に、最終判定を出します。
+
+---
+
+## 最終判定
+
+**【完成したもの】** ワクワクマップ — 職業体験イベント向け体験記録・診断アプリ（単一HTMLモック）
+
+**【バージョン】** v2（最終版）
+
+**【改善サイクル】** 2回（v1 → レビュー → v2 → レビュー → 完成判定）
+
+**【採用した要素】**
+- **ビジュアル&タイパ**：「ワクワクマップ」の名前・白い地図を埋める動機設計・横並び絵文字カード（v2）
+- **モバイル体験**：LocalStorage保存・親指ゾーン設計・fixedボタンのCTA配置（v2）
+- **オンボーディング**：名前入力の後回し（v2）・チュートリアルゼロの即体験設計
+- **ワクメモ（3案比較）**：2〜3件でも成立する3択タップ診断ロジック
+- **PM補佐**：タイマーバナー→状態ベースリマインドへの変更・記録少数での成立検証の指摘
+
+**【残課題】**（本番実装時に対応）
+1. **ブースデータのAPI化** — 現在ダミー8社。実際の26社データをJSON APIから動的取得する形に差し替え
+2. **同一軸偏り時の診断バリエーション** — 2件とも同じ軸が強いブースを選んだ場合のチャート表現と診断文の改善
+3. **padding-bottom微調整** — fixedボタンとブース最下部カードの重なり対策（100px→120px）
+
+**【ファイル】** `demo21_wakuwaku_map.html` として保存（許可待ち）
+
+
+--- あなた (user) ---
+HTMLファイルの保存とアウトプットの説明をしてください
+
+--- PM (facilitator) ---
+会議を終了します。お疲れ様でした。
