@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ワクワクメモ v6</title>
+<style>
+:root {
+  --primary: #2563EB;
+  --primary-light: #EFF6FF;
+  --primary-mid: #BFDBFE;
+  --accent: #F59E0B;
+  --accent-light: #FEF3C7;
+  --teal: #0D9488;
+  --teal-light: #CCFBF1;
+  --text: #1E293B;
+  --text-mid: #475569;
+  --text-light: #94A3B8;
+  --bg: #F8FAFC;
+  --white: #FFFFFF;
+  --border: #E2E8F0;
+  --radius: 16px;
+  --shadow: 0 2px 16px rgba(0,0,0,0.07);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  background: #E8EDF4;
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+  color: var(--text);
+}
+.app {
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg);
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+}
+.screen { display: none; min-height: 100dvh; }
+.screen.active { display: block; }
+
+/* ========== スタート（親向けブリーフィング）========== */
+#startScreen {
+  display: none;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--white);
+}
+#startScreen.active { display: flex; }
+
+.start-hero {
+  background: linear-gradient(135deg, #1E40AF 0%, #0369A1 100%);
+  padding: 48px 28px 36px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.start-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: -20px; right: -20px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+}
+.start-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.start-hero h1 {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.start-hero h1 em {
+  font-style: normal;
+  color: #FCD34D;
+}
+.start-hero p {
+  font-size: 13px;
+  opacity: 0.85;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+
+.start-body {
+  padding: 52px 24px 32px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.briefing-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.briefing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+.briefing-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-text { flex: 1; }
+.step-text strong { font-size: 14px; display: block; margin-bottom: 2px; }
+.step-text span { font-size: 12px; color: var(--text-mid); line-height: 1.5; }
+
+.parent-note {
+  background: var(--accent-light);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #92400E;
+  border-left: 3px solid var(--accent);
+}
+.parent-note strong { display: block; margin-bottom: 4px; font-size: 12px; }
+
+.name-section { margin-bottom: 20px; }
+.name-label { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text-mid); }
+.name-input-row { display: flex; gap: 10px; }
+.name-input-row input {
+  flex: 1;
+  padding: 13px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.name-input-row input:focus { border-color: var(--primary); }
+.name-hint { font-size: 11px; color: var(--text-light); margin-top: 6px; }
+
+.start-btn {
+  width: 100%;
+  padding: 17px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.start-btn:active { transform: scale(0.97); }
+.start-btn:disabled { opacity: 0.4; cursor: default; }
+.start-btn svg { width: 18px; height: 18px; }
+
+/* ========== ブース一覧 ========== */
+#listScreen { padding-bottom: 90px; }
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px 10px;
+}
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.header-title { font-size: 16px; font-weight: 800; color: var(--primary); }
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-light);
+  border: 1px solid var(--primary-mid);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.progress-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.progress-label { font-size: 12px; font-weight: 700; color: var(--text-mid); white-space: nowrap; }
+
+.booth-list-wrap { padding: 16px; }
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-left: 2px;
+}
+
+.booth-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  border: 2px solid transparent;
+}
+.booth-card:active { transform: scale(0.98); }
+.booth-card.recorded {
+  border-color: var(--teal);
+  background: #FAFFFE;
+}
+.booth-card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.booth-card-info { flex: 1; min-width: 0; }
+.booth-card-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.booth-card-catch {
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.booth-card-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--border);
+  color: var(--text-light);
+}
+.booth-card-done {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--teal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.booth-card-done svg { width: 12px; height: 12px; color: white; }
+
+.fixed-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: white;
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  z-index: 100;
+}
+.review-btn {
+  width: 100%;
+  padding: 15px;
+  background: var(--teal);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.review-btn:active { transform: scale(0.97); }
+.review-btn:disabled { background: var(--border); color: var(--text-light); cursor: default; }
+
+/* ========== 記録画面 ========== */
+#recordScreen { background: white; }
+
+.record-top { padding: 16px 16px 0; }
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 16px;
+}
+.back-btn svg { width: 16px; height: 16px; }
+.record-booth-hero {
+  background: var(--primary-light);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.record-booth-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.record-booth-name { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+.record-booth-catch { font-size: 12px; color: var(--text-mid); }
+
+.record-body { padding: 20px 16px; }
+
+/* 親向け問いかけカード */
+.parent-prompt-card {
+  background: linear-gradient(135deg, #EFF6FF, #E0F2FE);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--primary);
+}
+.parent-prompt-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.parent-prompt-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.5;
+}
+.parent-prompt-hint {
+  font-size: 11px;
+  color: var(--text-mid);
+  margin-top: 6px;
+}
+
+/* 子の言葉入力 */
+.child-input-section { margin-bottom: 20px; }
+.child-input-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-mid);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.child-input-label .optional {
+  font-size: 10px;
+  color: var(--text-light);
+  font-weight: 400;
+  background: var(--border);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+.child-input-field {
+  width: 100%;
+  padding: 13px 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: none;
+  font-family: inherit;
+}
+.child-input-field:focus { border-color: var(--primary); }
+.child-input-count {
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+/* Q1: 行動意欲選択 */
+.emotion-section { margin-bottom: 20px; }
+.emotion-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-mid);
+  margin-bottom: 12px;
+}
+.emotion-choices { display: flex; gap: 10px; }
+.emotion-btn {
+  flex: 1;
+  padding: 14px 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.emotion-btn:active { transform: scale(0.94); }
+.emotion-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.emotion-emoji { font-size: 40px; line-height: 1; }
+.emotion-label-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-light);
+  line-height: 1.3;
+  text-align: center;
+  white-space: pre-line;
+}
+.emotion-btn.selected .emotion-label-text { color: var(--primary); }
+
+/* Q2: 意欲の方向 */
+.motivation-section { margin-bottom: 28px; }
+.motivation-label { font-size: 12px; font-weight: 700; color: var(--text-mid); margin-bottom: 12px; }
+.motivation-choices { display: flex; gap: 8px; }
+.moti-btn {
+  flex: 1;
+  padding: 12px 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-mid);
+  transition: all 0.2s;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.moti-btn .moti-emoji { font-size: 24px; line-height: 1; }
+.moti-btn.selected {
+  border-color: var(--teal);
+  background: var(--teal-light);
+  color: var(--teal);
+}
+
+.save-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.save-btn:active { transform: scale(0.97); }
+.save-btn:disabled { opacity: 0.35; cursor: default; }
+
+/* 閲覧モード */
+.view-mode-card {
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.view-mode-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.view-mode-row:last-child { margin-bottom: 0; }
+.view-mode-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-light);
+  min-width: 80px;
+  flex-shrink: 0;
+}
+.view-mode-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.re-record-btn {
+  width: 100%;
+  padding: 14px;
+  background: white;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s;
+  margin-top: 8px;
+}
+.re-record-btn:active { transform: scale(0.97); }
+
+/* 完了メッセージ */
+.record-done {
+  padding: 40px 24px;
+  text-align: center;
+  animation: fadeUp 0.4s ease;
+}
+.record-done h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.record-done p { font-size: 14px; color: var(--text-mid); line-height: 1.6; margin-bottom: 24px; }
+.record-child-quote {
+  background: var(--accent-light);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 auto 24px;
+  max-width: 320px;
+  font-size: 14px;
+  color: #78350F;
+  font-style: italic;
+  border-left: 3px solid var(--accent);
+  text-align: left;
+}
+.record-child-quote::before { content: '\300C'; font-style: normal; font-weight: 800; }
+.record-child-quote::after { content: '\300D'; font-style: normal; font-weight: 800; }
+.next-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 28px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.next-btn svg { width: 16px; height: 16px; }
+
+/* ========== ふりかえり ========== */
+#reviewScreen { padding-bottom: 40px; }
+
+.review-header {
+  background: linear-gradient(135deg, #1E40AF 0%, #0369A1 100%);
+  padding: 28px 24px 36px;
+  color: white;
+  position: relative;
+}
+.review-header h1 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.review-header p { font-size: 13px; opacity: 0.8; }
+
+.review-body { padding: 20px 16px; }
+
+/* タイプカード */
+.type-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.type-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--teal));
+}
+.type-to-child {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.type-icon-large {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 8px;
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+.type-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.type-axis { font-size: 13px; color: var(--text-mid); margin-bottom: 12px; }
+.type-desc {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* サブタイプバッジ */
+.sub-types-area {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.sub-types-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+.sub-type-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sub-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 根拠トグル */
+.type-reason-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 0;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.type-reason-toggle-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.type-reason-toggle-arrow {
+  font-size: 11px;
+  color: var(--text-light);
+  transition: transform 0.2s;
+}
+.type-reason-toggle-arrow.open { transform: rotate(180deg); }
+.type-reason-body { display: none; padding-top: 12px; }
+.type-reason-body.open { display: block; }
+
+.score-bars { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.score-bar-row { display: flex; align-items: center; gap: 8px; }
+.score-bar-label {
+  font-size: 11px;
+  font-weight: 700;
+  width: 60px;
+  flex-shrink: 0;
+  color: var(--text-mid);
+}
+.score-bar-label.top { color: var(--primary); }
+.score-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.score-bar-pct {
+  font-size: 10px;
+  font-weight: 700;
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+  color: var(--text-light);
+}
+.score-bar-pct.top { color: var(--primary); }
+
+.evidence-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-mid);
+  margin-bottom: 8px;
+}
+.evidence-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.evidence-item:last-child { margin-bottom: 0; }
+.evidence-booth-icon { font-size: 16px; flex-shrink: 0; }
+.evidence-detail { flex: 1; }
+.evidence-booth-name { font-weight: 700; margin-bottom: 2px; }
+.evidence-axis-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.axis-chip {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+/* 子の言葉カード */
+.quotes-card {
+  background: var(--accent-light);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.quotes-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #92400E;
+  margin-bottom: 12px;
+}
+.quote-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+.quote-item:last-child { margin-bottom: 0; }
+.quote-icon { font-size: 18px; flex-shrink: 0; }
+.quote-text-wrap { flex: 1; }
+.quote-text { font-size: 13px; color: #78350F; font-style: italic; margin-bottom: 2px; }
+.quote-source { font-size: 11px; color: #B45309; }
+
+/* おすすめブース */
+.section-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.section-card-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.recommend-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.recommend-item:last-child { border-bottom: none; padding-bottom: 0; }
+.recommend-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.recommend-info { flex: 1; }
+.recommend-name { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.recommend-reason { font-size: 12px; color: var(--teal); font-weight: 600; line-height: 1.4; }
+
+/* 日常アクション */
+.action-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.action-item:last-child { border-bottom: none; padding-bottom: 0; }
+.action-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.action-text { flex: 1; font-size: 13px; line-height: 1.6; }
+.action-source { font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px; }
+
+/* 親向けセクション */
+.parent-section-card {
+  background: #F0FDF4;
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #BBF7D0;
+}
+.parent-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #166534;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.5px;
+}
+.parent-action-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #D1FAE5;
+  align-items: flex-start;
+}
+.parent-action-item:last-child { border-bottom: none; padding-bottom: 0; }
+.parent-action-icon { font-size: 18px; flex-shrink: 0; }
+.parent-action-text { flex: 1; }
+.parent-action-main { font-size: 13px; font-weight: 700; color: #166534; margin-bottom: 2px; }
+.parent-action-sub { font-size: 12px; color: #16A34A; line-height: 1.5; }
+
+.screenshot-hint {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-light);
+  padding: 8px 0 4px;
+}
+
+/* ========== モーダル ========== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-end;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  width: 100%;
+  max-width: 430px;
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 40px;
+  animation: sheetUp 0.3s ease;
+}
+.modal-title { font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 16px; }
+.user-list { list-style: none; }
+.user-item {
+  padding: 13px 16px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s;
+}
+.user-item:hover { background: var(--bg); }
+.user-item.current { background: var(--primary-light); }
+.user-item-name { font-size: 15px; font-weight: 700; }
+.user-item-count { font-size: 11px; color: var(--text-light); }
+.add-user-row { display: flex; gap: 8px; margin-top: 12px; }
+.add-user-row input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+}
+.add-user-row input:focus { border-color: var(--primary); }
+.add-user-btn {
+  padding: 12px 18px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ========== スタート（親向けブリーフィング）========== -->
+<div class="screen active" id="startScreen">
+  <div class="start-hero">
+    <div class="start-badge">保護者の方へ</div>
+    <h1>体験を<em>言葉</em>にして<br>持ち帰ろう</h1>
+    <p>ワークワクワク河内長野 体験記録アプリ<br>お子さんと一緒に使ってください</p>
+  </div>
+  <div class="start-body">
+    <div class="briefing-title">📋 今日できること</div>
+    <div class="briefing-steps">
+      <div class="briefing-step">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <strong>体験ごとに記録する</strong>
+          <span>「どうだった？」と聞きながら、お子さんの反応を記録します（30秒〜）</span>
+        </div>
+      </div>
+      <div class="briefing-step">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <strong>傾向がわかる</strong>
+          <span>記録が増えると「どんな体験に反応しやすいか」が見えてきます</span>
+        </div>
+      </div>
+      <div class="briefing-step">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <strong>次の体験と日常につなぐ</strong>
+          <span>おすすめブースと「家で試せること」をお子さんと一緒に確認できます</span>
+        </div>
+      </div>
+    </div>
+    <div class="parent-note">
+      <strong>💡 使い方のコツ</strong>
+      体験直後に「どんなところが楽しかった？」と聞いて、お子さんの言葉をそのまま入力してみてください。帰りのバスでまとめてやっても大丈夫です。
+    </div>
+    <div class="name-section">
+      <div class="name-label">お子さんの名前（ニックネームでも可）</div>
+      <div class="name-input-row">
+        <input type="text" id="nameInput" placeholder="例：たろう" maxlength="10">
+      </div>
+      <div class="name-hint">あとで兄弟・姉妹を追加することもできます</div>
+    </div>
+    <button class="start-btn" id="startBtn" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      ブース一覧を見る
+    </button>
+  </div>
+</div>
+
+<!-- ========== ブース一覧 ========== -->
+<div class="screen" id="listScreen">
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">ワクワクメモ</div>
+      <button class="user-btn" id="switchUserBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="currentUserLabel">—</span>
+      </button>
+    </div>
+    <div class="progress-row">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">0 / 8</div>
+    </div>
+  </div>
+  <div class="booth-list-wrap">
+    <div class="section-label">今日のブース</div>
+    <div id="boothList"></div>
+  </div>
+  <div class="fixed-bar" id="fixedBar">
+    <button class="review-btn" id="goReviewBtn" disabled>ふりかえりを見る</button>
+  </div>
+</div>
+
+<!-- ========== 記録画面 ========== -->
+<div class="screen" id="recordScreen">
+  <div class="record-top">
+    <button class="back-btn" id="recordBackBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <div class="record-booth-hero" id="recordBoothHero">
+      <div class="record-booth-icon" id="recordBoothIcon"></div>
+      <div>
+        <div class="record-booth-name" id="recordBoothName"></div>
+        <div class="record-booth-catch" id="recordBoothCatch"></div>
+      </div>
+    </div>
+  </div>
+  <div class="record-body" id="recordBody"></div>
+</div>
+
+<!-- ========== ふりかえり ========== -->
+<div class="screen" id="reviewScreen">
+  <div class="review-header">
+    <button class="back-btn" id="reviewBackBtn" style="color:white; margin-bottom:12px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <h1 id="reviewTitle"></h1>
+    <p>体験ふりかえりレポート</p>
+  </div>
+  <div class="review-body" id="reviewBody"></div>
+</div>
+
+<!-- ========== ユーザー切替モーダル ========== -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal-sheet">
+    <div class="modal-title">だれの記録？</div>
+    <ul class="user-list" id="userList"></ul>
+    <div class="add-user-row">
+      <input type="text" id="addUserInput" placeholder="名前を追加" maxlength="10">
+      <button class="add-user-btn" id="addUserBtn">追加</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+/* ===== 軸定義 ===== */
+const AXES = ['つくる','まもる','つなぐ','そだてる','しらべる','つたえる'];
+const AXIS_EMOJI = { 'つくる':'🛠️', 'まもる':'🛡️', 'つなぐ':'📬', 'そだてる':'🌱', 'しらべる':'🔬', 'つたえる':'📣' };
+const AXIS_BG = { 'つくる':'#DBEAFE', 'まもる':'#FEE2E2', 'つなぐ':'#CCFBF1', 'そだてる':'#DCFCE7', 'しらべる':'#EDE9FE', 'つたえる':'#FCE7F3' };
+const AXIS_JOBS = {
+  'つくる':'職人・シェフ・エンジニア',
+  'まもる':'警察・消防・医療',
+  'つなぐ':'物流・商社・SNS運営',
+  'そだてる':'教師・農家・保育士',
+  'しらべる':'研究者・記者・探偵',
+  'つたえる':'デザイナー・広報・俳優',
+};
+const AXIS_COLORS = ['#2563EB','#DC2626','#0891B2','#16A34A','#7C3AED','#DB2777'];
+
+/* ===== ブースデータ ===== */
+const BOOTHS = [
+  {
+    id:1, name:'トラックづくり体験', company:'河内長野運送(株)', icon:'🚚', color:'#FEE2E2',
+    catch:'🔧 大きなトラックのパーツを組んだ！',
+    axes:[1,0,0.3,0,0.3,0], category:'ものづくり', primaryAxis:0,
+    parentPrompt:'どんな道具を使ったの？難しかったところはどこ？',
+    afterActions: {
+      tryit:'家にある材料でミニカーを工作してみよう',
+      curious:'トラックの仕組みを図鑑で調べてみよう',
+      share:'家族に「トラックってどうやって動くの？」と説明してみよう'
+    }
+  },
+  {
+    id:2, name:'美容師なりきり体験', company:'ヘアサロン Ciel', icon:'💇', color:'#FDF2F8',
+    catch:'✂️ 本物のハサミで髪を切った！',
+    axes:[0.3,0,0,0,0,1], category:'サービス', primaryAxis:5,
+    parentPrompt:'お客さんの気持ちがわかった？どんなところが難しかった？',
+    afterActions: {
+      tryit:'家族の髪をとかしてスタイリングしてあげよう',
+      curious:'美容師さんがどんな練習をしているか調べてみよう',
+      share:'家族に似合う髪型を考えて提案してみよう'
+    }
+  },
+  {
+    id:3, name:'お花アレンジメント', company:'花工房 はなみずき', icon:'💐', color:'#F0FDF4',
+    catch:'🌸 お花の香りの中で束を作った！',
+    axes:[0.8,0,0,0.8,0,0.3], category:'ものづくり', primaryAxis:0,
+    parentPrompt:'どんな花を選んだの？どんなときに誰にあげたい？',
+    afterActions: {
+      tryit:'散歩中の草花でブーケを作ってみよう',
+      curious:'お花の名前を3つ調べて家族に教えよう',
+      share:'家族や友だちに花束をプレゼントしてみよう'
+    }
+  },
+  {
+    id:4, name:'工場見学ツアー', company:'大阪精密工業(株)', icon:'🏭', color:'#EFF6FF',
+    catch:'⚙️ 細かいネジが機械でつくられる様子を見た！',
+    axes:[0.6,0,0,0,1,0], category:'見学', primaryAxis:4,
+    parentPrompt:'一番びっくりしたのはどのシーン？なんで機械はあんなに正確なんだろう？',
+    afterActions: {
+      tryit:'身の回りの製品を分解して中の部品を観察してみよう',
+      curious:'1mmを定規で測って精密さを体験してみよう',
+      share:'工場で見たことを家族に説明してみよう'
+    }
+  },
+  {
+    id:5, name:'指紋採取ワークショップ', company:'河内長野警察署', icon:'🔍', color:'#F5F3FF',
+    catch:'👆 自分の指紋を採取して分析した！',
+    axes:[0,0.8,0,0,1,0], category:'体験', primaryAxis:4,
+    parentPrompt:'みんなの指紋は同じだった？証拠を調べるってどんな気持ち？',
+    afterActions: {
+      tryit:'家族の指紋をインクで採取して比べてみよう',
+      curious:'科学捜査の本を読んでみよう',
+      share:'家の中で証拠探しゲームを作って家族とやろう'
+    }
+  },
+  {
+    id:6, name:'パンづくり体験', company:'ベーカリー穂の香', icon:'🍞', color:'#FFFBEB',
+    catch:'🫙 生地をこねて、焼きたてを食べた！',
+    axes:[1,0,0.3,0.4,0,0], category:'ものづくり', primaryAxis:0,
+    parentPrompt:'生地のふわふわした感触はどうだった？においや色はどう変わった？',
+    afterActions: {
+      tryit:'おうちで簡単なパンづくりに挑戦しよう',
+      curious:'パン生地がふくらむ仕組み（イースト菌）を調べよう',
+      share:'家族と一緒にパンを焼いて感想を聞き合おう'
+    }
+  },
+  {
+    id:7, name:'消防士おしごと体験', company:'河内長野消防署', icon:'🚒', color:'#FFF1F2',
+    catch:'🧯 重い装備を着て放水を体験した！',
+    axes:[0,1,0,0.2,0.2,0.4], category:'体験', primaryAxis:1,
+    parentPrompt:'装備は重かった？消防士さんの仕事の大変なところはどこだと思う？',
+    afterActions: {
+      tryit:'家の消火器の場所を家族と確認しよう',
+      curious:'消防車の種類を調べてみよう',
+      share:'地域の避難場所を家族に教えてあげよう'
+    }
+  },
+  {
+    id:8, name:'配送センター見学', company:'ヤマト運輸 河内長野', icon:'📦', color:'#ECFEFF',
+    catch:'📬 1日何万個もの荷物が仕分けされるのを見た！',
+    axes:[0,0,1,0,0.4,0.3], category:'見学', primaryAxis:2,
+    parentPrompt:'荷物がどうやって届くか全部わかった？一番すごいと思ったシステムは？',
+    afterActions: {
+      tryit:'家族に手紙を「配達ごっこ」で届けてみよう',
+      curious:'届いた荷物の伝票で追跡してみよう',
+      share:'1週間で届く荷物の数を数えて家族に報告しよう'
+    }
+  },
+];
+
+/* ===== Q1: 行動意欲（newteam版を採用：排他的で直感的） ===== */
+const Q1_OPTIONS = [
+  { emoji:'🔨', label:'自分でも\nやってみたい！', value:'tryit' },
+  { emoji:'🔍', label:'もっと詳しく\n知りたい！', value:'curious' },
+  { emoji:'📣', label:'誰かに\n教えたい！', value:'share' },
+];
+
+/* ===== Q2: 意欲の方向（v5版を採用：日常アクションの選出に直結） ===== */
+const Q2_OPTIONS = [
+  { emoji:'✊', label:'すぐ\nやりたい！', value:'do_now' },
+  { emoji:'📚', label:'もっと調べて\nから', value:'learn_first' },
+  { emoji:'👀', label:'見るのが\nすき！', value:'watch' },
+];
+
+const Q1_LABELS = { tryit:'やってみたい！', curious:'もっと知りたい！', share:'誰かに教えたい！' };
+const Q2_LABELS = { do_now:'すぐやりたい！', learn_first:'もっと調べてから', watch:'見るのがすき！' };
+
+/* 旧値フォールバック */
+const Q1_VALID = new Set(['tryit','curious','share']);
+const Q2_VALID = new Set(['do_now','learn_first','watch']);
+const Q1_FB = { fun:'tryit', wow:'curious', hands:'tryit', discover:'curious', people:'share' };
+const Q2_FB = { easy:'do_now', normal:'learn_first', hard:'watch', none:'watch', once:'do_now', many:'do_now' };
+function nQ1(v) { return v && Q1_VALID.has(v) ? v : (Q1_FB[v] || 'tryit'); }
+function nQ2(v) { return v && Q2_VALID.has(v) ? v : (Q2_FB[v] || 'do_now'); }
+
+const TYPE_NAMES = {
+  'つくる':'クリエイター', 'まもる':'ガーディアン', 'つなぐ':'コネクター',
+  'そだてる':'グロウワー', 'しらべる':'リサーチャー', 'つたえる':'コミュニケーター'
+};
+
+const AXIS_RELATIONS = {
+  'つくる→まもる':'作ったものを守る視点を知ると、ものづくりの意味が深まるよ',
+  'つくる→つなぐ':'作ったものがどう届くかを知ると、仕事の全体像が見えてくるよ',
+  'つくる→そだてる':'材料を育てるところから見ると、ものづくりの出発点がわかるよ',
+  'つくる→しらべる':'作る前に調べる力があると、もっといいものが作れるよ',
+  'つくる→つたえる':'作ったものの良さを伝えられると、もっと多くの人に届くよ',
+  'まもる→つくる':'守るための道具を作る視点を知ると、守り方の幅が広がるよ',
+  'まもる→つなぐ':'安全を届ける仕事もある。つなぐことで守れる人が増えるよ',
+  'まもる→そだてる':'安全意識を育てることも大切な守り方のひとつだよ',
+  'まもる→しらべる':'危険を調べることが守りの第一歩。調査力で守れるものが増えるよ',
+  'まもる→つたえる':'守り方を伝えると、みんなが安全になれるよ',
+  'つなぐ→つくる':'届けるものを作る側を知ると、つなぐ仕事の意味がもっとわかるよ',
+  'つなぐ→まもる':'届けるものを守ることも大事。届けると守るはつながっているよ',
+  'つなぐ→そだてる':'届ける先の人を育てることもできる。つなぐことは人を育てることだよ',
+  'つなぐ→しらべる':'どこに届ければいいか調べる力があると、つなぐ仕事がもっと上手になるよ',
+  'つなぐ→つたえる':'届けるときに伝える力があると、届けたものの価値がもっと高まるよ',
+  'そだてる→つくる':'育てたものを形に変える体験は、育てる楽しさを倍にするよ',
+  'そだてる→まもる':'育てたものを守る大切さを知ると、育て方が変わるよ',
+  'そだてる→つなぐ':'育てたものを届けるところまで体験すると、やりがいが増えるよ',
+  'そだてる→しらべる':'育て方を調べると、もっと上手に育てられるようになるよ',
+  'そだてる→つたえる':'育てた経験を伝えると、自分の気づきがもっと深くなるよ',
+  'しらべる→つくる':'調べたことを形にすると、知識が生きた力になるよ',
+  'しらべる→まもる':'調べたことで人を守ることができる。知識は最強の守りだよ',
+  'しらべる→つなぐ':'調べた結果を届けると、みんなの役に立てるよ',
+  'しらべる→そだてる':'調べる力を育てると、どんな分野でも活躍できるようになるよ',
+  'しらべる→つたえる':'調べたことを伝えるのが研究者の仕事。伝える力で知識が広がるよ',
+  'つたえる→つくる':'伝えるための作品を作る体験は、表現力を伸ばすよ',
+  'つたえる→まもる':'大切な人を守るために伝える力を使えると、すごい力になるよ',
+  'つたえる→つなぐ':'気持ちを届けることは最高のコミュニケーション。届ける体験で学ぼう',
+  'つたえる→そだてる':'伝える力で後輩を育てることができる。教えることは最高の学びだよ',
+  'つたえる→しらべる':'伝えるためにまず調べる。調べて伝えると説得力が生まれるよ',
+};
+
+/* ===== 傾向文テンプレート（tryit/curious/share対応） ===== */
+const PATTERNS = {
+  'tryit×つくる':'手を動かしてモノを作る体験に「自分もやりたい！」とワクワクするタイプ',
+  'tryit×まもる':'人を守る仕事を見て「自分もやりたい！」と思える正義感の持ち主',
+  'tryit×つなぐ':'届ける・つなげる体験に「自分もやってみたい！」と思えるタイプ',
+  'tryit×そだてる':'何かを育てる体験に「自分もやってみたい！」とワクワクするタイプ',
+  'tryit×しらべる':'調査や実験に「自分もやってみたい！」と思える行動派の探究者',
+  'tryit×つたえる':'伝える体験に「自分もやりたい！」と思える表現力の持ち主',
+  'curious×つくる':'ものづくりの仕組みをもっと深く知りたいと思える探究心の持ち主',
+  'curious×まもる':'守る仕事の裏側をもっと知りたいと思える、探究心の強いタイプ',
+  'curious×つなぐ':'届ける仕組みの奥深さに「もっと知りたい！」と思える知的好奇心の持ち主',
+  'curious×そだてる':'育てることの奥深さをもっと知りたいと思える、研究者気質のタイプ',
+  'curious×しらべる':'調べれば調べるほど知りたくなる、生まれながらの探究者',
+  'curious×つたえる':'伝え方の工夫や仕組みに「もっと知りたい！」と気づけるタイプ',
+  'share×つくる':'ものづくりの感動を「みんなに教えたい！」と思える発信力のあるタイプ',
+  'share×まもる':'守ることの大切さを「みんなに教えたい！」と思える伝道師タイプ',
+  'share×つなぐ':'届ける仕組みを「みんなに教えたい！」と思える共有力のあるタイプ',
+  'share×そだてる':'育てる楽しさを「みんなに教えたい！」と思える先生タイプ',
+  'share×しらべる':'調べたことを「みんなに教えたい！」と思える知識の伝道師タイプ',
+  'share×つたえる':'伝えることの楽しさを「もっと広げたい！」と思えるコミュニケーションの達人',
+};
+
+/* ===== 状態管理 ===== */
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('wakumemo_v6') || 'null'); } catch { return null; }
+}
+function saveState(s) { localStorage.setItem('wakumemo_v6', JSON.stringify(s)); }
+function initState(name) { return { users:[{ name, records:{} }], currentUser:0 }; }
+function currentUser() { return appState.users[appState.currentUser]; }
+
+let appState = loadState();
+
+/* ===== 画面遷移 ===== */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const fb = document.getElementById('fixedBar');
+  if (fb) fb.style.display = (id==='listScreen') ? 'block' : 'none';
+}
+
+/* ===== スタート ===== */
+const nameInput = document.getElementById('nameInput');
+const startBtn = document.getElementById('startBtn');
+nameInput.addEventListener('input', () => { startBtn.disabled = !nameInput.value.trim(); });
+startBtn.addEventListener('click', () => {
+  const name = nameInput.value.trim();
+  if (!name) return;
+  if (appState) {
+    const ex = appState.users.findIndex(u => u.name === name);
+    if (ex >= 0) appState.currentUser = ex;
+    else { appState.users.push({name, records:{}}); appState.currentUser = appState.users.length - 1; }
+  } else {
+    appState = initState(name);
+  }
+  saveState(appState);
+  renderList();
+  showScreen('listScreen');
+});
+if (appState) { renderList(); showScreen('listScreen'); }
+
+/* ===== スコア計算 ===== */
+function calcScores(user) {
+  const scores = [0,0,0,0,0,0];
+  for (const id in user.records) {
+    const booth = BOOTHS.find(b => b.id === parseInt(id));
+    if (!booth) continue;
+    const rec = user.records[id];
+
+    /* Q1のスコア反映：tryit=行動系、curious=知識系、share=対人系 */
+    const q1 = nQ1(rec.emotion);
+    const q1Boost = [0,0,0,0,0,0];
+    if (q1 === 'tryit') { q1Boost[0]=0.2; q1Boost[3]=0.15; }
+    else if (q1 === 'curious') { q1Boost[4]=0.25; }
+    else if (q1 === 'share') { q1Boost[5]=0.2; q1Boost[2]=0.15; }
+
+    /* Q2のスコア反映：do_now=ブース軸強化、learn_first=しらべる強化、watch=つたえる強化 */
+    const q2 = nQ2(rec.motivation);
+    const q2Bonus = [0,0,0,0,0,0];
+    if (q2 === 'do_now') {
+      q2Bonus[booth.primaryAxis] = 0.2;
+    } else if (q2 === 'learn_first') {
+      q2Bonus[4] = 0.15;
+    } else if (q2 === 'watch') {
+      q2Bonus[5] = 0.1;
+    }
+
+    for (let i=0; i<6; i++) {
+      scores[i] += booth.axes[i] + q1Boost[i] + q2Bonus[i];
+    }
+  }
+  const max = Math.max(...scores, 0.001);
+  return scores.map(s => Math.min(s/max, 1));
+}
+
+/* ===== ブース一覧 ===== */
+function renderList() {
+  const user = currentUser();
+  document.getElementById('currentUserLabel').textContent = user.name || 'ゲスト';
+  const count = Object.keys(user.records).length;
+  const pct = (count / BOOTHS.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${count} / ${BOOTHS.length}`;
+
+  const btn = document.getElementById('goReviewBtn');
+  if (count < 1) { btn.disabled=true; btn.textContent='ふりかえりを見る（まず1つ記録しよう）'; }
+  else { btn.disabled=false; btn.textContent='ふりかえりを見る →'; }
+
+  const list = document.getElementById('boothList');
+  list.innerHTML = '';
+  BOOTHS.forEach(booth => {
+    const rec = user.records[booth.id];
+    const card = document.createElement('div');
+    card.className = 'booth-card' + (rec ? ' recorded' : '');
+    const emotionEmoji = rec ? (Q1_OPTIONS.find(o=>o.value===nQ1(rec.emotion))||{}).emoji || '' : '';
+    card.innerHTML = `
+      <div class="booth-card-icon" style="background:${booth.color}">${booth.icon}</div>
+      <div class="booth-card-info">
+        <div class="booth-card-name">${booth.name}</div>
+        <div class="booth-card-catch">${booth.catch}</div>
+        <span class="booth-card-tag">${booth.category}</span>
+        ${rec ? `<span class="booth-card-tag" style="background:var(--primary-light);color:var(--primary);margin-left:4px">${emotionEmoji} 記録ずみ</span>` : ''}
+      </div>
+      ${rec ? `<div class="booth-card-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
+    `;
+    card.addEventListener('click', () => openRecord(booth));
+    list.appendChild(card);
+  });
+}
+
+/* ===== 記録 ===== */
+let activeBooth = null;
+let tempRecord = {};
+let viewMode = false;
+
+function openRecord(booth) {
+  activeBooth = booth;
+  const user = currentUser();
+  const existing = user.records[booth.id];
+
+  document.getElementById('recordBoothIcon').style.background = booth.color;
+  document.getElementById('recordBoothIcon').textContent = booth.icon;
+  document.getElementById('recordBoothName').textContent = booth.name;
+  document.getElementById('recordBoothCatch').textContent = booth.catch;
+
+  if (existing && existing._done) {
+    tempRecord = { ...existing };
+    viewMode = true;
+    renderViewMode();
+  } else {
+    tempRecord = existing ? { ...existing } : {};
+    viewMode = false;
+    renderRecordForm();
+  }
+  showScreen('recordScreen');
+}
+
+/* ===== 閲覧モード ===== */
+function renderViewMode() {
+  const body = document.getElementById('recordBody');
+  const q1 = nQ1(tempRecord.emotion);
+  const q2 = nQ2(tempRecord.motivation);
+  const q1Opt = Q1_OPTIONS.find(o => o.value === q1);
+  const q2Opt = Q2_OPTIONS.find(o => o.value === q2);
+
+  body.innerHTML = `
+    <div class="parent-prompt-card">
+      <div class="parent-prompt-label">📋 記録内容</div>
+      <div class="parent-prompt-text">${activeBooth.name}の記録</div>
+    </div>
+    <div class="view-mode-card">
+      <div class="view-mode-row">
+        <div class="view-mode-label">やりたくなった</div>
+        <div class="view-mode-value">${q1Opt ? q1Opt.emoji : ''} ${Q1_LABELS[q1] || ''}</div>
+      </div>
+      <div class="view-mode-row">
+        <div class="view-mode-label">次のステップ</div>
+        <div class="view-mode-value">${q2Opt ? q2Opt.emoji : ''} ${Q2_LABELS[q2] || ''}</div>
+      </div>
+      ${tempRecord.childWords ? `
+      <div class="view-mode-row">
+        <div class="view-mode-label">お子さんの言葉</div>
+        <div class="view-mode-value" style="font-style:italic;">\u300C${tempRecord.childWords}\u300D</div>
+      </div>` : ''}
+    </div>
+    <button class="re-record-btn" id="reRecordBtn">記録しなおす</button>
+  `;
+  document.getElementById('reRecordBtn').addEventListener('click', () => {
+    viewMode = false;
+    delete tempRecord._done;
+    renderRecordForm();
+  });
+}
+
+/* ===== 記録フォーム ===== */
+function renderRecordForm() {
+  const body = document.getElementById('recordBody');
+
+  if (tempRecord._done) {
+    body.innerHTML = `
+      <div class="record-done">
+        <h2>記録できました！ 🎉</h2>
+        <p>お子さんの言葉、覚えておきましょう</p>
+        ${tempRecord.childWords ? `<div class="record-child-quote">${tempRecord.childWords}</div>` : ''}
+        <button class="next-btn" id="nextBoothBtn">
+          つぎのブースへ
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>`;
+    document.getElementById('nextBoothBtn').addEventListener('click', () => {
+      renderList();
+      showScreen('listScreen');
+    });
+    return;
+  }
+
+  const curQ1 = tempRecord.emotion && Q1_VALID.has(tempRecord.emotion) ? tempRecord.emotion : '';
+  const curQ2 = tempRecord.motivation && Q2_VALID.has(tempRecord.motivation) ? tempRecord.motivation : '';
+
+  body.innerHTML = `
+    <div class="parent-prompt-card">
+      <div class="parent-prompt-label">📣 お子さんに聞いてみよう</div>
+      <div class="parent-prompt-text">${activeBooth.parentPrompt}</div>
+      <div class="parent-prompt-hint">そのまま読み上げてOKです</div>
+    </div>
+
+    <div class="child-input-section">
+      <div class="child-input-label">
+        お子さんの言葉をメモ
+        <span class="optional">任意</span>
+      </div>
+      <textarea class="child-input-field" id="childWordsInput" placeholder="例：ハンドルが思ったより重かった、でも楽しかった" rows="3" maxlength="60">${tempRecord.childWords || ''}</textarea>
+      <div class="child-input-count" id="wordCount">${(tempRecord.childWords||'').length} / 60</div>
+    </div>
+
+    <div class="emotion-section">
+      <div class="emotion-label">お子さんがこの体験で一番思ったことは？</div>
+      <div class="emotion-choices" id="emotionChoices">
+        ${Q1_OPTIONS.map(o => `
+          <button class="emotion-btn ${curQ1===o.value?'selected':''}" data-val="${o.value}">
+            <span class="emotion-emoji">${o.emoji}</span>
+            <span class="emotion-label-text">${o.label}</span>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="motivation-section">
+      <div class="motivation-label">この体験のあと、おうちでは？</div>
+      <div class="motivation-choices" id="motiChoices">
+        ${Q2_OPTIONS.map(o => `
+          <button class="moti-btn ${curQ2===o.value?'selected':''}" data-val="${o.value}">
+            <span class="moti-emoji">${o.emoji}</span>
+            ${o.label}
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <button class="save-btn" id="saveRecordBtn" ${curQ1?'':'disabled'}>記録を保存する</button>
+  `;
+
+  const cwInput = document.getElementById('childWordsInput');
+  cwInput.addEventListener('input', () => {
+    document.getElementById('wordCount').textContent = `${cwInput.value.length} / 60`;
+    tempRecord.childWords = cwInput.value;
+  });
+
+  document.getElementById('emotionChoices').addEventListener('click', e => {
+    const btn = e.target.closest('.emotion-btn');
+    if (!btn) return;
+    tempRecord.emotion = btn.dataset.val;
+    document.querySelectorAll('.emotion-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('saveRecordBtn').disabled = false;
+  });
+
+  document.getElementById('motiChoices').addEventListener('click', e => {
+    const btn = e.target.closest('.moti-btn');
+    if (!btn) return;
+    tempRecord.motivation = btn.dataset.val;
+    document.querySelectorAll('.moti-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+
+  document.getElementById('saveRecordBtn').addEventListener('click', () => {
+    tempRecord._done = true;
+    const user = currentUser();
+    user.records[activeBooth.id] = { ...tempRecord };
+    saveState(appState);
+    renderRecordForm();
+  });
+}
+
+document.getElementById('recordBackBtn').addEventListener('click', () => {
+  renderList();
+  showScreen('listScreen');
+});
+
+/* ===== ふりかえり ===== */
+document.getElementById('goReviewBtn').addEventListener('click', () => {
+  renderReview();
+  showScreen('reviewScreen');
+});
+document.getElementById('reviewBackBtn').addEventListener('click', () => {
+  renderList();
+  showScreen('listScreen');
+});
+
+function renderReview() {
+  const user = currentUser();
+  const scores = calcScores(user);
+  const records = user.records;
+
+  document.getElementById('reviewTitle').textContent = `${user.name}の体験レポート`;
+
+  /* タイプ判定 */
+  let maxIdx = 0;
+  for (let i=1; i<scores.length; i++) if (scores[i]>scores[maxIdx]) maxIdx=i;
+  const topAxis = AXES[maxIdx];
+  const typeName = TYPE_NAMES[topAxis];
+  const maxScore = scores[maxIdx];
+
+  /* 複数タイプ：60%閾値 */
+  const threshold = maxScore * 0.6;
+  const topTypes = [{ axis: topAxis, idx: maxIdx, score: scores[maxIdx] }];
+  const sorted = [...Array(6).keys()].filter(i=>i!==maxIdx).sort((a,b)=>scores[b]-scores[a]);
+  for (const i of sorted) {
+    if (topTypes.length >= 3) break;
+    if (scores[i] >= threshold) topTypes.push({ axis: AXES[i], idx: i, score: scores[i] });
+  }
+  const subTypes = topTypes.slice(1);
+  const topTypeAxes = new Set(topTypes.map(t=>t.axis));
+
+  /* 傾向文 */
+  const pCounts = {};
+  for (const id in records) {
+    const booth = BOOTHS.find(b=>b.id===parseInt(id));
+    if (!booth) continue;
+    let sIdx=0, sVal=0;
+    for (let i=0;i<6;i++) if(booth.axes[i]>sVal){sVal=booth.axes[i];sIdx=i;}
+    const q1 = nQ1(records[id].emotion);
+    const key = `${q1}\u00D7${AXES[sIdx]}`;
+    pCounts[key] = (pCounts[key]||0)+1;
+  }
+  let domPattern='', domCount=0;
+  for (const k in pCounts) if(pCounts[k]>domCount){domCount=pCounts[k];domPattern=k;}
+  const patternText = PATTERNS[domPattern] || 'いろんな分野にバランスよく興味を持てるタイプ';
+
+  /* 子の言葉 */
+  const quotes = [];
+  for (const id in records) {
+    const booth = BOOTHS.find(b=>b.id===parseInt(id));
+    if (booth && records[id].childWords) {
+      quotes.push({ text: records[id].childWords, booth: booth.name, icon: booth.icon });
+    }
+  }
+
+  /* おすすめブース */
+  const unvisited = BOOTHS.filter(b=>!records[b.id]);
+  const ranked = unvisited.map(b => {
+    let aff=0; for(let i=0;i<6;i++) aff+=b.axes[i]*(1-(scores[i]||0));
+    let si=0,sv=0;
+    for(let i=0;i<6;i++) if(b.axes[i]>sv){sv=b.axes[i];si=i;}
+    const relKey = `${topAxis}\u2192${AXES[si]}`;
+    const reason = AXIS_RELATIONS[relKey] || `\u300C${AXES[si]}\u300Dの新しい視点が広がるよ`;
+    return { booth:b, aff, reason };
+  }).sort((a,b)=>b.aff-a.aff);
+
+  /* 日常アクション（Q1=tryit/curious/shareでafterActionsを引く） */
+  const actions = [];
+  const usedKeys = new Set();
+  for (const id in records) {
+    const booth = BOOTHS.find(b=>b.id===parseInt(id));
+    if (!booth) continue;
+    const q1 = nQ1(records[id].emotion);
+    const action = booth.afterActions[q1];
+    const key = `${booth.id}_${q1}`;
+    if (action && !usedKeys.has(key) && actions.length < 3) {
+      actions.push({ text: action, boothName: booth.name, icon: booth.icon });
+      usedKeys.add(key);
+    }
+  }
+
+  /* 根拠データ */
+  const evidenceItems = [];
+  for (const id in records) {
+    const booth = BOOTHS.find(b=>b.id===parseInt(id));
+    if (!booth) continue;
+    const rec = records[id];
+    const q1 = nQ1(rec.emotion);
+    const q1Label = Q1_LABELS[q1] || q1;
+    const q1Boost = [0,0,0,0,0,0];
+    if(q1==='tryit'){q1Boost[0]=0.2;q1Boost[3]=0.15;}
+    else if(q1==='curious'){q1Boost[4]=0.25;}
+    else if(q1==='share'){q1Boost[5]=0.2;q1Boost[2]=0.15;}
+    const contribAxes = [];
+    for(let i=0;i<6;i++){
+      if(booth.axes[i]>0.3) contribAxes.push({axis:AXES[i], val:booth.axes[i]+q1Boost[i], isTop:AXES[i]===topAxis});
+    }
+    contribAxes.sort((a,b)=>b.val-a.val);
+    evidenceItems.push({ booth, q1Label, contribAxes });
+  }
+
+  const scorePct = scores.map(s => Math.round(s * 100));
+
+  /* 親向けアクション */
+  const parentActions = [
+    { icon:'💬', main:`\u300C${topAxis}\u300Dの仕事について話してみよう`, sub:`${AXIS_JOBS[topAxis]} などが代表的な仕事です。\u300Cどんな人が働いているんだろう？\u300Dと話題を広げてみてください` },
+    ranked.length > 0 ? { icon:'🗺️', main:`明日は\u300C${ranked[0].booth.name}\u300Dを見てみよう`, sub:ranked[0].reason } : null,
+    { icon:'📓', main:'今日の体験を一言で書いてもらおう', sub:'寝る前に\u300C今日一番心に残った体験は？\u300Dと聞いて、本人に書かせてみてください' }
+  ].filter(Boolean);
+
+  const reviewBody = document.getElementById('reviewBody');
+  reviewBody.innerHTML = `
+    <!-- タイプカード -->
+    <div class="type-card">
+      <div class="type-to-child">🔍 ${user.name}のワクワクタイプ</div>
+      <div class="type-icon-large" style="background:${AXIS_BG[topAxis]};">${AXIS_EMOJI[topAxis]}</div>
+      <div class="type-name">${topAxis}タイプ — ${typeName}</div>
+      <div class="type-axis">代表的な仕事：${AXIS_JOBS[topAxis]}</div>
+      <div class="type-desc">${user.name}は${patternText}！この感覚を大切にしてね。</div>
+
+      ${subTypes.length > 0 ? `
+      <div class="sub-types-area">
+        <div class="sub-types-label">こんな面もあるよ</div>
+        <div class="sub-type-badges">
+          ${subTypes.map(st => `
+            <span class="sub-type-badge" style="background:${AXIS_BG[st.axis]}; color:${AXIS_COLORS[st.idx]};">
+              ${AXIS_EMOJI[st.axis]} ${st.axis}タイプ
+            </span>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="type-reason-toggle" id="reasonToggle">
+        <div class="type-reason-toggle-label">
+          🧮 なぜ\u300C${topAxis}タイプ\u300Dになったの？
+        </div>
+        <span class="type-reason-toggle-arrow" id="reasonArrow">\u25BC</span>
+      </div>
+      <div class="type-reason-body" id="reasonBody">
+        <div class="score-bars">
+          ${AXES.map((ax, i) => `
+            <div class="score-bar-row">
+              <div class="score-bar-label ${ax===topAxis?'top':''}">${AXIS_EMOJI[ax]} ${ax}</div>
+              <div class="score-bar-track">
+                <div class="score-bar-fill" style="width:${scorePct[i]}%; background:${ax===topAxis?'var(--primary)':topTypeAxes.has(ax)?'var(--teal)':'#CBD5E1'}"></div>
+              </div>
+              <div class="score-bar-pct ${ax===topAxis?'top':''}">${scorePct[i]}</div>
+            </div>`).join('')}
+        </div>
+        <div class="evidence-label">体験ごとの内訳</div>
+        ${evidenceItems.map(ev => `
+          <div class="evidence-item">
+            <span class="evidence-booth-icon">${ev.booth.icon}</span>
+            <div class="evidence-detail">
+              <div class="evidence-booth-name">${ev.booth.name}（${ev.q1Label}）</div>
+              <div class="evidence-axis-chips">
+                ${ev.contribAxes.map(c => `
+                  <span class="axis-chip" style="background:${c.isTop?'var(--primary-mid)':'var(--border)'}; color:${c.isTop?'var(--primary)':'var(--text-mid)'}">
+                    ${c.isTop?'\u2605':''}${c.axis}
+                  </span>`).join('')}
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- 子の言葉 -->
+    ${quotes.length > 0 ? `
+    <div class="quotes-card">
+      <div class="quotes-label">\uD83D\uDCDD ${user.name}が言っていた言葉</div>
+      ${quotes.map(q => `
+        <div class="quote-item">
+          <span class="quote-icon">${q.icon}</span>
+          <div class="quote-text-wrap">
+            <div class="quote-text">${q.text}</div>
+            <div class="quote-source">${q.booth}にて</div>
+          </div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- おすすめブース -->
+    ${ranked.length > 0 ? `
+    <div class="section-card">
+      <div class="section-card-title">\uD83D\uDDFA\uFE0F まだ行ってないおすすめブース</div>
+      ${ranked.slice(0,2).map(r => `
+        <div class="recommend-item">
+          <div class="recommend-icon" style="background:${r.booth.color}">${r.booth.icon}</div>
+          <div class="recommend-info">
+            <div class="recommend-name">${r.booth.name}</div>
+            <div class="recommend-reason">${r.reason}</div>
+          </div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- 日常アクション -->
+    ${actions.length > 0 ? `
+    <div class="section-card">
+      <div class="section-card-title">\uD83C\uDFE0 明日からやってみよう</div>
+      ${actions.map((a,i) => `
+        <div class="action-item">
+          <div class="action-num">${i+1}</div>
+          <div>
+            <div class="action-text">${a.text}</div>
+            <div class="action-source">${a.icon} ${a.boothName}から</div>
+          </div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <!-- 親向けセクション -->
+    <div class="parent-section-card">
+      <div class="parent-section-title">\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67 保護者の方へ</div>
+      ${parentActions.map(a => `
+        <div class="parent-action-item">
+          <div class="parent-action-icon">${a.icon}</div>
+          <div class="parent-action-text">
+            <div class="parent-action-main">${a.main}</div>
+            <div class="parent-action-sub">${a.sub}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="screenshot-hint">\uD83D\uDCF8 スクリーンショットして記念に残そう</div>
+  `;
+
+  document.getElementById('reasonToggle').addEventListener('click', () => {
+    const rb = document.getElementById('reasonBody');
+    const ra = document.getElementById('reasonArrow');
+    rb.classList.toggle('open');
+    ra.classList.toggle('open');
+  });
+}
+
+/* ===== ユーザー切替 ===== */
+const userModal = document.getElementById('userModal');
+document.getElementById('switchUserBtn').addEventListener('click', () => {
+  renderUserModal();
+  userModal.classList.add('show');
+});
+userModal.addEventListener('click', e => { if(e.target===userModal) userModal.classList.remove('show'); });
+
+function renderUserModal() {
+  const ul = document.getElementById('userList');
+  ul.innerHTML = '';
+  appState.users.forEach((u,i) => {
+    const li = document.createElement('li');
+    li.className = 'user-item' + (i===appState.currentUser?' current':'');
+    const cnt = Object.keys(u.records).length;
+    li.innerHTML = `<span class="user-item-name">${u.name}</span><span class="user-item-count">${cnt}件記録済み</span>`;
+    li.addEventListener('click', () => {
+      appState.currentUser=i;
+      saveState(appState);
+      renderList();
+      userModal.classList.remove('show');
+    });
+    ul.appendChild(li);
+  });
+}
+document.getElementById('addUserBtn').addEventListener('click', () => {
+  const name = document.getElementById('addUserInput').value.trim();
+  if (!name) return;
+  const ex = appState.users.findIndex(u=>u.name===name);
+  if (ex>=0) appState.currentUser=ex;
+  else { appState.users.push({name,records:{}}); appState.currentUser=appState.users.length-1; }
+  saveState(appState);
+  document.getElementById('addUserInput').value='';
+  renderList();
+  userModal.classList.remove('show');
+});
+</script>
+</body>
+</html>

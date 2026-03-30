@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ワクワクマップ</title>
+<style>
+:root {
+  --primary: #FF6B35;
+  --primary-light: #FFF0E8;
+  --secondary: #4ECDC4;
+  --accent: #FFE66D;
+  --bg: #FAFAFA;
+  --text: #2D3436;
+  --text-light: #636E72;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  background: #F0F0F0;
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  min-height: 100dvh;
+}
+
+.app {
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg);
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.screen {
+  display: none;
+  min-height: 100dvh;
+  padding: 0 0 100px;
+}
+.screen.active { display: block; }
+
+/* ===== スタート画面 ===== */
+#startScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(160deg, #FFF0E8 0%, #E8FFF8 50%, #FFF8E0 100%);
+}
+#startScreen.active { display: flex; }
+
+.start-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.start-subtitle {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 32px;
+}
+.start-chart-container {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 24px;
+  opacity: 0.4;
+}
+.start-message {
+  font-size: 15px;
+  color: var(--text-light);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+.start-btn {
+  width: 100%;
+  max-width: 280px;
+  padding: 16px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.start-btn:active { transform: scale(0.97); }
+
+/* ===== ヘッダー ===== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF;
+  padding: 12px 16px 8px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.header-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary);
+}
+.user-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-light);
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+.user-switcher svg { width: 14px; height: 14px; }
+
+.mini-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+.mini-chart { width: 48px; height: 48px; }
+.mini-chart-info {
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+.mini-chart-info strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* ===== ブース一覧 ===== */
+.booth-list { padding: 16px; }
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+
+.booth-card {
+  background: #FFF;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.booth-card:active { transform: scale(0.98); }
+.booth-card.recorded {
+  border-left: 4px solid var(--secondary);
+}
+.booth-card.recorded::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: var(--secondary);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.booth-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.booth-info { flex: 1; }
+.booth-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.booth-company {
+  font-size: 12px;
+  color: var(--text-light);
+}
+.booth-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.booth-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #F0F0F0;
+  color: var(--text-light);
+}
+
+/* ===== リマインドバナー ===== */
+.remind-banner {
+  display: none;
+  margin: 0 16px 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #FFF8E0, #FFF0E8);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--text);
+  align-items: center;
+  gap: 8px;
+  animation: slideDown 0.3s ease;
+}
+.remind-banner.show { display: flex; }
+.remind-banner-icon { font-size: 20px; }
+.remind-banner-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Fixed下部ふりかえりボタン ===== */
+.fixed-review-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: #FFF;
+  padding: 12px 16px;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+.review-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.review-btn:active { transform: scale(0.97); }
+.review-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ===== 記録画面 ===== */
+#recordScreen {
+  background: linear-gradient(180deg, #FFF 0%, #F8F8F8 100%);
+}
+.record-header {
+  padding: 20px 16px 16px;
+  text-align: center;
+}
+.record-booth-name {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.record-company {
+  font-size: 13px;
+  color: var(--text-light);
+}
+.record-step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0;
+}
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #DDD;
+  transition: background 0.2s, transform 0.2s;
+}
+.step-dot.active {
+  background: var(--primary);
+  transform: scale(1.3);
+}
+.step-dot.done { background: var(--secondary); }
+
+.question-area {
+  padding: 0 24px;
+  text-align: center;
+}
+.question-text {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+/* 横並び絵文字カード */
+.choices {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
+  max-width: 340px;
+  margin: 0 auto;
+}
+.choice-btn {
+  flex: 1;
+  padding: 16px 8px 12px;
+  border: 2px solid #E8E8E8;
+  border-radius: 16px;
+  background: #FFF;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.choice-btn:active { transform: scale(0.94); }
+.choice-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: scale(1.05);
+}
+.choice-emoji { font-size: 48px; line-height: 1; }
+.choice-label { font-size: 10px; font-weight: 600; color: var(--text-light); line-height: 1.3; }
+.choice-btn.selected .choice-label { color: var(--primary); }
+
+.record-chart-preview {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0 16px;
+}
+.record-chart-preview svg { width: 160px; height: 160px; }
+
+.record-done-msg {
+  text-align: center;
+  padding: 32px 24px;
+  animation: fadeUp 0.4s ease;
+}
+.record-done-msg h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.record-done-msg p {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+.record-done-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.record-next-btn {
+  padding: 14px 32px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.record-next-btn:active { transform: scale(0.97); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 名前入力モーダル（初回記録時） ===== */
+.name-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 300;
+  justify-content: center;
+  align-items: center;
+}
+.name-modal-overlay.show { display: flex; }
+.name-modal {
+  width: 90%;
+  max-width: 320px;
+  background: #FFF;
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  animation: fadeUp 0.3s ease;
+}
+.name-modal h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.name-modal p {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.name-modal input {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid #DDD;
+  border-radius: 12px;
+  font-size: 18px;
+  text-align: center;
+  outline: none;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.name-modal input:focus { border-color: var(--primary); }
+.name-modal-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.name-modal-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ===== ふりかえり画面 ===== */
+#reviewScreen {
+  background: linear-gradient(180deg, #FFF0E8 0%, #E8FFF8 50%, #FFF8E0 100%);
+}
+.review-header {
+  text-align: center;
+  padding: 32px 24px 16px;
+}
+.review-header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.review-header p {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.review-chart-area {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+.review-chart-area svg { width: 260px; height: 260px; }
+
+.type-card {
+  margin: 0 16px 16px;
+  background: #FFF;
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  box-shadow: var(--card-shadow);
+  text-align: center;
+}
+.type-label {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+.type-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.type-desc {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.recommend-section {
+  padding: 0 16px 16px;
+}
+.recommend-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-left: 4px;
+}
+.recommend-card {
+  background: #FFF;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.recommend-card .booth-icon { width: 40px; height: 40px; font-size: 20px; border-radius: 10px; }
+.recommend-card-info { flex: 1; }
+.recommend-card-name { font-size: 14px; font-weight: 700; }
+.recommend-card-reason { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+
+.action-section { padding: 0 16px 16px; }
+.action-card {
+  background: #FFF;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.action-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.action-text { font-size: 14px; line-height: 1.6; }
+
+.screenshot-hint {
+  text-align: center;
+  padding: 8px 16px 16px;
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+/* ===== ユーザー切替モーダル ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  justify-content: center;
+  align-items: flex-end;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  width: 100%;
+  max-width: 430px;
+  background: #FFF;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 40px;
+  animation: sheetUp 0.3s ease;
+}
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.user-list { list-style: none; }
+.user-item {
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s;
+}
+.user-item:hover { background: #F8F8F8; }
+.user-item.current { background: var(--primary-light); font-weight: 700; }
+.user-item-name { font-size: 16px; }
+.user-item-count { font-size: 12px; color: var(--text-light); }
+
+.add-user-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.add-user-row input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #E8E8E8;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+}
+.add-user-row input:focus { border-color: var(--primary); }
+.add-user-btn {
+  padding: 12px 20px;
+  background: var(--primary);
+  color: #FFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin: 12px 16px 0;
+}
+.back-btn svg { width: 18px; height: 18px; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ===== スタート画面 ===== -->
+  <div class="screen active" id="startScreen">
+    <div class="start-title">ワクワクマップ</div>
+    <div class="start-subtitle">ワークワクワク河内長野</div>
+    <div class="start-chart-container">
+      <svg id="startChart" viewBox="0 0 200 200"></svg>
+    </div>
+    <div class="start-message">これを今日の体験で<br>塗りつぶそう！</div>
+    <button class="start-btn" id="startBtn">ブースを見る</button>
+  </div>
+
+  <!-- ===== ブース一覧画面 ===== -->
+  <div class="screen" id="listScreen">
+    <div class="header">
+      <div class="header-top">
+        <div class="header-title">ワクワクマップ</div>
+        <button class="user-switcher" id="switchUserBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="currentUserLabel">—</span>
+        </button>
+      </div>
+      <div class="mini-chart-row">
+        <svg class="mini-chart" id="miniChart" viewBox="0 0 48 48"></svg>
+        <div class="mini-chart-info">
+          <strong id="recordCountLabel">0 / 8 体験済み</strong><br>
+          <span id="miniChartHint">ブースを体験して記録しよう</span>
+        </div>
+      </div>
+    </div>
+    <div class="remind-banner" id="remindBanner">
+      <span class="remind-banner-icon">💡</span>
+      <span>さっきの体験、どうだった？<br>記録するともっとマップが育つよ！</span>
+      <button class="remind-banner-close" id="remindClose">✕</button>
+    </div>
+    <div class="booth-list" id="boothList"></div>
+    <!-- fixed下部ふりかえりボタン -->
+    <div class="fixed-review-bar" id="fixedReviewBar">
+      <button class="review-btn" id="goReviewBtn" disabled>ふりかえりを見る（あと2件！）</button>
+    </div>
+  </div>
+
+  <!-- ===== 記録画面 ===== -->
+  <div class="screen" id="recordScreen">
+    <button class="back-btn" id="recordBackBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <div class="record-header">
+      <div class="record-booth-name" id="recordBoothName"></div>
+      <div class="record-company" id="recordCompany"></div>
+    </div>
+    <div class="record-step-indicator" id="stepIndicator"></div>
+    <div class="question-area" id="questionArea"></div>
+    <div class="record-chart-preview" id="recordChartPreview">
+      <svg id="recordChart" viewBox="0 0 200 200"></svg>
+    </div>
+  </div>
+
+  <!-- ===== ふりかえり画面 ===== -->
+  <div class="screen" id="reviewScreen">
+    <button class="back-btn" id="reviewBackBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      もどる
+    </button>
+    <div class="review-header">
+      <h1 id="reviewUserName"></h1>
+      <p>きみのワクワクマップ</p>
+    </div>
+    <div class="review-chart-area">
+      <svg id="reviewChart" viewBox="0 0 260 260"></svg>
+    </div>
+    <div class="type-card" id="typeCard">
+      <div class="type-label">きみのワクワクタイプ</div>
+      <div class="type-name" id="typeName"></div>
+      <div class="type-desc" id="typeDesc"></div>
+    </div>
+    <div class="recommend-section" id="recommendSection">
+      <div class="recommend-title">🗺️ まだ冒険してないおすすめブース</div>
+      <div id="recommendList"></div>
+    </div>
+    <div class="action-section">
+      <div class="recommend-title">🏠 明日からやってみよう</div>
+      <div id="actionList"></div>
+    </div>
+    <div class="screenshot-hint">📸 スクショして記念に残そう！</div>
+  </div>
+
+  <!-- ===== 名前入力モーダル（初回記録時） ===== -->
+  <div class="name-modal-overlay" id="nameModal">
+    <div class="name-modal">
+      <h2>きみの名前は？</h2>
+      <p>記録するために名前を教えてね！<br>あとで変えられるよ</p>
+      <input type="text" id="nameModalInput" placeholder="なまえを入れてね" maxlength="10">
+      <button class="name-modal-btn" id="nameModalBtn" disabled>きろくをはじめる</button>
+    </div>
+  </div>
+
+  <!-- ===== ユーザー切替モーダル ===== -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal-sheet">
+      <div class="modal-title">だれが使う？</div>
+      <ul class="user-list" id="userList"></ul>
+      <div class="add-user-row">
+        <input type="text" id="addUserInput" placeholder="なまえを追加" maxlength="10">
+        <button class="add-user-btn" id="addUserBtn">追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== ブースデータ（河内長野実績ベース ダミー8社） ===== */
+const AXES = ['つくる','まもる','とどける','そだてる','しらべる','つたえる'];
+const AXIS_COLORS = ['#FF6B35','#4ECDC4','#45B7D1','#96CEB4','#A78BFA','#F472B6'];
+
+const BOOTHS = [
+  { id:1, name:'トラックづくり体験', company:'河内長野運送(株)', icon:'🚚', color:'#FFE0CC', axes:[1,0,0.4,0,0.2,0], category:'ものづくり' },
+  { id:2, name:'美容師なりきり体験', company:'ヘアサロン Ciel', icon:'💇', color:'#FFE0F0', axes:[0.4,0,0,0,0,1], category:'サービス' },
+  { id:3, name:'お花アレンジメント', company:'花工房 はなみずき', icon:'💐', color:'#E8FFE0', axes:[0.8,0,0,0.8,0,0.3], category:'ものづくり' },
+  { id:4, name:'工場見学ツアー', company:'大阪精密工業(株)', icon:'🏭', color:'#E0ECFF', axes:[0.6,0,0,0,1,0], category:'見学' },
+  { id:5, name:'指紋採取ワークショップ', company:'河内長野警察署', icon:'🔍', color:'#F0E8FF', axes:[0,0.8,0,0,1,0], category:'体験' },
+  { id:6, name:'パンづくり体験', company:'ベーカリー穂の香', icon:'🍞', color:'#FFF5E0', axes:[1,0,0.3,0.4,0,0], category:'ものづくり' },
+  { id:7, name:'消防士おしごと体験', company:'河内長野消防署', icon:'🚒', color:'#FFE0E0', axes:[0,1,0,0.3,0.2,0.5], category:'体験' },
+  { id:8, name:'配送センター見学', company:'ヤマト運輸 河内長野', icon:'📦', color:'#E0F8FF', axes:[0,0,1,0,0.4,0.3], category:'見学' },
+];
+
+const QUESTIONS = [
+  { text:'この体験、どうだった？', choices:[
+    { emoji:'😆', label:'たのしかった！', value:'fun' },
+    { emoji:'🤩', label:'すごかった！', value:'wow' },
+    { emoji:'🤔', label:'もっと知りたい！', value:'curious' },
+  ]},
+  { text:'むずかしさは？', choices:[
+    { emoji:'😊', label:'かんたん', value:'easy' },
+    { emoji:'🙂', label:'ふつう', value:'normal' },
+    { emoji:'😤', label:'むずかしい！', value:'hard' },
+  ]},
+];
+
+const TYPES = {
+  'つくる':  { name:'クリエイター', desc:'ものを作るのが好きなきみは、手を動かして形にする力がある！図工や料理でその才能をもっと伸ばそう。', actions:['おうちで簡単な工作に挑戦してみよう','料理のお手伝いで「つくる楽しさ」を体験しよう','身の回りのものがどう作られているか観察しよう'] },
+  'まもる':  { name:'ガーディアン', desc:'人を守りたい気持ちが強いきみは、正義感と優しさの持ち主！防災や安全について学んでみよう。', actions:['おうちの防災グッズをチェックしてみよう','困っている人がいたら声をかけてみよう','交通ルールを周りの人にも教えてあげよう'] },
+  'とどける':{ name:'デリバラー', desc:'届けることに興味があるきみは、人と人をつなぐ力がある！お手紙やプレゼントで誰かを喜ばせよう。', actions:['家族にお手紙を書いてみよう','お使いに挑戦してみよう','「届ける」仕事にはどんな種類があるか調べよう'] },
+  'そだてる':{ name:'グロウワー', desc:'育てることが好きなきみは、根気強さと愛情の持ち主！植物や生き物のお世話をしてみよう。', actions:['ベランダで小さな植物を育ててみよう','ペットや生き物を観察してみよう','弟や妹、年下の子に何か教えてあげよう'] },
+  'しらべる':{ name:'リサーチャー', desc:'調べることが好きなきみは、好奇心旺盛な探求者！図書館やネットでどんどん調べてみよう。', actions:['興味のあることを図書館で調べてみよう','身の回りの「なぜ？」を3つ書き出そう','実験や観察の記録をつけてみよう'] },
+  'つたえる':{ name:'コミュニケーター', desc:'伝えることが得意なきみは、みんなの気持ちがわかる人！話したり書いたりで表現力をみがこう。', actions:['今日の出来事を家族に話してみよう','絵日記や感想文を書いてみよう','友だちの話をじっくり聞いてみよう'] },
+};
+
+/* ===== 状態管理 ===== */
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('wakumap') || 'null'); } catch { return null; }
+}
+function saveState(state) {
+  localStorage.setItem('wakumap', JSON.stringify(state));
+}
+function initState() {
+  return { users: [{ name: '', records: {} }], currentUser: 0 };
+}
+function getCurrentUser(state) {
+  return state.users[state.currentUser];
+}
+
+let appState = loadState();
+
+/* ===== レーダーチャート描画 ===== */
+function drawRadar(svgEl, scores, size, opts = {}) {
+  const { showLabels = false, showValues = false, animate = false } = opts;
+  const cx = size / 2, cy = size / 2, r = size * 0.35;
+  const n = AXES.length;
+  let svg = '';
+
+  for (let lv = 1; lv <= 3; lv++) {
+    const rr = r * lv / 3;
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      pts.push(`${cx + rr * Math.cos(angle)},${cy + rr * Math.sin(angle)}`);
+    }
+    svg += `<polygon points="${pts.join(' ')}" fill="none" stroke="#E0E0E0" stroke-width="${lv===3?1.5:0.7}"/>`;
+  }
+
+  for (let i = 0; i < n; i++) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#E0E0E0" stroke-width="0.7"/>`;
+  }
+
+  const dataPts = [];
+  for (let i = 0; i < n; i++) {
+    const val = Math.min(scores[i] || 0, 1);
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const dr = r * (0.1 + 0.9 * val);
+    dataPts.push(`${cx + dr * Math.cos(angle)},${cy + dr * Math.sin(angle)}`);
+  }
+  const hasData = scores.some(s => s > 0);
+  if (hasData) {
+    svg += `<polygon points="${dataPts.join(' ')}" fill="rgba(255,107,53,0.15)" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round"${animate ? ' style="animation:fadeUp 0.5s ease"' : ''}/>`;
+    for (let i = 0; i < n; i++) {
+      if ((scores[i] || 0) > 0) {
+        svg += `<circle cx="${dataPts[i].split(',')[0]}" cy="${dataPts[i].split(',')[1]}" r="3.5" fill="var(--primary)"/>`;
+      }
+    }
+  }
+
+  if (showLabels) {
+    for (let i = 0; i < n; i++) {
+      const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+      const lr = r + size * 0.12;
+      const lx = cx + lr * Math.cos(angle);
+      const ly = cy + lr * Math.sin(angle);
+      const val = scores[i] || 0;
+      const color = val > 0 ? AXIS_COLORS[i] : '#AAA';
+      const fontSize = size > 100 ? 12 : 6;
+      svg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central" fill="${color}" font-size="${fontSize}" font-weight="700">${AXES[i]}</text>`;
+      if (showValues && val === 0) {
+        const vly = ly + fontSize + 2;
+        svg += `<text x="${lx}" y="${vly}" text-anchor="middle" fill="#CCC" font-size="${fontSize * 0.7}">未冒険</text>`;
+      }
+    }
+  }
+
+  svgEl.innerHTML = svg;
+}
+
+/* ===== ユーザーのスコア計算 ===== */
+function calcScores(user) {
+  const scores = [0,0,0,0,0,0];
+  const records = user.records;
+  const count = Object.keys(records).length;
+  if (count === 0) return scores;
+
+  for (const boothId in records) {
+    const booth = BOOTHS.find(b => b.id === parseInt(boothId));
+    if (!booth) continue;
+    const rec = records[boothId];
+    let weight = 1;
+    if (rec.q1 === 'fun') weight = 1.0;
+    else if (rec.q1 === 'wow') weight = 1.2;
+    else if (rec.q1 === 'curious') weight = 1.1;
+    let diffBonus = 0;
+    if (rec.q2 === 'hard') diffBonus = 0.15;
+    else if (rec.q2 === 'normal') diffBonus = 0.05;
+
+    for (let i = 0; i < 6; i++) {
+      scores[i] += booth.axes[i] * weight + (booth.axes[i] > 0 ? diffBonus : 0);
+    }
+  }
+
+  const max = Math.max(...scores, 0.001);
+  return scores.map(s => Math.min(s / max, 1));
+}
+
+/* ===== 画面遷移 ===== */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // fixed review barはブース一覧のみ表示
+  document.getElementById('fixedReviewBar').style.display = (id === 'listScreen') ? 'block' : 'none';
+}
+
+/* ===== スタート画面 ===== */
+drawRadar(document.getElementById('startChart'), [0,0,0,0,0,0], 200, { showLabels: true });
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  if (!appState) {
+    appState = initState();
+    saveState(appState);
+  }
+  renderList();
+  showScreen('listScreen');
+});
+
+// 既存データがあれば自動でリストへ
+if (appState) {
+  renderList();
+  showScreen('listScreen');
+}
+
+/* ===== ブース一覧画面 ===== */
+function renderList() {
+  const user = getCurrentUser(appState);
+  const displayName = user.name || 'ゲスト';
+  document.getElementById('currentUserLabel').textContent = displayName;
+  const recordCount = Object.keys(user.records).length;
+  document.getElementById('recordCountLabel').textContent = `${recordCount} / ${BOOTHS.length} 体験済み`;
+
+  if (recordCount === 0) {
+    document.getElementById('miniChartHint').textContent = 'ブースを体験して記録しよう';
+  } else if (recordCount < 2) {
+    document.getElementById('miniChartHint').textContent = 'あと少しでタイプ診断ができるよ！';
+  } else {
+    document.getElementById('miniChartHint').textContent = 'ふりかえりで診断結果を見よう！';
+  }
+
+  const scores = calcScores(user);
+  drawRadar(document.getElementById('miniChart'), scores, 48);
+
+  // ふりかえりボタン更新
+  const goReviewBtn = document.getElementById('goReviewBtn');
+  const remaining = 2 - recordCount;
+  if (remaining > 0) {
+    goReviewBtn.disabled = true;
+    goReviewBtn.textContent = `ふりかえりを見る（あと${remaining}件！）`;
+  } else {
+    goReviewBtn.disabled = false;
+    goReviewBtn.textContent = 'ふりかえりを見る 🔍';
+  }
+
+  // リマインドバナー
+  const banner = document.getElementById('remindBanner');
+  if (recordCount > 0 && recordCount < BOOTHS.length) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+
+  const list = document.getElementById('boothList');
+  list.innerHTML = '<div class="section-label">今日のブース</div>';
+  BOOTHS.forEach(booth => {
+    const recorded = !!user.records[booth.id];
+    const card = document.createElement('div');
+    card.className = 'booth-card' + (recorded ? ' recorded' : '');
+    card.innerHTML = `
+      <div class="booth-icon" style="background:${booth.color}">${booth.icon}</div>
+      <div class="booth-info">
+        <div class="booth-name">${booth.name}</div>
+        <div class="booth-company">${booth.company}</div>
+        <div class="booth-tags"><span class="booth-tag">${booth.category}</span></div>
+      </div>
+    `;
+    card.addEventListener('click', () => onBoothTap(booth));
+    list.appendChild(card);
+  });
+}
+
+document.getElementById('remindClose').addEventListener('click', () => {
+  document.getElementById('remindBanner').classList.remove('show');
+});
+
+document.getElementById('goReviewBtn').addEventListener('click', () => {
+  renderReview();
+  showScreen('reviewScreen');
+});
+
+/* ===== 名前入力モーダル（初回記録時） ===== */
+let pendingBooth = null;
+
+const nameModal = document.getElementById('nameModal');
+const nameModalInput = document.getElementById('nameModalInput');
+const nameModalBtn = document.getElementById('nameModalBtn');
+
+nameModalInput.addEventListener('input', () => {
+  nameModalBtn.disabled = nameModalInput.value.trim().length === 0;
+});
+
+nameModalBtn.addEventListener('click', () => {
+  const name = nameModalInput.value.trim();
+  if (!name) return;
+  const user = getCurrentUser(appState);
+  user.name = name;
+  saveState(appState);
+  nameModal.classList.remove('show');
+  renderList();
+  // 保留中のブース記録を開始
+  if (pendingBooth) {
+    startRecord(pendingBooth);
+    pendingBooth = null;
+  }
+});
+
+function onBoothTap(booth) {
+  const user = getCurrentUser(appState);
+  // 名前未設定かつ初回記録 → 名前を聞く
+  if (!user.name && Object.keys(user.records).length === 0) {
+    pendingBooth = booth;
+    nameModalInput.value = '';
+    nameModalBtn.disabled = true;
+    nameModal.classList.add('show');
+    setTimeout(() => nameModalInput.focus(), 100);
+    return;
+  }
+  startRecord(booth);
+}
+
+/* ===== ユーザー切替 ===== */
+const userModal = document.getElementById('userModal');
+document.getElementById('switchUserBtn').addEventListener('click', () => {
+  renderUserList();
+  userModal.classList.add('show');
+});
+userModal.addEventListener('click', (e) => {
+  if (e.target === userModal) userModal.classList.remove('show');
+});
+
+function renderUserList() {
+  const ul = document.getElementById('userList');
+  ul.innerHTML = '';
+  appState.users.forEach((u, i) => {
+    const li = document.createElement('li');
+    li.className = 'user-item' + (i === appState.currentUser ? ' current' : '');
+    const cnt = Object.keys(u.records).length;
+    const displayName = u.name || 'ゲスト';
+    li.innerHTML = `<span class="user-item-name">${displayName}</span><span class="user-item-count">${cnt}件記録</span>`;
+    li.addEventListener('click', () => {
+      appState.currentUser = i;
+      saveState(appState);
+      renderList();
+      userModal.classList.remove('show');
+    });
+    ul.appendChild(li);
+  });
+}
+
+document.getElementById('addUserBtn').addEventListener('click', () => {
+  const input = document.getElementById('addUserInput');
+  const name = input.value.trim();
+  if (!name) return;
+  const existing = appState.users.findIndex(u => u.name === name);
+  if (existing >= 0) {
+    appState.currentUser = existing;
+  } else {
+    appState.users.push({ name, records: {} });
+    appState.currentUser = appState.users.length - 1;
+  }
+  saveState(appState);
+  input.value = '';
+  renderList();
+  userModal.classList.remove('show');
+});
+
+/* ===== 記録画面 ===== */
+let currentBooth = null;
+let currentStep = 0;
+let recordAnswers = {};
+
+function startRecord(booth) {
+  currentBooth = booth;
+  currentStep = 0;
+  recordAnswers = {};
+  const user = getCurrentUser(appState);
+  if (user.records[booth.id]) {
+    recordAnswers = { ...user.records[booth.id] };
+  }
+
+  document.getElementById('recordBoothName').textContent = booth.name;
+  document.getElementById('recordCompany').textContent = booth.company;
+  renderStep();
+  showScreen('recordScreen');
+}
+
+function renderStep() {
+  const indicator = document.getElementById('stepIndicator');
+  indicator.innerHTML = '';
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i === currentStep ? ' active' : (i < currentStep ? ' done' : ''));
+    indicator.appendChild(dot);
+  }
+
+  const area = document.getElementById('questionArea');
+  const chartPreview = document.getElementById('recordChartPreview');
+
+  if (currentStep >= QUESTIONS.length) {
+    // 完了表示
+    area.innerHTML = '';
+    const doneDiv = document.createElement('div');
+    doneDiv.className = 'record-done-msg';
+    doneDiv.innerHTML = `
+      <h2>きろくできた！ 🎉</h2>
+      <p>マップが少し育ったよ。<br>ほかのブースも体験してみよう！</p>
+      <div class="record-done-actions">
+        <button class="record-next-btn" id="recordNextBtn">つぎのブースへ →</button>
+      </div>
+    `;
+    area.appendChild(doneDiv);
+
+    document.getElementById('recordNextBtn').addEventListener('click', () => {
+      showScreen('listScreen');
+      renderList();
+    });
+
+    const user = getCurrentUser(appState);
+    const scores = calcScores(user);
+    chartPreview.style.display = 'flex';
+    drawRadar(document.getElementById('recordChart'), scores, 200, { showLabels: true, animate: true });
+    return;
+  }
+
+  chartPreview.style.display = 'none';
+  const q = QUESTIONS[currentStep];
+  area.innerHTML = `<div class="question-text">${q.text}</div>`;
+  const choicesDiv = document.createElement('div');
+  choicesDiv.className = 'choices';
+  q.choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    const prevAnswer = recordAnswers[`q${currentStep + 1}`];
+    if (prevAnswer === c.value) btn.classList.add('selected');
+    btn.innerHTML = `<span class="choice-emoji">${c.emoji}</span><span class="choice-label">${c.label}</span>`;
+    btn.addEventListener('click', () => {
+      recordAnswers[`q${currentStep + 1}`] = c.value;
+      const user = getCurrentUser(appState);
+      user.records[currentBooth.id] = { ...recordAnswers };
+      saveState(appState);
+      currentStep++;
+      setTimeout(renderStep, 200);
+    });
+    choicesDiv.appendChild(btn);
+  });
+  area.appendChild(choicesDiv);
+}
+
+document.getElementById('recordBackBtn').addEventListener('click', () => {
+  if (currentStep > 0) {
+    currentStep--;
+    renderStep();
+  } else {
+    showScreen('listScreen');
+    renderList();
+  }
+});
+
+/* ===== ふりかえり画面 ===== */
+function renderReview() {
+  const user = getCurrentUser(appState);
+  const scores = calcScores(user);
+  const displayName = user.name || 'ゲスト';
+
+  document.getElementById('reviewUserName').textContent = `${displayName}のワクワクマップ`;
+  drawRadar(document.getElementById('reviewChart'), scores, 260, { showLabels: true, showValues: true, animate: true });
+
+  let maxIdx = 0;
+  for (let i = 1; i < scores.length; i++) {
+    if (scores[i] > scores[maxIdx]) maxIdx = i;
+  }
+  const axisName = AXES[maxIdx];
+  const type = TYPES[axisName];
+  document.getElementById('typeName').textContent = `${axisName}タイプ — ${type.name}`;
+  document.getElementById('typeDesc').textContent = type.desc;
+
+  const unvisited = BOOTHS.filter(b => !user.records[b.id]);
+  const ranked = unvisited.map(b => {
+    let affinity = 0;
+    for (let i = 0; i < 6; i++) affinity += b.axes[i] * (1 - (scores[i] || 0));
+    return { booth: b, affinity };
+  }).sort((a, b) => b.affinity - a.affinity);
+
+  const recommendList = document.getElementById('recommendList');
+  const recommendSection = document.getElementById('recommendSection');
+  if (ranked.length === 0) {
+    recommendSection.style.display = 'none';
+  } else {
+    recommendSection.style.display = 'block';
+    recommendList.innerHTML = '';
+    ranked.slice(0, 2).forEach(r => {
+      let reasonAxis = '';
+      let maxVal = 0;
+      for (let i = 0; i < 6; i++) {
+        if (r.booth.axes[i] > maxVal && scores[i] < 0.3) {
+          maxVal = r.booth.axes[i];
+          reasonAxis = AXES[i];
+        }
+      }
+      const reason = reasonAxis ? `「${reasonAxis}」の新しい発見があるかも！` : 'まだ体験していない分野だよ！';
+      const card = document.createElement('div');
+      card.className = 'recommend-card';
+      card.innerHTML = `
+        <div class="booth-icon" style="background:${r.booth.color}">${r.booth.icon}</div>
+        <div class="recommend-card-info">
+          <div class="recommend-card-name">${r.booth.name}</div>
+          <div class="recommend-card-reason">${reason}</div>
+        </div>
+      `;
+      recommendList.appendChild(card);
+    });
+  }
+
+  const actionList = document.getElementById('actionList');
+  actionList.innerHTML = '';
+  type.actions.forEach((action, i) => {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = `<div class="action-num">${i + 1}</div><div class="action-text">${action}</div>`;
+    actionList.appendChild(card);
+  });
+}
+
+document.getElementById('reviewBackBtn').addEventListener('click', () => {
+  showScreen('listScreen');
+  renderList();
+});
+</script>
+</body>
+</html>
